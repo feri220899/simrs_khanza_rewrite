@@ -1,0 +1,49 @@
+{
+  "name": "khanza-desktop",
+  "version": "0.1.0",
+  "description": "Rewrite SIMRS Khanza (Java Swing) ke Electron - koneksi langsung ke Postgres, tanpa backend Express terpisah",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev --watch",
+    "build": "electron-vite build",
+    "start": "electron-vite build && electron-builder",
+    "migrate": "node scripts/migrate.mjs"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "daisyui": "^5.5.19",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "tailwindcss": "^4.2.4"
+  },
+  "dependencies": {
+    "axios": "^1.15.2",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.5",
+    "electron-updater": "^6.8.9",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-vue-next": "^1.0.0",
+    "node-machine-id": "^1.1.12",
+    "pg": "^8.13.1",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.33",
+    "vue-router": "^4.5.0"
+  },
+  "build": {
+    "appId": "com.khanza.desktop",
+    "productName": "Khanza Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"]
+    },
+    "win": {
+      "target": ["nsis"]
+    }
+  }
+}

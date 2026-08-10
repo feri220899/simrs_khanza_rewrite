@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+    themes: corporate --default, night;
+}
+
+/* Scrollbar tipis — pola sama seperti pos-desktop (src/renderer/src/assets/main.css) */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128,128,128,0.3) transparent;
+}
+::-webkit-scrollbar              { width: 3px; height: 3px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(128,128,128,0.3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(128,128,128,0.5); }
