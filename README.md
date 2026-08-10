@@ -21,15 +21,31 @@ Struktur folder & pola UI (sidebar, permission, komponen) mengikuti
 - Migration pakai runner custom (numbered files, tabel `migrations`, backup
   `pg_dump` sebelum migrasi jalan pada instalasi yang sudah ada datanya) — pola
   sama seperti referensi, cuma ganti `better-sqlite3` → `pg`.
+- **Migration TIDAK auto-run saat app start** (beda dari referensi) — app ini
+  di-install di banyak PC RS sekaligus ke satu Postgres pusat, auto-migrate
+  tiap boot berisiko race condition. Migration cuma bisa dipicu manual oleh
+  **Administrator** lewat tombol di Pengaturan (role dicek ulang di IPC
+  handler, bukan cuma disembunyikan di UI) atau `npm run migrate` dari CLI.
 
 ## Setup
 
 ```bash
 npm install
 cp .env.example .env   # isi kredensial Postgres & JWT_SECRET yang sebenarnya
-npm run migrate         # jalankan migration tanpa buka Electron (buat cek ke staging DB dulu)
+npm run migrate         # WAJIB dijalankan manual sekali di awal — app TIDAK auto-migrate
 npm run dev              # jalankan app
 ```
+
+Alternatif buat instalasi pertama: **tidak perlu buka terminal** — cukup jalankan
+`npm run dev`/app-nya, layar Login otomatis mendeteksi database masih kosong dan
+menampilkan tombol **"Siapkan Database Sekarang"** (bootstrap tanpa perlu login dulu,
+tapi cuma bisa dipakai SEKALI selagi database benar-benar virgin — lihat guard-nya di
+`main/index.js` > `db:runInitialMigration` dan Khanza.md > "Bootstrap instalasi pertama").
+`npm run migrate` dari CLI tetap tersedia sebagai opsi buat IT/automasi.
+
+Di instalasi produksi (banyak PC), migrasi pertama ini cukup dilakukan **sekali** dari
+satu PC — bukan per-PC. Migrasi-migrasi BERIKUTNYA (update rilis di masa depan) baru bisa lewat tombol "Jalankan
+Migration" di Pengaturan, karena saat itu admin sudah bisa login.
 
 Login default setelah migrasi: `admin` / `admin123` (dipaksa ganti password —
 `must_change_password = true`, tapi UI ganti password belum dibuat, masih TODO).

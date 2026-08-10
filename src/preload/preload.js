@@ -35,4 +35,15 @@ contextBridge.exposeInMainWorld('api', {
         listJenis: ()        => ipcRenderer.invoke('parkir:listJenis'),
         cekBarcode: (kode)   => ipcRenderer.invoke('parkir:cekBarcode', kode),
     },
+    // Migration DB — status boleh dibaca siapa saja yang login, tapi jalankan
+    // migration divalidasi ulang role-nya di main process (lihat main/index.js),
+    // bukan cuma disembunyikan tombolnya di renderer.
+    db: {
+        migrationStatus:    ()      => ipcRenderer.invoke('db:migrationStatus'),
+        runMigrations:      (token) => ipcRenderer.invoke('db:runMigrations', token),
+        // Cuma jalan kalau database benar-benar belum pernah di-migration
+        // sama sekali — lihat guard-nya di main/index.js. Dipakai dari
+        // Login.vue saat layar "Database Belum Disiapkan" muncul.
+        runInitialMigration: () => ipcRenderer.invoke('db:runInitialMigration'),
+    },
 })

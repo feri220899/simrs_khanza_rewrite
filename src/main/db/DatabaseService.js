@@ -42,20 +42,48 @@ function connect() {
     return pool
 }
 
-async function runMigrations() {
+// Cuma bikin tabel tracking-nya kalau belum ada — idempotent & aman dipanggil
+// dari banyak PC sekaligus (CREATE TABLE IF NOT EXISTS). TIDAK menjalankan
+// migration apa pun. Dipanggil setiap app boot (lewat get()) supaya
+// getMigrationStatus() selalu bisa jalan, termasuk di instalasi yang benar-benar baru.
+async function ensureMigrationsTable() {
     const db = connect()
-
     await db.query(`
         CREATE TABLE IF NOT EXISTS migrations (
             name    TEXT PRIMARY KEY,
             ran_at  TIMESTAMPTZ NOT NULL DEFAULT now()
         )
     `)
+    return db
+}
+
+// Cek status TANPA menjalankan apa pun — dipakai buat nampilin badge/tombol
+// di Pengaturan ("N migrasi tertunda") sebelum Administrator memutuskan klik
+// "Jalankan Migration".
+async function getMigrationStatus() {
+    const db = await ensureMigrationsTable()
+    const { rows } = await db.query('SELECT name FROM migrations')
+    const applied = rows.map(r => r.name)
+    const pending = migrations.filter(m => !applied.includes(m.name)).map(m => m.name)
+    return { applied, pending, upToDate: pending.length === 0 }
+}
+
+// PENTING: fungsi ini SENGAJA TIDAK dipanggil otomatis saat app start (lihat
+// main/index.js). Aplikasi ini di-install di banyak komputer RS sekaligus —
+// kalau migration jalan otomatis tiap boot, beberapa PC bisa mencoba
+// menjalankan migration yang sama ke Postgres terpusat yang sama secara
+// bersamaan (race condition), atau migration destruktif kejalanan tanpa ada
+// yang sadar/mengawasi. Migration cuma boleh dipicu MANUAL oleh Administrator
+// — lewat tombol di Pengaturan (IPC 'db:runMigrations', dicek role-nya di
+// server/main process, bukan cuma disembunyikan di UI) atau `npm run migrate`
+// dari command line buat cek ke staging dulu.
+async function runMigrations() {
+    const db = await ensureMigrationsTable()
 
     const { rows } = await db.query('SELECT name FROM migrations')
     const ran     = rows.map(r => r.name)
     const pending = migrations.filter(m => !ran.includes(m.name))
-    if (pending.length === 0) return
+    if (pending.length === 0) return { ranCount: 0, names: [] }
 
     // Backup sebelum migrasi jalan pada instalasi yang SUDAH punya data (bukan
     // fresh install). Gagal backup = HENTIKAN migrasi (jangan sampai migrasi
@@ -80,6 +108,8 @@ async function runMigrations() {
             client.release()
         }
     }
+
+    return { ranCount: pending.length, names: pending.map(m => m.name) }
 }
 
 // Backup pakai pg_dump (custom format) ke folder lokal komputer yang menjalankan
@@ -127,7 +157,10 @@ function pruneBackups(dir, keep) {
 
 async function get() {
     if (!pool) connect()
-    await runMigrations()
+    // SENGAJA cuma ensureMigrationsTable(), BUKAN runMigrations() — lihat
+    // catatan panjang di atas runMigrations(). Setiap PC yang buka app tidak
+    // boleh diam-diam mengubah skema database bersama.
+    await ensureMigrationsTable()
     return pool
 }
 
@@ -138,4 +171,4 @@ async function close() {
     }
 }
 
-export default { connect, get, runMigrations, close }
+export default { connect, get, runMigrations, getMigrationStatus, close }

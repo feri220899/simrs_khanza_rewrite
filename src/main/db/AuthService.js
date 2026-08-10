@@ -11,18 +11,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ubah-di-.env'
 async function login(username, password) {
     const db = await DatabaseService.get()
 
-    const { rows: [user] } = await db.query(
-        `SELECT u.id, u.username, u.password, u.active, u.must_change_password,
-                r.nama AS role_name,
-                COALESCE(array_agg(p.slug) FILTER (WHERE p.slug IS NOT NULL), '{}') AS permissions
-         FROM users u
-         JOIN roles r ON r.id = u.role_id
-         LEFT JOIN role_permissions rp ON rp.role_id = r.id
-         LEFT JOIN permissions p ON p.id = rp.permission_id
-         WHERE u.username = $1
-         GROUP BY u.id, r.nama`,
-        [username]
-    )
+    let user
+    try {
+        ;({ rows: [user] } = await db.query(
+            `SELECT u.id, u.username, u.password, u.active, u.must_change_password,
+                    r.nama AS role_name,
+                    COALESCE(array_agg(p.slug) FILTER (WHERE p.slug IS NOT NULL), '{}') AS permissions
+             FROM users u
+             JOIN roles r ON r.id = u.role_id
+             LEFT JOIN role_permissions rp ON rp.role_id = r.id
+             LEFT JOIN permissions p ON p.id = rp.permission_id
+             WHERE u.username = $1
+             GROUP BY u.id, r.nama`,
+            [username]
+        ))
+    } catch (err) {
+        // Database masih kosong (belum pernah di-migration) — tabel users/roles
+        // belum ada. Ini KONDISI YANG DIHARAPKAN pada instalasi fresh sebelum
+        // Administrator menjalankan `npm run migrate` sekali di awal (lihat
+        // Khanza.md > "Prinsip Migrasi Data"), bukan bug. Kasih pesan jelas,
+        // jangan biarkan error mentah PostgreSQL nyampe ke UI.
+        if (err.message?.includes('does not exist')) {
+            return { success: false, message: 'Database belum disiapkan — hubungi administrator IT untuk menjalankan migration awal.', notMigrated: true }
+        }
+        throw err
+    }
 
     if (!user || !user.active) return { success: false, message: 'Username atau password salah' }
     if (!bcrypt.compareSync(password, user.password)) return { success: false, message: 'Username atau password salah' }

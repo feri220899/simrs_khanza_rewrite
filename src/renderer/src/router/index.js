@@ -63,8 +63,6 @@ const routes = [
     { path: '/pengaturan/aplikasi', component: Pengaturan, meta: { layout: true, auth: true, permission: 'pengaturan-aplikasi' } },
     ...FASE_1_ROUTES.map(r => ({ ...r, meta: { layout: true, auth: true } })),
     ...PLACEHOLDER_PATHS.map(path => ({ path, component: Placeholder, meta: { layout: true, auth: true } })),
-    // Catch-all — kalau ada path di menu.js yang lupa didaftarkan di sini
-    // (baru saja kejadian sama Toko), tetap render sesuatu, bukan diam kosong.
     { path: '/:pathMatch(.*)*', component: Placeholder, meta: { layout: true, auth: true } },
 ]
 

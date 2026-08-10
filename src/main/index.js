@@ -43,14 +43,16 @@ function createWindow() {
 // ─── IPC ─────────────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-    // Migration Postgres dijalankan sekali di sini saat app start (lihat
-    // DatabaseService.get() -> runMigrations()). Kalau gagal, app SENGAJA
-    // tidak lanjut buka window — jangan biarkan user masuk ke app dengan
-    // skema DB yang belum tentu benar.
+    // Cuma connect + pastikan tabel `migrations` ada — TIDAK menjalankan
+    // migration apa pun di sini (lihat catatan panjang di DatabaseService.js
+    // > runMigrations()). App ini di-install di banyak PC RS sekaligus;
+    // migration schema WAJIB dipicu manual sekali oleh Administrator (lewat
+    // IPC db:runMigrations di bawah, atau `npm run migrate` dari CLI),
+    // bukan otomatis tiap PC nyala.
     try {
         await DatabaseService.get()
     } catch (err) {
-        console.error('Gagal konek/migrasi database:', err.message)
+        console.error('Gagal konek ke database:', err.message)
         app.quit()
         return
     }
@@ -80,6 +82,46 @@ app.whenReady().then(async () => {
     // Parkir (Fase 1 — contoh modul pertama)
     ipcMain.handle('parkir:listJenis',       ()        => ParkirService.listJenis())
     ipcMain.handle('parkir:cekBarcode',      (_, kode) => ParkirService.cekBarcode(kode))
+
+    // Migration database — cek status boleh siapa saja yang login (buat
+    // nampilin badge "N migrasi tertunda"), tapi EKSEKUSI wajib role
+    // Administrator. Dicek DI SINI (server-side/main process), BUKAN cuma
+    // disembunyikan tombolnya di UI — renderer bisa saja diutak-atik, jadi
+    // token session-nya divalidasi ulang tiap kali sebelum migration jalan.
+    ipcMain.handle('db:migrationStatus', () => DatabaseService.getMigrationStatus())
+
+    // Bootstrap instalasi pertama — TANPA token. Sengaja dikecualikan dari
+    // gate Administrator, tapi HANYA kalau `applied.length === 0` (database
+    // benar-benar virgin, belum ada migrasi SATU PUN yang pernah jalan).
+    // Alasan: di kondisi itu memang belum mungkin ada Administrator yang bisa
+    // login sama sekali (chicken-and-egg, lihat Khanza.md > "Bootstrap
+    // instalasi pertama") — jadi mensyaratkan auth di sini justru bikin
+    // sistem tidak bisa di-setup sama sekali tanpa buka terminal.
+    // Begitu ada satu migrasi yang jalan (lewat jalur ini ATAUPUN `npm run
+    // migrate`), jalur ini otomatis terkunci lagi — migrasi berikutnya WAJIB
+    // lewat db:runMigrations (bawah ini) yang di-gate token Administrator.
+    ipcMain.handle('db:runInitialMigration', async () => {
+        const status = await DatabaseService.getMigrationStatus()
+        if (status.applied.length > 0) {
+            return { success: false, message: 'Sistem sudah pernah di-setup sebagian — gunakan tombol migrasi di Pengaturan dengan akun Administrator, atau `npm run migrate` dari CLI.' }
+        }
+        return DatabaseService.runMigrations()
+            .then(result => ({ success: true, ...result }))
+            .catch(err => ({ success: false, message: err.message }))
+    })
+
+    ipcMain.handle('db:runMigrations', (_, token) => {
+        const session = AuthService.verifySession(token)
+        if (!session.success) {
+            return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        }
+        if (session.user.role !== 'Administrator') {
+            return { success: false, message: 'Cuma Administrator yang boleh menjalankan migration' }
+        }
+        return DatabaseService.runMigrations()
+            .then(result => ({ success: true, ...result }))
+            .catch(err => ({ success: false, message: err.message }))
+    })
 
     createWindow()
 
