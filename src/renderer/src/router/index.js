@@ -8,7 +8,13 @@ import ParkirJenis   from '../views/parkir/JenisTarif.vue'
 import ParkirBarcode from '../views/parkir/KartuBarcode.vue'
 import ParkirMasuk   from '../views/parkir/Masuk.vue'
 import Toko          from '../views/toko/Toko.vue'
-import Perpustakaan  from '../views/perpustakaan/Perpustakaan.vue'
+import PerpusMaster     from '../views/perpustakaan/Master.vue'
+import PerpusKoleksi    from '../views/perpustakaan/Koleksi.vue'
+import PerpusAnggota    from '../views/perpustakaan/Anggota.vue'
+import PerpusInventaris from '../views/perpustakaan/Inventaris.vue'
+import PerpusSirkulasi  from '../views/perpustakaan/Sirkulasi.vue'
+import PerpusDenda      from '../views/perpustakaan/Denda.vue'
+import PerpusPengaturan from '../views/perpustakaan/Pengaturan.vue'
 import Surat         from '../views/surat/Surat.vue'
 import Ipsrs          from '../views/ipsrs/Ipsrs.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
@@ -28,7 +34,13 @@ const FASE_1_ROUTES = [
     { path: '/toko/penjualan', component: Toko },
     { path: '/toko/piutang', component: Toko },
     { path: '/toko/retur', component: Toko },
-    { path: '/perpustakaan', component: Perpustakaan },
+    { path: '/perpustakaan/master', component: PerpusMaster },
+    { path: '/perpustakaan/koleksi', component: PerpusKoleksi },
+    { path: '/perpustakaan/anggota', component: PerpusAnggota },
+    { path: '/perpustakaan/inventaris', component: PerpusInventaris },
+    { path: '/perpustakaan/sirkulasi', component: PerpusSirkulasi },
+    { path: '/perpustakaan/denda', component: PerpusDenda },
+    { path: '/perpustakaan/pengaturan', component: PerpusPengaturan },
     { path: '/surat', component: Surat },
     { path: '/ipsrs', component: Ipsrs },
 ]

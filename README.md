@@ -71,11 +71,27 @@ server lisensi sungguhan sudah siap.
 
 - [x] Fase 0 — Auth (roles, permissions, users, login, ganti password service)
 - [x] Fase 1 (sebagian) — migration Parkir/Toko/Perpustakaan/Surat/IPSRS sudah
-      ada & tervalidasi jalan di Postgres. **Parkir CRUD selesai penuh**:
-      Jenis & Tarif + Kartu/Barcode (create/update/delete, validasi & auto-suggest
-      kode 1:1 dengan `DlgParkirJenis.java`/`DlgParkirBarcode.java`, permission
-      tulis di-gate server-side lewat `AuthService.requirePermission()`) —
-      Toko/Perpustakaan/Surat/IPSRS masih halaman placeholder.
+      ada & tervalidasi jalan di Postgres. **Parkir, Surat Menyurat (taksonomi),
+      dan Perpustakaan CRUD selesai penuh**:
+      - Parkir: Jenis & Tarif + Kartu/Barcode (`DlgParkirJenis.java`/`DlgParkirBarcode.java`)
+      - Surat: 9 taksonomi arsip fisik identik (Rak/Almari/Klasifikasi/Sifat/
+        Map/Indeks/Ruang/Status/Balas) lewat **1 service generik**
+        (`SuratTaksonomiService.js`) + **1 komponen Vue generik** (`TaksonomiTab.vue`)
+        dipakai ulang 9x via prop — bukan file copy-paste. `SuratMasuk`/`SuratKeluar`
+        masih sisa pekerjaan (lihat "Arsitektur Hybrid WebView" di Khanza.md).
+      - Perpustakaan: 7 halaman — Master Data (5 sub-taksonomi + Penerbit dalam
+        1 halaman ber-tab), Koleksi (katalog buku, FK ke 4 master data),
+        Anggota, Inventaris (eksemplar fisik + summary nilai total), Sirkulasi
+        (pinjam/kembali/perpanjang dengan preview jatuh-tempo & denda live),
+        Denda (taksonomi % + BayarDenda 2-tabel terpisah), Pengaturan
+        Peminjaman (config 1 baris). 3 file WebView (`PerpustakaanCariEbook/
+        Ebook/Penelitian`) TIDAK digarap.
+
+      Semua: create/update/delete, validasi & auto-suggest kode 1:1 dengan
+      Java asli, permission tulis di-gate server-side lewat
+      `AuthService.requirePermission()`, list pakai `useServerTable`+`AppPagination`
+      (Konvensi UI di Khanza.md) — Toko/IPSRS masih placeholder (IPSRS ternyata
+      41 file, jauh lebih besar dari dokumentasi awal — cek ulang sebelum digarap).
 - [ ] Fase -1 — Aktivasi Lisensi: halaman `Aktivasi.vue` + `LisensiService.js`
       sudah ada strukturnya, TAPI `PUBLIC_KEY` & `LISENSI_BASE_URL` masih
       PLACEHOLDER — server lisensi Khanza sendiri belum dibangun.
@@ -107,14 +123,44 @@ kolom asli itu** — lihat `src/main/db/reference/khanza-permissions-asli.txt`
   sebenarnya — skema penuhnya belum di-migration.
 - **Surat**: `SuratMasuk`/`SuratKeluar` & puluhan template surat klinis di
   Khanza asli pakai JavaFX WebView (compose surat), TIDAK menyentuh database
-  sama sekali — beda arsitektur total dari form CRUD biasa, butuh investigasi
-  terpisah sebelum didesain.
+  sama sekali — TIDAK digarap. Yang beneran CRUD cuma 9 taksonomi arsip fisik
+  (Rak/Almari/Klasifikasi/Sifat/Map/Indeks/Ruang/Status/Balas) — 3 di antaranya
+  (Ruang, Status, Balas) KELEWAT di migration awal (014), baru ketahuan pas
+  cek index folder `src/surat/` lebih teliti — ditambahkan lewat migration 020.
+  Ada juga mismatch penamaan: permission `surat_almari` (dari `SuratAlmari.java`)
+  ternyata query ke tabel `surat_lemari`, bukan `surat_almari`.
+- **Perpustakaan**: migration `009`–`013` ditulis SEBELUM investigasi mendalam
+  (baru baca isi lengkap 13 file Java, bukan tebak dari nama field UI) —
+  ketahuan beberapa mismatch: `perpustakaan_kategori.kode_kategori` seharusnya
+  `id_kategori`, `perpustakaan_jenis_buku.nm_jenis` seharusnya `nama_jenis`,
+  `perpustakaan_penerbit` kurang 3 kolom kontak (no_telp/email/website),
+  `perpustakaan_set_peminjaman` kurang 2 kolom PENTING (`max_pinjam`/
+  `lama_pinjam` — dipakai validasi batas pinjam & hitung jatuh tempo), dan
+  `perpustakaan_bayar_denda` salah bentuk TOTAL (migration awal nebak 1 tabel
+  gabungan tanpa `no_anggota`, padahal aslinya 2 tabel terpisah lewat 2 tab di
+  dialog yang sama). Semua diperbaiki lewat migration baru `021_fix_perpustakaan_schema.js`
+  (bukan edit migration 009-013 langsung — migration yang sudah applied tidak
+  boleh diubah).
 
-**Pelajaran dari temuan Toko**: jangan berhenti investigasi begitu nemu SATU
-file yang namanya cocok — cek juga apakah ada folder/package dengan nama
-modul itu sendiri (`src/toko/`, bukan cuma referensi ke "toko" dari file lain).
-Cross-check ke `sik.sql` (daftar permission) adalah cara cepat mendeteksi kalau
-sebuah modul ternyata lebih besar dari yang kelihatan dari nama file.
+**Pelajaran dari temuan Toko & Surat**: jangan berhenti investigasi begitu
+nemu SATU/BEBERAPA file yang namanya cocok — selalu cek index LENGKAP folder
+modulnya (`ls src/<modul>/`), bukan cuma yang "kelihatan jelas" dari grep
+awal. Cross-check ke `sik.sql` (daftar permission) adalah cara cepat
+mendeteksi kalau sebuah modul ternyata lebih besar dari yang kelihatan.
+
+- **Kolom `DATE` balik sebagai objek JS `Date`, bukan string** (ditemukan saat
+  uji manual Perpustakaan → Anggota, error `row.tgl_lahir?.slice is not a
+  function` pas buka modal Edit): driver `pg` secara default parsing tipe
+  Postgres `DATE` (OID 1082) jadi `Date`, padahal semua kode renderer (Vue)
+  ditulis dengan asumsi string `'YYYY-MM-DD'` (dipakai langsung di
+  `<input type="date">` v-model, `.slice(0,10)`, dst). **Sudah diperbaiki di
+  SATU tempat** — `DatabaseService.js` sekarang override type parser-nya
+  (`types.setTypeParser(1082, val => val)`) supaya `DATE` selalu balik
+  sebagai string mentah dari Postgres, bukan di-parse jadi `Date`. Ini
+  berlaku global (semua query lewat pool yang sama), jadi modul manapun yang
+  nanti punya kolom `DATE` otomatis aman, tidak perlu ditambal manual per
+  komponen. **Kolom `TIMESTAMP`/`TIMESTAMPTZ` TIDAK disentuh** (tetap balik
+  `Date`, memang lebih berguna untuk audit timestamp) — cuma `DATE` murni.
 
 Sebelum menambah modul baru: **wajib ikuti SOP di Khanza.md** (baca kode Java
 asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI).
@@ -152,3 +198,11 @@ didesain ulang dari nol tiap modul:
    SQL, tidak pernah interpolasi langsung dari input user.
 8. **Toast** (`useToast`/`AppToast`, sudah di-mount di `App.vue`) buat feedback
    sukses/gagal — bukan teks error statis di kartu form.
+9. **Kalau satu modul punya BANYAK layar yang CRUD-nya identik** (cuma beda
+   nama tabel/kolom — lihat contoh Surat: 9 taksonomi arsip fisik sama persis)
+   — buat **SATU service generik** diparameterkan (`SuratTaksonomiService.js`,
+   whitelist `jenis` → `{table, kolom, prefix, permission}`) dan **SATU
+   komponen Vue generik** (`TaksonomiTab.vue`) dipakai ulang lewat prop +
+   `:key` biar remount bersih tiap ganti jenis — JANGAN copy-paste N file
+   yang isinya sama. Halaman induknya (`Surat.vue`) tinggal daftar tab yang
+   memilih `jenis` mana yang aktif.

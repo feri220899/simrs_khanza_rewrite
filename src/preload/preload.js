@@ -45,6 +45,87 @@ contextBridge.exposeInMainWorld('api', {
         updateBarcode:  (token, oldKode, data) => ipcRenderer.invoke('parkir:updateBarcode', token, oldKode, data),
         deleteBarcode:  (token, kode)        => ipcRenderer.invoke('parkir:deleteBarcode', token, kode),
     },
+    // Surat — 9 tabel taksonomi identik, satu channel generik diparameterkan
+    // `jenis` (lihat SuratTaksonomiService.js buat daftar jenis yang valid).
+    surat: {
+        daftarJenis: ()                       => ipcRenderer.invoke('surat:daftarJenis'),
+        list:        (jenis, params)          => ipcRenderer.invoke('surat:list', jenis, params),
+        nextKode:    (jenis)                  => ipcRenderer.invoke('surat:nextKode', jenis),
+        create:      (token, jenis, data)     => ipcRenderer.invoke('surat:create', token, jenis, data),
+        update:      (token, jenis, oldKode, data) => ipcRenderer.invoke('surat:update', token, jenis, oldKode, data),
+        delete:      (token, jenis, kode)     => ipcRenderer.invoke('surat:delete', token, jenis, kode),
+    },
+    // Perpustakaan — 8 sub-modul (lihat Khanza.md > section 19 & README.md
+    // buat detail koreksi arsitektur hasil investigasi ulang).
+    perpustakaan: {
+        taksonomi: {
+            daftarJenis: ()                       => ipcRenderer.invoke('perpustakaan:taksonomi:daftarJenis'),
+            list:        (jenis, params)          => ipcRenderer.invoke('perpustakaan:taksonomi:list', jenis, params),
+            nextKode:    (jenis)                  => ipcRenderer.invoke('perpustakaan:taksonomi:nextKode', jenis),
+            create:      (token, jenis, data)     => ipcRenderer.invoke('perpustakaan:taksonomi:create', token, jenis, data),
+            update:      (token, jenis, oldKode, data) => ipcRenderer.invoke('perpustakaan:taksonomi:update', token, jenis, oldKode, data),
+            delete:      (token, jenis, kode)     => ipcRenderer.invoke('perpustakaan:taksonomi:delete', token, jenis, kode),
+        },
+        penerbit: {
+            list:     (params)             => ipcRenderer.invoke('perpustakaan:penerbit:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('perpustakaan:penerbit:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('perpustakaan:penerbit:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('perpustakaan:penerbit:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('perpustakaan:penerbit:delete', token, kode),
+        },
+        koleksi: {
+            list:     (params)             => ipcRenderer.invoke('perpustakaan:koleksi:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('perpustakaan:koleksi:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('perpustakaan:koleksi:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('perpustakaan:koleksi:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('perpustakaan:koleksi:delete', token, kode),
+        },
+        anggota: {
+            list:     (params)             => ipcRenderer.invoke('perpustakaan:anggota:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('perpustakaan:anggota:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('perpustakaan:anggota:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('perpustakaan:anggota:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('perpustakaan:anggota:delete', token, kode),
+        },
+        inventaris: {
+            list:     (params)             => ipcRenderer.invoke('perpustakaan:inventaris:list', params),
+            summary:  ()                   => ipcRenderer.invoke('perpustakaan:inventaris:summary'),
+            nextKode: ()                   => ipcRenderer.invoke('perpustakaan:inventaris:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('perpustakaan:inventaris:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('perpustakaan:inventaris:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('perpustakaan:inventaris:delete', token, kode),
+        },
+        sirkulasi: {
+            getSetting:     ()             => ipcRenderer.invoke('perpustakaan:sirkulasi:getSetting'),
+            list:           (params)       => ipcRenderer.invoke('perpustakaan:sirkulasi:list', params),
+            previewPinjam:  (data)         => ipcRenderer.invoke('perpustakaan:sirkulasi:previewPinjam', data),
+            pinjam:         (token, data)  => ipcRenderer.invoke('perpustakaan:sirkulasi:pinjam', token, data),
+            previewKembali: (data)         => ipcRenderer.invoke('perpustakaan:sirkulasi:previewKembali', data),
+            kembali:        (token, data)  => ipcRenderer.invoke('perpustakaan:sirkulasi:kembali', token, data),
+            perpanjang:     (token, data)  => ipcRenderer.invoke('perpustakaan:sirkulasi:perpanjang', token, data),
+            delete:         (token, data)  => ipcRenderer.invoke('perpustakaan:sirkulasi:delete', token, data),
+        },
+        denda: {
+            list:     (params)             => ipcRenderer.invoke('perpustakaan:denda:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('perpustakaan:denda:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('perpustakaan:denda:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('perpustakaan:denda:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('perpustakaan:denda:delete', token, kode),
+        },
+        bayarDenda: {
+            listHarian:   (params)        => ipcRenderer.invoke('perpustakaan:bayarDenda:listHarian', params),
+            createHarian: (token, data)   => ipcRenderer.invoke('perpustakaan:bayarDenda:createHarian', token, data),
+            deleteHarian: (token, data)   => ipcRenderer.invoke('perpustakaan:bayarDenda:deleteHarian', token, data),
+            listLain:     (params)        => ipcRenderer.invoke('perpustakaan:bayarDenda:listLain', params),
+            createLain:   (token, data)   => ipcRenderer.invoke('perpustakaan:bayarDenda:createLain', token, data),
+            deleteLain:   (token, data)   => ipcRenderer.invoke('perpustakaan:bayarDenda:deleteLain', token, data),
+        },
+        pengaturan: {
+            get:    ()             => ipcRenderer.invoke('perpustakaan:pengaturan:get'),
+            upsert: (token, data)  => ipcRenderer.invoke('perpustakaan:pengaturan:upsert', token, data),
+            delete: (token)        => ipcRenderer.invoke('perpustakaan:pengaturan:delete', token),
+        },
+    },
     // Migration DB — status boleh dibaca siapa saja yang login, tapi jalankan
     // migration divalidasi ulang role-nya di main process (lihat main/index.js),
     // bukan cuma disembunyikan tombolnya di renderer.

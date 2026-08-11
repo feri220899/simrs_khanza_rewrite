@@ -14,7 +14,15 @@ import { createRequire } from 'module'
 import { homedir } from 'os'
 import migrations from './migrations/index.js'
 
-const { Pool } = pg
+const { Pool, types } = pg
+
+// `pg` secara default parsing kolom DATE (OID 1082) jadi objek JS `Date` —
+// TAPI seluruh renderer (Vue) nulis kode dengan asumsi kolom tanggal balik
+// sebagai string 'YYYY-MM-DD' (dipakai langsung di `<input type="date">`
+// v-model, `.slice(0,10)`, dst — lihat Parkir/Surat/Perpustakaan). Daripada
+// tambal tiap komponen, override di SATU tempat ini: balikin string mentah
+// apa adanya dari Postgres (sudah 'YYYY-MM-DD'), jangan di-parse jadi Date.
+types.setTypeParser(1082, val => val)
 
 let pool = null
 

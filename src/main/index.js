@@ -7,6 +7,16 @@ import DeviceService  from './electron/DeviceService.js'
 import AuthService    from './db/AuthService.js'
 import DatabaseService from './db/DatabaseService.js'
 import ParkirService  from './db/modules/ParkirService.js'
+import SuratTaksonomiService from './db/modules/SuratTaksonomiService.js'
+import PerpustakaanTaksonomiService from './db/modules/PerpustakaanTaksonomiService.js'
+import PerpustakaanPenerbitService  from './db/modules/PerpustakaanPenerbitService.js'
+import PerpustakaanKoleksiService   from './db/modules/PerpustakaanKoleksiService.js'
+import PerpustakaanAnggotaService   from './db/modules/PerpustakaanAnggotaService.js'
+import PerpustakaanInventarisService from './db/modules/PerpustakaanInventarisService.js'
+import PerpustakaanSirkulasiService from './db/modules/PerpustakaanSirkulasiService.js'
+import PerpustakaanDendaService     from './db/modules/PerpustakaanDendaService.js'
+import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaService.js'
+import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -114,6 +124,184 @@ app.whenReady().then(async () => {
     ipcMain.handle('parkir:deleteBarcode', (_, token, kode) => {
         const auth = AuthService.requirePermission(token, 'parkir_barcode')
         return auth.ok ? ParkirService.deleteBarcode(kode) : { success: false, message: auth.message }
+    })
+
+    // Surat — 9 tabel taksonomi identik (Rak/Almari/Klasifikasi/Sifat/Map/
+    // Indeks/Ruang/Status/Balas), SATU set handler generik diparameterkan
+    // `jenis` (di-whitelist di SuratTaksonomiService, bukan dipercaya mentah
+    // dari renderer). Permission tulis diambil dari config per-jenis (beda
+    // per tabel, mis. 'surat_almari' — BUKAN 'surat_lemari').
+    ipcMain.handle('surat:daftarJenis', () => SuratTaksonomiService.daftarJenis())
+    ipcMain.handle('surat:list',     (_, jenis, params) => SuratTaksonomiService.list(jenis, params))
+    ipcMain.handle('surat:nextKode', (_, jenis) => SuratTaksonomiService.nextKode(jenis))
+    ipcMain.handle('surat:create', (_, token, jenis, data) => {
+        const auth = AuthService.requirePermission(token, SuratTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? SuratTaksonomiService.create(jenis, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('surat:update', (_, token, jenis, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, SuratTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? SuratTaksonomiService.update(jenis, oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('surat:delete', (_, token, jenis, kode) => {
+        const auth = AuthService.requirePermission(token, SuratTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? SuratTaksonomiService.deleteOne(jenis, kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — taksonomi (Jenis/Ruang/Pengarang/Kategori), pola generik
+    // sama seperti Surat.
+    ipcMain.handle('perpustakaan:taksonomi:daftarJenis', () => PerpustakaanTaksonomiService.daftarJenis())
+    ipcMain.handle('perpustakaan:taksonomi:list',     (_, jenis, params) => PerpustakaanTaksonomiService.list(jenis, params))
+    ipcMain.handle('perpustakaan:taksonomi:nextKode', (_, jenis) => PerpustakaanTaksonomiService.nextKode(jenis))
+    ipcMain.handle('perpustakaan:taksonomi:create', (_, token, jenis, data) => {
+        const auth = AuthService.requirePermission(token, PerpustakaanTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? PerpustakaanTaksonomiService.create(jenis, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:taksonomi:update', (_, token, jenis, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, PerpustakaanTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? PerpustakaanTaksonomiService.update(jenis, oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:taksonomi:delete', (_, token, jenis, kode) => {
+        const auth = AuthService.requirePermission(token, PerpustakaanTaksonomiService.getConfig(jenis).permission)
+        return auth.ok ? PerpustakaanTaksonomiService.deleteOne(jenis, kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Penerbit
+    ipcMain.handle('perpustakaan:penerbit:list',     (_, params) => PerpustakaanPenerbitService.list(params))
+    ipcMain.handle('perpustakaan:penerbit:nextKode', () => PerpustakaanPenerbitService.nextKode())
+    ipcMain.handle('perpustakaan:penerbit:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'penerbit_perpustakaan')
+        return auth.ok ? PerpustakaanPenerbitService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:penerbit:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'penerbit_perpustakaan')
+        return auth.ok ? PerpustakaanPenerbitService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:penerbit:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'penerbit_perpustakaan')
+        return auth.ok ? PerpustakaanPenerbitService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Koleksi (katalog buku)
+    ipcMain.handle('perpustakaan:koleksi:list',     (_, params) => PerpustakaanKoleksiService.list(params))
+    ipcMain.handle('perpustakaan:koleksi:nextKode', () => PerpustakaanKoleksiService.nextKode())
+    ipcMain.handle('perpustakaan:koleksi:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'koleksi_perpustakaan')
+        return auth.ok ? PerpustakaanKoleksiService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:koleksi:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'koleksi_perpustakaan')
+        return auth.ok ? PerpustakaanKoleksiService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:koleksi:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'koleksi_perpustakaan')
+        return auth.ok ? PerpustakaanKoleksiService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Anggota
+    ipcMain.handle('perpustakaan:anggota:list',     (_, params) => PerpustakaanAnggotaService.list(params))
+    ipcMain.handle('perpustakaan:anggota:nextKode', () => PerpustakaanAnggotaService.nextKode())
+    ipcMain.handle('perpustakaan:anggota:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'anggota_perpustakaan')
+        return auth.ok ? PerpustakaanAnggotaService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:anggota:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'anggota_perpustakaan')
+        return auth.ok ? PerpustakaanAnggotaService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:anggota:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'anggota_perpustakaan')
+        return auth.ok ? PerpustakaanAnggotaService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Inventaris (eksemplar fisik)
+    ipcMain.handle('perpustakaan:inventaris:list',     (_, params) => PerpustakaanInventarisService.list(params))
+    ipcMain.handle('perpustakaan:inventaris:summary',  () => PerpustakaanInventarisService.summary())
+    ipcMain.handle('perpustakaan:inventaris:nextKode', () => PerpustakaanInventarisService.nextKode())
+    ipcMain.handle('perpustakaan:inventaris:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'inventaris_perpustakaan')
+        return auth.ok ? PerpustakaanInventarisService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:inventaris:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'inventaris_perpustakaan')
+        return auth.ok ? PerpustakaanInventarisService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:inventaris:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'inventaris_perpustakaan')
+        return auth.ok ? PerpustakaanInventarisService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Sirkulasi (pinjam/kembali/perpanjang) — nip diambil dari
+    // sesi yang login (server-side), bukan dipercaya mentah dari form, biar
+    // tidak bisa dipalsukan jadi nama petugas lain.
+    ipcMain.handle('perpustakaan:sirkulasi:getSetting', () => PerpustakaanSirkulasiService.getSetting())
+    ipcMain.handle('perpustakaan:sirkulasi:list', (_, params) => PerpustakaanSirkulasiService.list(params))
+    ipcMain.handle('perpustakaan:sirkulasi:previewPinjam', (_, data) => PerpustakaanSirkulasiService.previewPinjam(data))
+    ipcMain.handle('perpustakaan:sirkulasi:pinjam', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanSirkulasiService.pinjam({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:sirkulasi:previewKembali', (_, data) => PerpustakaanSirkulasiService.previewKembali(data))
+    ipcMain.handle('perpustakaan:sirkulasi:kembali', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanSirkulasiService.kembali({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:sirkulasi:perpanjang', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanSirkulasiService.perpanjang({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:sirkulasi:delete', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanSirkulasiService.deleteOne(data) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Denda (taksonomi jenis denda %)
+    ipcMain.handle('perpustakaan:denda:list',     (_, params) => PerpustakaanDendaService.list(params))
+    ipcMain.handle('perpustakaan:denda:nextKode', () => PerpustakaanDendaService.nextKode())
+    ipcMain.handle('perpustakaan:denda:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'denda_perpustakaan')
+        return auth.ok ? PerpustakaanDendaService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:denda:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'denda_perpustakaan')
+        return auth.ok ? PerpustakaanDendaService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:denda:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'denda_perpustakaan')
+        return auth.ok ? PerpustakaanDendaService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Bayar Denda (2 tabel: harian/lain)
+    ipcMain.handle('perpustakaan:bayarDenda:listHarian', (_, params) => PerpustakaanBayarDendaService.listHarian(params))
+    ipcMain.handle('perpustakaan:bayarDenda:createHarian', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'bayar_denda_perpustakaan')
+        return auth.ok ? PerpustakaanBayarDendaService.createHarian(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:bayarDenda:deleteHarian', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'bayar_denda_perpustakaan')
+        return auth.ok ? PerpustakaanBayarDendaService.deleteHarian(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:bayarDenda:listLain', (_, params) => PerpustakaanBayarDendaService.listLain(params))
+    ipcMain.handle('perpustakaan:bayarDenda:createLain', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'bayar_denda_perpustakaan')
+        return auth.ok ? PerpustakaanBayarDendaService.createLain(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:bayarDenda:deleteLain', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'bayar_denda_perpustakaan')
+        return auth.ok ? PerpustakaanBayarDendaService.deleteLain(data) : { success: false, message: auth.message }
+    })
+
+    // Perpustakaan — Pengaturan Peminjaman (single-row config). DIGATE ke
+    // permission 'set_peminjaman_perpustakaan' meski Java asli TIDAK ada
+    // pengecekan akses sama sekali (oversight di kode asli) — deviasi sengaja
+    // demi keamanan, lihat komentar di PerpustakaanPengaturanService.js.
+    ipcMain.handle('perpustakaan:pengaturan:get', () => PerpustakaanPengaturanService.get())
+    ipcMain.handle('perpustakaan:pengaturan:upsert', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'set_peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanPengaturanService.upsert(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('perpustakaan:pengaturan:delete', (_, token) => {
+        const auth = AuthService.requirePermission(token, 'set_peminjaman_perpustakaan')
+        return auth.ok ? PerpustakaanPengaturanService.deleteSetting() : { success: false, message: auth.message }
     })
 
     // Migration database — cek status boleh siapa saja yang login (buat

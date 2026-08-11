@@ -1,0 +1,115 @@
+// Taksonomi Perpustakaan — 4 tabel 2-kolom identik polanya di Java asli
+// (PerpustakaanJenis, PerpustakaanRuang, PerpustakaanPengarang,
+// PerpustakaanKategori), cuma beda nama tabel/kolom PK/prefix kode. SATU
+// service generik, whitelist di TAKSONOMI (bukan terima nama tabel mentah
+// dari renderer) — pola sama persis SuratTaksonomiService.js.
+//
+// PENTING: nama kolom PK & kolom nilai BEDA-BEDA per tabel (bukan seragam
+// "kd"/"nama" kayak Surat) — id_jenis/nama_jenis, kd_ruang/nm_ruang,
+// kode_pengarang/nama_pengarang, id_kategori/nama_kategori. Field `pk`/`kolom`
+// di bawah HASIL BACA LANGSUNG dari SELECT/UPDATE di Java asli, lihat
+// migration 021_fix_perpustakaan_schema.js untuk histori koreksinya (migration
+// 009 sempat salah nama kolom sebelum investigasi ulang).
+import DatabaseService from '../DatabaseService.js'
+
+const TAKSONOMI = {
+    jenis:     { table: 'perpustakaan_jenis_buku', pk: 'id_jenis',       kolom: 'nama_jenis',     prefix: 'JK', permission: 'jenis_perpustakaan',     label: 'Jenis Koleksi' },
+    ruang:     { table: 'perpustakaan_ruang',      pk: 'kd_ruang',       kolom: 'nm_ruang',       prefix: 'RP', permission: 'ruang_perpustakaan',     label: 'Ruang' },
+    pengarang: { table: 'perpustakaan_pengarang',  pk: 'kode_pengarang', kolom: 'nama_pengarang', prefix: 'PP', permission: 'pengarang_perpustakaan', label: 'Pengarang' },
+    kategori:  { table: 'perpustakaan_kategori',   pk: 'id_kategori',    kolom: 'nama_kategori',  prefix: 'KK', permission: 'kategori_perpustakaan',  label: 'Kategori' },
+}
+
+function getConfig(jenis) {
+    const cfg = TAKSONOMI[jenis]
+    if (!cfg) throw new Error(`Jenis taksonomi perpustakaan tidak dikenal: ${jenis}`)
+    return cfg
+}
+
+function daftarJenis() {
+    return Object.entries(TAKSONOMI).map(([jenis, cfg]) => ({ jenis, label: cfg.label, permission: cfg.permission }))
+}
+
+async function list(jenis, { page = 1, pageSize = 10, sortOrder = 'asc', search = '' } = {}) {
+    const { table, pk, kolom } = getConfig(jenis)
+    const db = await DatabaseService.get()
+    const dir = sortOrder === 'desc' ? 'DESC' : 'ASC'
+    const like = `%${search}%`
+
+    const { rows } = await db.query(
+        `SELECT ${pk} AS kd, ${kolom} AS nama FROM ${table}
+         WHERE ${pk} ILIKE $1 OR ${kolom} ILIKE $1
+         ORDER BY ${pk} ${dir}
+         LIMIT $2 OFFSET $3`,
+        [like, pageSize, (page - 1) * pageSize]
+    )
+    const { rows: [{ count }] } = await db.query(
+        `SELECT count(*)::int AS count FROM ${table} WHERE ${pk} ILIKE $1 OR ${kolom} ILIKE $1`,
+        [like]
+    )
+    return { data: rows, total: count }
+}
+
+// Replika Valid.autoNomer(tabMode,"XX",3,TKd) di Java: prefix + (jumlah baris
+// saat ini + 1), padding 3 digit — sama utk keempat taksonomi ini.
+async function nextKode(jenis) {
+    const { table, prefix } = getConfig(jenis)
+    const db = await DatabaseService.get()
+    const { rows } = await db.query(`SELECT count(*)::int AS n FROM ${table}`)
+    return prefix + String(rows[0].n + 1).padStart(3, '0')
+}
+
+function validate(nama) {
+    if (!nama?.trim()) return 'Nama tidak boleh kosong'
+    return null
+}
+
+async function create(jenis, { kd, nama }) {
+    const { table, pk, kolom } = getConfig(jenis)
+    if (!kd?.trim()) return { success: false, message: 'Kode tidak boleh kosong' }
+    const err = validate(nama)
+    if (err) return { success: false, message: err }
+
+    const db = await DatabaseService.get()
+    try {
+        await db.query(`INSERT INTO ${table} (${pk}, ${kolom}) VALUES ($1, $2)`, [kd, nama])
+        return { success: true }
+    } catch (e) {
+        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        throw e
+    }
+}
+
+async function update(jenis, oldKode, { kd, nama }) {
+    const { table, pk, kolom } = getConfig(jenis)
+    if (!kd?.trim()) return { success: false, message: 'Kode tidak boleh kosong' }
+    const err = validate(nama)
+    if (err) return { success: false, message: err }
+
+    const db = await DatabaseService.get()
+    try {
+        const { rowCount } = await db.query(
+            `UPDATE ${table} SET ${pk}=$1, ${kolom}=$2 WHERE ${pk}=$3`,
+            [kd, nama, oldKode]
+        )
+        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        return { success: true }
+    } catch (e) {
+        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        throw e
+    }
+}
+
+async function deleteOne(jenis, kode) {
+    const { table, pk } = getConfig(jenis)
+    const db = await DatabaseService.get()
+    try {
+        const { rowCount } = await db.query(`DELETE FROM ${table} WHERE ${pk}=$1`, [kode])
+        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    } catch (e) {
+        // FK dari perpustakaan_buku (kalau taksonomi ini masih dipakai koleksi)
+        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di data Koleksi' }
+        throw e
+    }
+}
+
+export default { daftarJenis, getConfig, list, nextKode, create, update, deleteOne }

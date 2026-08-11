@@ -12,6 +12,7 @@ import {
   Building2, FileBarChart, Activity, HandHeart, LineChart, MessageSquare,
   Link2, IdCard, FileCheck2, ListTree, UserCog, Settings,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
+  Tags, UserCircle, Repeat, Coins, SlidersHorizontal,
 } from 'lucide-vue-next'
 
 // PERMISSION SLUG SEKARANG = NAMA KOLOM ASLI di sik.sql > CREATE TABLE `user`
@@ -225,15 +226,30 @@ export const allMenu = [
       // 18. IPSRS — representatif 'ipsrs_barang', varian: ipsrs_pengadaan_barang,
       // ipsrs_stok_keluar, ipsrs_jenis_barang, ipsrs_rekap_*, ipsrs_returbeli, dst.
       { to: '/ipsrs', label: 'IPSRS (Sarana Prasarana)', icon: Wrench, permission: 'ipsrs_barang' },
-      // 19. Perpustakaan — representatif 'koleksi_perpustakaan'. sik.sql punya
-      // 13 flag terpisah (ruang/kategori/jenis/pengarang/penerbit/koleksi/
-      // inventaris/set_peminjaman/denda/anggota/peminjaman/bayar_denda/ebook
-      // _perpustakaan) — pertimbangkan dipecah jadi grup kalau modul ini digarap.
-      { to: '/perpustakaan', label: 'Perpustakaan', icon: BookOpen, permission: 'koleksi_perpustakaan' },
-      // 20. Surat Menyurat — representatif 'surat_masuk'. Ingat temuan SOP:
-      // SuratMasuk/Keluar asli tidak sentuh DB (JavaFX WebView) — permission-nya
-      // tetap ada di sik.sql meski implementasinya beda arsitektur total.
-      { to: '/surat', label: 'Surat Menyurat', icon: Mail, permission: 'surat_masuk' },
+      // 19. Perpustakaan — DIGARAP PENUH, dipecah jadi grup (13 flag terpisah
+      // di sik.sql: ruang/kategori/jenis/pengarang/penerbit/koleksi/inventaris/
+      // set_peminjaman/denda/anggota/peminjaman/bayar_denda/ebook_perpustakaan).
+      // `ebook_perpustakaan` TIDAK ada di sini — itu WebView ke webapps/, lihat
+      // Khanza.md > "Arsitektur Hybrid WebView".
+      {
+        label: 'Perpustakaan', icon: BookOpen,
+        children: [
+          { to: '/perpustakaan/master',     label: 'Master Data',           icon: Tags,              permission: 'jenis_perpustakaan' },
+          { to: '/perpustakaan/koleksi',    label: 'Koleksi (Katalog Buku)', icon: BookOpen,          permission: 'koleksi_perpustakaan' },
+          { to: '/perpustakaan/anggota',    label: 'Anggota',                icon: UserCircle,        permission: 'anggota_perpustakaan' },
+          { to: '/perpustakaan/inventaris', label: 'Inventaris',             icon: Archive,           permission: 'inventaris_perpustakaan' },
+          { to: '/perpustakaan/sirkulasi',  label: 'Sirkulasi (Pinjam/Kembali)', icon: Repeat,        permission: 'peminjaman_perpustakaan' },
+          { to: '/perpustakaan/denda',      label: 'Denda',                  icon: Coins,             permission: 'denda_perpustakaan' },
+          { to: '/perpustakaan/pengaturan', label: 'Pengaturan Peminjaman',  icon: SlidersHorizontal, permission: 'set_peminjaman_perpustakaan' },
+        ],
+      },
+      // 20. Surat Menyurat — DIKOREKSI dari 'surat_masuk' (representatif awal,
+      // salah — SuratMasuk/Keluar TIDAK digarap, JavaFX WebView tanpa DB,
+      // lihat SOP). Yang beneran diimplementasi cuma 9 taksonomi arsip fisik
+      // (Surat.vue internal tab per jenis, masing2 permission sendiri: rak,
+      // almari, klasifikasi, sifat, map, indeks, ruang, status, balas — filter
+      // tab dilakukan DI DALAM Surat.vue, bukan di sini). Representatif: surat_rak.
+      { to: '/surat', label: 'Surat Menyurat', icon: Mail, permission: 'surat_rak' },
     ],
   },
   {
