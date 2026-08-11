@@ -1,11 +1,12 @@
 <script setup>
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { Repeat, TriangleAlert } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
+import AppSelect from '../../components/AppSelect.vue'
 
 // src/perpustakaan/PerpustakaanSirkulasi.java — transaksi inti (pinjam/
 // kembali/perpanjang). Entity KOMPLEKS (field yg tampil beda tergantung
@@ -20,6 +21,14 @@ const setting = ref(null)
 const statusFilter = ref('')
 const opsiAnggota = ref([])
 const opsiInventaris = ref([])
+
+// AppSelect (dropdown pencarian) nonaktifkan opsi lewat field `disabled` —
+// buku yang statusnya bukan 'Ada' tidak boleh dipinjam lagi.
+const opsiInventarisPinjam = computed(() => opsiInventaris.value.map(o => ({
+    ...o,
+    tampilan: `${o.judul_buku} (${o.no_inventaris})${o.status_buku !== 'Ada' ? ` — ${o.status_buku}` : ''}`,
+    disabled: o.status_buku !== 'Ada',
+})))
 
 async function muatAwal() {
     setting.value = await window.api.perpustakaan.sirkulasi.getSetting()
@@ -242,19 +251,11 @@ onMounted(muatAwal)
                 <template v-if="mode === 'pinjam'">
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Peminjam (Anggota) <span class="text-error">*</span></label>
-                        <select v-model="form.no_anggota" class="select select-bordered w-full" @change="cekPreview">
-                            <option value="" disabled>Pilih Anggota</option>
-                            <option v-for="o in opsiAnggota" :key="o.no_anggota" :value="o.no_anggota">{{ o.nama_anggota }}</option>
-                        </select>
+                        <AppSelect v-model="form.no_anggota" :options="opsiAnggota" value-prop="no_anggota" label="nama_anggota" placeholder="Pilih Anggota" @change="cekPreview" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Buku (Inventaris) <span class="text-error">*</span></label>
-                        <select v-model="form.no_inventaris" class="select select-bordered w-full" @change="cekPreview">
-                            <option value="" disabled>Pilih Buku</option>
-                            <option v-for="o in opsiInventaris" :key="o.no_inventaris" :value="o.no_inventaris" :disabled="o.status_buku !== 'Ada'">
-                                {{ o.judul_buku }} ({{ o.no_inventaris }}) — {{ o.status_buku }}
-                            </option>
-                        </select>
+                        <AppSelect v-model="form.no_inventaris" :options="opsiInventarisPinjam" value-prop="no_inventaris" label="tampilan" placeholder="Pilih Buku" @change="cekPreview" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pinjam</label>

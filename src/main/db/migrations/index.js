@@ -22,13 +22,16 @@ import m018 from './018_seed_permissions_electron_extra.js'
 import m019 from './019_add_parkir_jenis_check.js'
 import m020 from './020_add_surat_master_missing.js'
 import m021 from './021_fix_perpustakaan_schema.js'
+import m022 from './022_create_surat_masuk_keluar.js'
 
-// CATATAN: SuratMasuk/SuratKeluar sengaja TIDAK punya migration — kode aslinya
-// (src/surat/SuratMasuk.java, SuratKeluar.java) tidak menyentuh database sama
-// sekali (JavaFX WebView compose surat, bukan form terstruktur). Lihat komentar
-// di 014_create_surat_master.js sebelum menambahkan tabel untuk ini.
+// CATATAN (sudah tidak berlaku, dibiarkan buat histori): SuratMasuk/SuratKeluar
+// sempat TIDAK punya migration karena src/surat/SuratMasuk.java/SuratKeluar.java
+// sendiri memang tidak nyentuh DB (JavaFX WebView shell doang) — TAPI ternyata
+// logic aslinya ada di PHP webapps/surat/pages/{input,input2,list,list2}.php
+// (pola "hybrid webview", lihat Khanza.md > "Arsitektur Hybrid WebView").
+// Migration 022 nge-port skema dari PHP itu ke Postgres.
 
 export default [
     m001, m002, m003, m004, m005,
-    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019, m020, m021,
+    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019, m020, m021, m022,
 ]

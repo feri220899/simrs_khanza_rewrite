@@ -22,12 +22,14 @@
   },
   "dependencies": {
     "@tanstack/vue-table": "^8.21.3",
+    "@vueform/multiselect": "^2.6.11",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
     "electron-updater": "^6.8.9",
     "jsonwebtoken": "^9.0.3",
     "lucide-vue-next": "^1.0.0",
+    "minio": "^8.0.7",
     "node-machine-id": "^1.1.12",
     "pg": "^8.13.1",
     "pinia": "^3.0.4",
@@ -41,10 +43,15 @@
       "output": "dist"
     },
     "linux": {
-      "target": ["AppImage", "deb"]
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     }
   }
 }

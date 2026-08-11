@@ -12,3 +12,40 @@
 ::-webkit-scrollbar-track        { background: transparent; }
 ::-webkit-scrollbar-thumb        { background: rgba(128,128,128,0.3); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover  { background: rgba(128,128,128,0.5); }
+
+/* @vueform/multiselect (dipakai lewat components/AppSelect.vue) — dipetakan
+   ke token warna daisyUI (--color-*) yang sudah ada, biar otomatis ikut tema
+   aktif (corporate/night) tanpa perlu override tiap class manual. Ukuran
+   disamakan kira-kira dengan `.input.input-bordered` daisyUI. */
+.multiselect {
+    --ms-bg: var(--color-base-100);
+    --ms-border-color: var(--color-base-300);
+    --ms-border-width: 1px;
+    --ms-border-color-active: var(--color-primary);
+    --ms-ring-width: 1px;
+    --ms-ring-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    --ms-radius: var(--radius-field, 0.5rem);
+    --ms-py: 0.5rem;
+    --ms-px: 0.75rem;
+    --ms-font-size: 0.875rem;
+    --ms-line-height: 1.25rem;
+    --ms-placeholder-color: color-mix(in oklab, var(--color-base-content) 40%, transparent);
+    --ms-caret-color: var(--color-base-content);
+    --ms-clear-color: var(--color-base-content);
+    --ms-clear-color-hover: var(--color-error);
+    --ms-spinner-color: var(--color-primary);
+    --ms-dropdown-bg: var(--color-base-100);
+    --ms-dropdown-border-color: var(--color-base-300);
+    --ms-dropdown-radius: var(--radius-field, 0.5rem);
+    --ms-option-font-size: 0.875rem;
+    --ms-option-bg-pointed: var(--color-base-200);
+    --ms-option-color-pointed: var(--color-base-content);
+    --ms-option-bg-selected: var(--color-primary);
+    --ms-option-color-selected: var(--color-primary-content);
+    --ms-option-bg-selected-pointed: var(--color-primary);
+    --ms-option-color-selected-pointed: var(--color-primary-content);
+    --ms-option-bg-disabled: var(--color-base-200);
+    --ms-option-color-disabled: color-mix(in oklab, var(--color-base-content) 35%, transparent);
+    --ms-empty-color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+    min-height: 2.5rem;
+}

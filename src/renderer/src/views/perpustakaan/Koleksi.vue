@@ -6,14 +6,15 @@ import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
+import AppSelect from '../../components/AppSelect.vue'
 
 // src/perpustakaan/PerpustakaanKoleksi.java — katalog buku, FK ke 4 master
 // data (Penerbit/Pengarang/Kategori/Jenis). Java asli pakai popup picker
 // terpisah buat tiap FK (window baru, klik baris, window nutup sendiri) —
-// di sini disederhanakan jadi <select> biasa (master datanya kecil, sudah
-// ada halaman Master Data sendiri buat kelola isinya). Field TIDAK ada yang
-// kondisional, jadi tetap pola SEDERHANA (2 tab + modal edit) sesuai
-// Konvensi UI, bukan modal tunggal ala entity kompleks.
+// di sini disederhanakan jadi dropdown pencarian `AppSelect` (master datanya
+// bisa panjang, sudah ada halaman Master Data sendiri buat kelola isinya).
+// Field TIDAK ada yang kondisional, jadi tetap pola SEDERHANA (2 tab + modal
+// edit) sesuai Konvensi UI, bukan modal tunggal ala entity kompleks.
 const { showToast } = useToast()
 const authStore = useAuthStore()
 const bolehTulis = () => authStore.can('koleksi_perpustakaan')
@@ -252,31 +253,19 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Penerbit <span class="text-error">*</span></label>
-                            <select v-model="form.kode_penerbit" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Penerbit</option>
-                                <option v-for="o in opsiPenerbit" :key="o.kode_penerbit" :value="o.kode_penerbit">{{ o.nama_penerbit }}</option>
-                            </select>
+                            <AppSelect v-model="form.kode_penerbit" :options="opsiPenerbit" value-prop="kode_penerbit" label="nama_penerbit" placeholder="Pilih Penerbit" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Pengarang <span class="text-error">*</span></label>
-                            <select v-model="form.kode_pengarang" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Pengarang</option>
-                                <option v-for="o in opsiPengarang" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                            </select>
+                            <AppSelect v-model="form.kode_pengarang" :options="opsiPengarang" value-prop="kd" label="nama" placeholder="Pilih Pengarang" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis <span class="text-error">*</span></label>
-                            <select v-model="form.id_jenis" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Jenis</option>
-                                <option v-for="o in opsiJenis" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                            </select>
+                            <AppSelect v-model="form.id_jenis" :options="opsiJenis" value-prop="kd" label="nama" placeholder="Pilih Jenis" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kategori <span class="text-error">*</span></label>
-                            <select v-model="form.id_kategori" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Kategori</option>
-                                <option v-for="o in opsiKategori" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                            </select>
+                            <AppSelect v-model="form.id_kategori" :options="opsiKategori" value-prop="kd" label="nama" placeholder="Pilih Kategori" />
                         </div>
                     </div>
                     <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>
@@ -317,27 +306,19 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Penerbit</label>
-                    <select v-model="editForm.kode_penerbit" class="select select-bordered w-full">
-                        <option v-for="o in opsiPenerbit" :key="o.kode_penerbit" :value="o.kode_penerbit">{{ o.nama_penerbit }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.kode_penerbit" :options="opsiPenerbit" value-prop="kode_penerbit" label="nama_penerbit" placeholder="Pilih Penerbit" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Pengarang</label>
-                    <select v-model="editForm.kode_pengarang" class="select select-bordered w-full">
-                        <option v-for="o in opsiPengarang" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.kode_pengarang" :options="opsiPengarang" value-prop="kd" label="nama" placeholder="Pilih Pengarang" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis</label>
-                    <select v-model="editForm.id_jenis" class="select select-bordered w-full">
-                        <option v-for="o in opsiJenis" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.id_jenis" :options="opsiJenis" value-prop="kd" label="nama" placeholder="Pilih Jenis" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kategori</label>
-                    <select v-model="editForm.id_kategori" class="select select-bordered w-full">
-                        <option v-for="o in opsiKategori" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.id_kategori" :options="opsiKategori" value-prop="kd" label="nama" placeholder="Pilih Kategori" />
                 </div>
             </div>
             <div class="modal-action mt-4">

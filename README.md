@@ -77,8 +77,15 @@ server lisensi sungguhan sudah siap.
       - Surat: 9 taksonomi arsip fisik identik (Rak/Almari/Klasifikasi/Sifat/
         Map/Indeks/Ruang/Status/Balas) lewat **1 service generik**
         (`SuratTaksonomiService.js`) + **1 komponen Vue generik** (`TaksonomiTab.vue`)
-        dipakai ulang 9x via prop — bukan file copy-paste. `SuratMasuk`/`SuratKeluar`
-        masih sisa pekerjaan (lihat "Arsitektur Hybrid WebView" di Khanza.md).
+        dipakai ulang 9x via prop — bukan file copy-paste. **`SuratMasuk`/
+        `SuratKeluar` SEKARANG SELESAI JUGA** (`SuratMasukKeluarService.js` +
+        `MasukKeluarTab.vue`) — modul PERTAMA hasil porting dari pola hybrid
+        webview (PHP `webapps/surat/pages/{input,input2,list,list2}.php`) ke
+        native, lihat "Arsitektur Hybrid WebView" di Khanza.md. File lampiran
+        (WAJIB di aslinya) disimpan ke **MinIO** (`MinioService.js`) —
+        implementasi pertama dari keputusan MinIO yang sebelumnya cuma
+        rencana. Cuma Create+List+Delete, TIDAK ADA Edit (replikasi apa
+        adanya, memang begitu di aslinya).
       - Perpustakaan: 7 halaman — Master Data (5 sub-taksonomi + Penerbit dalam
         1 halaman ber-tab), Koleksi (katalog buku, FK ke 4 master data),
         Anggota, Inventaris (eksemplar fisik + summary nilai total), Sirkulasi
@@ -162,8 +169,60 @@ mendeteksi kalau sebuah modul ternyata lebih besar dari yang kelihatan.
   komponen. **Kolom `TIMESTAMP`/`TIMESTAMPTZ` TIDAK disentuh** (tetap balik
   `Date`, memang lebih berguna untuk audit timestamp) — cuma `DATE` murni.
 
+- **Surat Masuk/Keluar** (`webapps/surat/pages/input.php`/`list.php`): kolom
+  DB aslinya `file_url`, BUKAN `dokumen` — `$dokumen` cuma nama variabel PHP,
+  ketahuan dari `SELECT` di `list.php` yang pakai nama `file_url` (INSERT-nya
+  positional, `INSERT INTO tabel VALUES(...)`, jadi nama variabel PHP tidak
+  mencerminkan nama kolom DB — WAJIB cross-check ke query SELECT, jangan
+  percaya nama variabel INSERT begitu saja). Kuirk lain: field "Nomor Masuk/
+  Keluar" di form KELIHATAN editable (text input, ada `required` & pattern
+  regex) TAPI nilai yang disubmit user **tidak pernah dibaca** — PHP selalu
+  recompute `no_urut` dari tanggal terima/kirim yang dipilih user saat itu
+  juga. Direplikasi apa adanya di `SuratMasukKeluarService.create()` (server
+  selalu hitung ulang, form cuma preview) — bukan kelalaian port, itu emang
+  begitu di PHP-nya.
+
 Sebelum menambah modul baru: **wajib ikuti SOP di Khanza.md** (baca kode Java
 asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI).
+
+## File lampiran (MinIO): `main/electron/MinioService.js`
+
+Pengganti folder `webapps/<modul>/pages/upload/` milik PHP di Khanza asli
+(lihat Khanza.md > "Arsitektur Hybrid WebView"). Dipegang HANYA main process
+(pola sama `DatabaseService.js`) — renderer TIDAK pernah connect langsung ke
+MinIO, cuma lewat IPC `file:upload`/`file:getUrl`. Postgres cuma nyimpan
+**object key**-nya (bukan URL permanen/`bytea`) — presigned URL (berumur
+pendek) di-generate on-demand tiap kali dibutuhkan.
+
+Konfigurasi lewat `.env` (`MINIO_ENDPOINT/PORT/ACCESS_KEY/SECRET_KEY/
+USE_SSL/BUCKET`, default instalasi lokal standar — `localhost:9000`,
+`minioadmin`/`minioadmin`, bucket `khanza`). Alur upload dari renderer:
+baca file jadi `ArrayBuffer` (`File.arrayBuffer()`) dulu sebelum di-`invoke`
+(JANGAN kirim `File` object langsung — structured-clone Electron tidak
+reliable buat itu), generate `objectKey` unik (pola: `<modul>/<jenis>/
+<timestamp>-<namafile>`), baru panggil `create()` record-nya dengan
+`file_url: objectKey`. Saat record dihapus, `deleteOne()` di service hapus
+file MinIO DULU baru row DB (replikasi urutan `unlink()` lalu `Hapus()` di
+PHP asli) — kalau hapus file gagal (mis. sudah kehapus manual), tetap lanjut
+hapus row, tidak menghentikan proses.
+
+## Dropdown pencarian (gaya Select2): `components/AppSelect.vue`
+
+Buat field FK/referensi yang datanya bisa panjang (pilih Anggota, Buku,
+Penerbit, dst — lihat Perpustakaan) — bukan `<select>` native. Dibungkus dari
+`@vueform/multiselect` (Vue-native, BUKAN Select2 asli yang jQuery — sengaja
+dihindari karena bentrok sama Virtual DOM Vue). Tema warnanya dipetakan ke
+token daisyUI (`--color-*`) di `style.css`, otomatis ikut tema aktif.
+
+Pakai `AppSelect` HANYA untuk data referensi yang bisa banyak (master data,
+FK ke tabel lain). Untuk enum kecil TETAP (2–5 opsi tetap, mis. Jenis Kelamin,
+Sistem Harian/Jam, Asal Buku) — pakai `<select>` native biasa, search tidak
+menambah manfaat di situ. Props: `options` (array of object, WAJIB, nama
+field kode/labelnya beda-beda per tabel — jangan diseragamkan paksa),
+`value-prop` (nama field kode), `label` (nama field yang ditampilkan). Kalau
+label butuh gabungan beberapa field (mis. "Judul (No.Inventaris)"), bikin
+`computed` yang nambahin field string baru (lihat `opsiInventarisPinjam` di
+`Sirkulasi.vue`) — jangan taruh template expression di prop `label`.
 
 ## Pola CRUD modul — contoh: Parkir
 

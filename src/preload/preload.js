@@ -54,6 +54,22 @@ contextBridge.exposeInMainWorld('api', {
         create:      (token, jenis, data)     => ipcRenderer.invoke('surat:create', token, jenis, data),
         update:      (token, jenis, oldKode, data) => ipcRenderer.invoke('surat:update', token, jenis, oldKode, data),
         delete:      (token, jenis, kode)     => ipcRenderer.invoke('surat:delete', token, jenis, kode),
+        // Surat Masuk/Keluar — modul pertama hasil porting dari webapps/surat/
+        // PHP, lihat SuratMasukKeluarService.js. `jenis`: 'masuk' | 'keluar'.
+        masukKeluar: {
+            list:        (jenis, params) => ipcRenderer.invoke('surat:masukKeluar:list', jenis, params),
+            nextNoUrut:  (jenis, tgl)    => ipcRenderer.invoke('surat:masukKeluar:nextNoUrut', jenis, tgl),
+            create:      (token, jenis, data)   => ipcRenderer.invoke('surat:masukKeluar:create', token, jenis, data),
+            delete:      (token, jenis, noUrut) => ipcRenderer.invoke('surat:masukKeluar:delete', token, jenis, noUrut),
+        },
+    },
+    // File lampiran (MinIO) — dipakai Surat Masuk/Keluar & modul lain ke
+    // depannya yang butuh upload file. `data` HARUS ArrayBuffer/Uint8Array
+    // (baca file via `File.arrayBuffer()` di renderer dulu), bukan File object
+    // langsung (Electron IPC structured-clone tidak selalu reliable utk File).
+    file: {
+        upload: (objectKey, data, contentType) => ipcRenderer.invoke('file:upload', objectKey, data, contentType),
+        getUrl: (objectKey) => ipcRenderer.invoke('file:getUrl', objectKey),
     },
     // Perpustakaan — 8 sub-modul (lihat Khanza.md > section 19 & README.md
     // buat detail koreksi arsitektur hasil investigasi ulang).

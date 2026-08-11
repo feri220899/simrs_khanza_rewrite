@@ -1,11 +1,12 @@
 <script setup>
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { Plus, List } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
+import AppSelect from '../../components/AppSelect.vue'
 
 // Tab "Denda Lain-lain" — src/perpustakaan/PerpustakaanBayarDenda.java (tab 1).
 // besar_denda dihitung SERVER-SIDE (harga buku x persentase jenis denda),
@@ -18,6 +19,8 @@ const activeTab = ref('list')
 const opsiAnggota = ref([])
 const opsiInventaris = ref([])
 const opsiJenisDenda = ref([])
+const opsiInventarisTampil = computed(() => opsiInventaris.value.map(o => ({ ...o, tampilan: `${o.judul_buku} (${o.no_inventaris})` })))
+const opsiJenisDendaTampil = computed(() => opsiJenisDenda.value.map(o => ({ ...o, tampilan: `${o.jenis_denda} (${o.besar_denda}%)` })))
 
 async function muatOpsi() {
     const [a, i, d] = await Promise.all([
@@ -147,24 +150,15 @@ onMounted(muatOpsi)
                         <div></div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Peminjam <span class="text-error">*</span></label>
-                            <select v-model="form.no_anggota" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Anggota</option>
-                                <option v-for="o in opsiAnggota" :key="o.no_anggota" :value="o.no_anggota">{{ o.nama_anggota }}</option>
-                            </select>
+                            <AppSelect v-model="form.no_anggota" :options="opsiAnggota" value-prop="no_anggota" label="nama_anggota" placeholder="Pilih Anggota" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Buku <span class="text-error">*</span></label>
-                            <select v-model="form.no_inventaris" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Buku</option>
-                                <option v-for="o in opsiInventaris" :key="o.no_inventaris" :value="o.no_inventaris">{{ o.judul_buku }} ({{ o.no_inventaris }})</option>
-                            </select>
+                            <AppSelect v-model="form.no_inventaris" :options="opsiInventarisTampil" value-prop="no_inventaris" label="tampilan" placeholder="Pilih Buku" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Denda <span class="text-error">*</span></label>
-                            <select v-model="form.kode_denda" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Jenis Denda</option>
-                                <option v-for="o in opsiJenisDenda" :key="o.kode_denda" :value="o.kode_denda">{{ o.jenis_denda }} ({{ o.besar_denda }}%)</option>
-                            </select>
+                            <AppSelect v-model="form.kode_denda" :options="opsiJenisDendaTampil" value-prop="kode_denda" label="tampilan" placeholder="Pilih Jenis Denda" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Keterangan <span class="text-error">*</span></label>

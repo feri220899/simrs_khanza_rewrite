@@ -6,6 +6,7 @@ import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
+import AppSelect from '../../components/AppSelect.vue'
 
 // src/perpustakaan/PerpustakaanInventaris.java — eksemplar fisik per judul
 // buku. `status_buku` biasanya DIUBAH OTOMATIS oleh Sirkulasi (pinjam/
@@ -251,10 +252,7 @@ onMounted(async () => {
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul (Koleksi) <span class="text-error">*</span></label>
-                            <select v-model="form.kode_buku" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Koleksi</option>
-                                <option v-for="o in opsiBuku" :key="o.kode_buku" :value="o.kode_buku">{{ o.judul_buku }}</option>
-                            </select>
+                            <AppSelect v-model="form.kode_buku" :options="opsiBuku" value-prop="kode_buku" label="judul_buku" placeholder="Pilih Koleksi" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga <span class="text-error">*</span></label>
@@ -274,10 +272,7 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Ruang <span class="text-error">*</span></label>
-                            <select v-model="form.kd_ruang" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Ruang</option>
-                                <option v-for="o in opsiRuang" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                            </select>
+                            <AppSelect v-model="form.kd_ruang" :options="opsiRuang" value-prop="kd" label="nama" placeholder="Pilih Ruang" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rak</label>
@@ -321,9 +316,7 @@ onMounted(async () => {
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul (Koleksi)</label>
-                    <select v-model="editForm.kode_buku" class="select select-bordered w-full">
-                        <option v-for="o in opsiBuku" :key="o.kode_buku" :value="o.kode_buku">{{ o.judul_buku }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.kode_buku" :options="opsiBuku" value-prop="kode_buku" label="judul_buku" placeholder="Pilih Koleksi" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga</label>
@@ -343,9 +336,7 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Ruang</label>
-                    <select v-model="editForm.kd_ruang" class="select select-bordered w-full">
-                        <option v-for="o in opsiRuang" :key="o.kd" :value="o.kd">{{ o.nama }}</option>
-                    </select>
+                    <AppSelect v-model="editForm.kd_ruang" :options="opsiRuang" value-prop="kd" label="nama" placeholder="Pilih Ruang" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rak</label>

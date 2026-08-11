@@ -1,11 +1,12 @@
 <script setup>
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { Plus, List } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
+import AppSelect from '../../components/AppSelect.vue'
 
 // Tab "Denda Keterlambatan" — src/perpustakaan/PerpustakaanBayarDenda.java
 // (tab 0). besar_denda dihitung SERVER-SIDE (keterlambatan x denda_perhari
@@ -17,6 +18,7 @@ const bolehTulis = () => authStore.can('bayar_denda_perpustakaan')
 const activeTab = ref('list')
 const opsiAnggota = ref([])
 const opsiInventaris = ref([])
+const opsiInventarisTampil = computed(() => opsiInventaris.value.map(o => ({ ...o, tampilan: `${o.judul_buku} (${o.no_inventaris})` })))
 
 async function muatOpsi() {
     const [a, i] = await Promise.all([
@@ -144,17 +146,11 @@ onMounted(muatOpsi)
                         <div></div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Peminjam <span class="text-error">*</span></label>
-                            <select v-model="form.no_anggota" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Anggota</option>
-                                <option v-for="o in opsiAnggota" :key="o.no_anggota" :value="o.no_anggota">{{ o.nama_anggota }}</option>
-                            </select>
+                            <AppSelect v-model="form.no_anggota" :options="opsiAnggota" value-prop="no_anggota" label="nama_anggota" placeholder="Pilih Anggota" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Buku <span class="text-error">*</span></label>
-                            <select v-model="form.no_inventaris" class="select select-bordered w-full">
-                                <option value="" disabled>Pilih Buku</option>
-                                <option v-for="o in opsiInventaris" :key="o.no_inventaris" :value="o.no_inventaris">{{ o.judul_buku }} ({{ o.no_inventaris }})</option>
-                            </select>
+                            <AppSelect v-model="form.no_inventaris" :options="opsiInventarisTampil" value-prop="no_inventaris" label="tampilan" placeholder="Pilih Buku" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Keterlambatan (hari) <span class="text-error">*</span></label>

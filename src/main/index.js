@@ -17,6 +17,8 @@ import PerpustakaanSirkulasiService from './db/modules/PerpustakaanSirkulasiServ
 import PerpustakaanDendaService     from './db/modules/PerpustakaanDendaService.js'
 import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaService.js'
 import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
+import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
+import MinioService from './electron/MinioService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -145,6 +147,35 @@ app.whenReady().then(async () => {
     ipcMain.handle('surat:delete', (_, token, jenis, kode) => {
         const auth = AuthService.requirePermission(token, SuratTaksonomiService.getConfig(jenis).permission)
         return auth.ok ? SuratTaksonomiService.deleteOne(jenis, kode) : { success: false, message: auth.message }
+    })
+
+    // File lampiran (MinIO) — lihat MinioService.js. Upload sendiri TIDAK
+    // digate permission di sini (belum tentu terkait 1 record spesifik, alur
+    // UI-nya upload dulu baru create record-nya) — yang digate permission
+    // adalah aksi create/delete record yang MEMAKAI file itu (di bawah).
+    ipcMain.handle('file:upload', async (_, objectKey, data, contentType) => {
+        try {
+            return await MinioService.upload(objectKey, Buffer.from(data), contentType)
+        } catch (e) {
+            return { success: false, message: 'Gagal upload file: ' + e.message }
+        }
+    })
+    ipcMain.handle('file:getUrl', (_, objectKey) => MinioService.getPresignedUrl(objectKey))
+
+    // Surat Masuk/Keluar — modul PERTAMA hasil porting dari pola hybrid
+    // webview (PHP webapps/surat/pages/{input,input2,list,list2}.php) ke
+    // native, lihat SuratMasukKeluarService.js & Khanza.md > "Arsitektur
+    // Hybrid WebView". Permission 'surat_masuk'/'surat_keluar' — nama asli
+    // sik.sql, kebetulan sama persis nama tabelnya.
+    ipcMain.handle('surat:masukKeluar:list', (_, jenis, params) => SuratMasukKeluarService.list(jenis, params))
+    ipcMain.handle('surat:masukKeluar:nextNoUrut', (_, jenis, tgl) => SuratMasukKeluarService.nextNoUrut(jenis, tgl))
+    ipcMain.handle('surat:masukKeluar:create', (_, token, jenis, data) => {
+        const auth = AuthService.requirePermission(token, jenis === 'masuk' ? 'surat_masuk' : 'surat_keluar')
+        return auth.ok ? SuratMasukKeluarService.create(jenis, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('surat:masukKeluar:delete', (_, token, jenis, noUrut) => {
+        const auth = AuthService.requirePermission(token, jenis === 'masuk' ? 'surat_masuk' : 'surat_keluar')
+        return auth.ok ? SuratMasukKeluarService.deleteOne(jenis, noUrut) : { success: false, message: auth.message }
     })
 
     // Perpustakaan — taksonomi (Jenis/Ruang/Pengarang/Kategori), pola generik

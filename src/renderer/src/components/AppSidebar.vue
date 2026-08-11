@@ -72,14 +72,14 @@ function cancelCloseFlyout() {
 }
 
 function navClass(path) {
-    const base = 'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors'
+    const base = 'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg font-medium transition-colors'
     return route.path === path
         ? `${base} bg-primary text-white`
         : `${base} text-white/70 hover:bg-base-200 hover:text-white`
 }
 
 function childNavClass(path) {
-    const base = 'flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors'
+    const base = 'flex items-center gap-2 px-2.5 py-1 rounded-lg text-sm font-medium transition-colors'
     return route.path === path
         ? `${base} bg-primary text-white`
         : `${base} text-white/60 hover:bg-base-200 hover:text-white hover:text-white/80`
@@ -163,7 +163,7 @@ onMounted(syncOpenFromRoute)
 <template>
     <aside data-theme="night"
         class="flex flex-col h-screen shrink-0 bg-base-100 border-r border-base-300 transition-[width] duration-200"
-        :class="collapsed ? 'w-16' : 'w-64'">
+        :class="collapsed ? 'w-16' : 'w-80'">
 
         <!-- Header: logo (cuma saat expanded) + tombol ciutkan/perluas -->
         <div class="flex items-center h-16 shrink-0 border-b border-base-300 px-3"
@@ -172,7 +172,7 @@ onMounted(syncOpenFromRoute)
                 <div class="btn btn-primary btn-square btn-sm no-animation pointer-events-none shrink-0">
                     <LayoutGrid class="size-4" />
                 </div>
-                <div class="text-sm font-bold text-base-content leading-tight truncate">Khanza Desktop</div>
+                <div class="font-bold text-base-content leading-tight truncate">Khanza JavaScript</div>
             </div>
             <button class="btn btn-ghost btn-square btn-sm shrink-0"
                 :title="collapsed ? 'Perluas sidebar' : 'Ciutkan sidebar'"
@@ -218,7 +218,7 @@ onMounted(syncOpenFromRoute)
                         @mouseleave="scheduleCloseFlyout">
                         <template v-if="item.children?.length">
                             <button
-                                class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg font-medium transition-colors"
                                 :class="[isParentActive(item)
                                     ? 'bg-primary/10 text-primary'
                                     : 'text-white/70 hover:bg-base-200 hover:text-white',
