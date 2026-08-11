@@ -19,6 +19,11 @@ import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaSe
 import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
 import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
 import MinioService from './electron/MinioService.js'
+import TokoJenisService from './db/modules/TokoJenisService.js'
+import TokoSuplierService from './db/modules/TokoSuplierService.js'
+import TokoMemberService from './db/modules/TokoMemberService.js'
+import TokoBarangService from './db/modules/TokoBarangService.js'
+import TokoOpnameService from './db/modules/TokoOpnameService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -177,6 +182,97 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, jenis === 'masuk' ? 'surat_masuk' : 'surat_keluar')
         return auth.ok ? SuratMasukKeluarService.deleteOne(jenis, noUrut) : { success: false, message: auth.message }
     })
+
+    // Toko — MASTER DATA + STOK OPNAME saja (Penjualan/Pembelian/Pemesanan/
+    // Piutang/Retur DITUNDA ke Fase 3, semua itu otomatis posting jurnal ke
+    // Keuangan yang belum dibangun — lihat Khanza.md section 14 & SOP).
+    ipcMain.handle('toko:jenis:list',     (_, params) => TokoJenisService.list(params))
+    ipcMain.handle('toko:jenis:nextKode', () => TokoJenisService.nextKode())
+    ipcMain.handle('toko:jenis:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_jenis')
+        return auth.ok ? TokoJenisService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:jenis:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_jenis')
+        return auth.ok ? TokoJenisService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:jenis:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'toko_jenis')
+        return auth.ok ? TokoJenisService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    ipcMain.handle('toko:suplier:list',     (_, params) => TokoSuplierService.list(params))
+    ipcMain.handle('toko:suplier:nextKode', () => TokoSuplierService.nextKode())
+    ipcMain.handle('toko:suplier:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_suplier')
+        return auth.ok ? TokoSuplierService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:suplier:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_suplier')
+        return auth.ok ? TokoSuplierService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:suplier:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'toko_suplier')
+        return auth.ok ? TokoSuplierService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    ipcMain.handle('toko:member:list',     (_, params) => TokoMemberService.list(params))
+    ipcMain.handle('toko:member:nextKode', () => TokoMemberService.nextKode())
+    ipcMain.handle('toko:member:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_member')
+        return auth.ok ? TokoMemberService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:member:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_member')
+        return auth.ok ? TokoMemberService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:member:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'toko_member')
+        return auth.ok ? TokoMemberService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    ipcMain.handle('toko:barang:list',       (_, params) => TokoBarangService.list(params))
+    ipcMain.handle('toko:barang:listSampah', (_, token, params) => {
+        // "Data Sampah" cuma boleh dilihat Administrator (Admin Utama di
+        // Java asli) — bukan cuma permission toko_barang biasa.
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { data: [], total: 0 }
+        if (session.user.role !== 'Administrator') return { data: [], total: 0 }
+        return TokoBarangService.listSampah(params)
+    })
+    ipcMain.handle('toko:barang:nextKode', () => TokoBarangService.nextKode())
+    ipcMain.handle('toko:barang:calcHarga', (_, beli) => TokoBarangService.calcHarga(beli))
+    ipcMain.handle('toko:barang:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_barang')
+        return auth.ok ? TokoBarangService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:barang:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'toko_barang')
+        return auth.ok ? TokoBarangService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:barang:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'toko_barang')
+        return auth.ok ? TokoBarangService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:barang:restore', (_, token, kode) => {
+        // Replika "Admin Utama only" — role Administrator secara eksplisit,
+        // bukan cuma permission toko_barang (yang bisa saja dipunya role lain).
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (session.user.role !== 'Administrator') return { success: false, message: 'Cuma Administrator yang boleh memulihkan data' }
+        return TokoBarangService.restore(kode)
+    })
+
+    ipcMain.handle('toko:opname:list', (_, params) => TokoOpnameService.listOpname(params))
+    ipcMain.handle('toko:opname:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'stok_opname_toko')
+        return auth.ok ? TokoOpnameService.createOpname({ ...data, petugas: auth.user.username }) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:opname:delete', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'stok_opname_toko')
+        return auth.ok ? TokoOpnameService.deleteOpname(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('toko:riwayat:list', (_, params) => TokoOpnameService.listRiwayat(params))
 
     // Perpustakaan — taksonomi (Jenis/Ruang/Pengarang/Kategori), pola generik
     // sama seperti Surat.

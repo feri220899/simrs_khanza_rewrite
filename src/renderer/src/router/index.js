@@ -7,7 +7,9 @@ import Dashboard from '../views/Dashboard.vue'
 import ParkirJenis   from '../views/parkir/JenisTarif.vue'
 import ParkirBarcode from '../views/parkir/KartuBarcode.vue'
 import ParkirMasuk   from '../views/parkir/Masuk.vue'
-import Toko          from '../views/toko/Toko.vue'
+import TokoMaster  from '../views/toko/Master.vue'
+import TokoOpname  from '../views/toko/Opname.vue'
+import TokoRiwayat from '../views/toko/Riwayat.vue'
 import PerpusMaster     from '../views/perpustakaan/Master.vue'
 import PerpusKoleksi    from '../views/perpustakaan/Koleksi.vue'
 import PerpusAnggota    from '../views/perpustakaan/Anggota.vue'
@@ -27,13 +29,13 @@ const FASE_1_ROUTES = [
     { path: '/parkir/masuk', component: ParkirMasuk },
     { path: '/parkir/jenis', component: ParkirJenis },
     { path: '/parkir/barcode', component: ParkirBarcode },
-    // Toko jadi grup 4 anak di menu.js (barang/penjualan/piutang/retur) —
-    // semua diarahkan ke komponen placeholder Toko.vue yang sama dulu,
-    // sampai tiap sub-fiturnya digarap beneran sesuai SOP.
-    { path: '/toko/barang', component: Toko },
-    { path: '/toko/penjualan', component: Toko },
-    { path: '/toko/piutang', component: Toko },
-    { path: '/toko/retur', component: Toko },
+    // Toko: Master Data + Stok Opname sudah digarap (tidak sentuh jurnal
+    // Keuangan). Penjualan/Pembelian/Pemesanan/Piutang/Retur DITUNDA ke Fase 3
+    // (otomatis posting jurnal ke Keuangan yang belum dibangun) — lihat
+    // PLACEHOLDER_PATHS di bawah & Khanza.md section 14.
+    { path: '/toko/master', component: TokoMaster },
+    { path: '/toko/opname', component: TokoOpname },
+    { path: '/toko/riwayat', component: TokoRiwayat },
     { path: '/perpustakaan/master', component: PerpusMaster },
     { path: '/perpustakaan/koleksi', component: PerpusKoleksi },
     { path: '/perpustakaan/anggota', component: PerpusAnggota },
@@ -46,6 +48,8 @@ const FASE_1_ROUTES = [
 ]
 
 const PLACEHOLDER_PATHS = [
+    // Toko — ditunda ke Fase 3 (butuh integrasi jurnal Keuangan), lihat Khanza.md section 14.
+    '/toko/penjualan', '/toko/pembelian', '/toko/pemesanan', '/toko/piutang', '/toko/retur',
     '/registrasi', '/igd', '/rawat-jalan',
     '/rawat-inap/kamar', '/rawat-inap/pemeriksaan', '/rawat-inap/daftar-pasien',
     '/operasi/booking', '/operasi/ruang', '/operasi/obat',

@@ -63,6 +63,49 @@ contextBridge.exposeInMainWorld('api', {
             delete:      (token, jenis, noUrut) => ipcRenderer.invoke('surat:masukKeluar:delete', token, jenis, noUrut),
         },
     },
+    // Toko — MASTER DATA + STOK OPNAME saja (transaksi ditunda ke Fase 3,
+    // lihat Khanza.md section 14).
+    toko: {
+        jenis: {
+            list:     (params)             => ipcRenderer.invoke('toko:jenis:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('toko:jenis:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('toko:jenis:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('toko:jenis:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('toko:jenis:delete', token, kode),
+        },
+        suplier: {
+            list:     (params)             => ipcRenderer.invoke('toko:suplier:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('toko:suplier:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('toko:suplier:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('toko:suplier:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('toko:suplier:delete', token, kode),
+        },
+        member: {
+            list:     (params)             => ipcRenderer.invoke('toko:member:list', params),
+            nextKode: ()                   => ipcRenderer.invoke('toko:member:nextKode'),
+            create:   (token, data)        => ipcRenderer.invoke('toko:member:create', token, data),
+            update:   (token, oldKode, data) => ipcRenderer.invoke('toko:member:update', token, oldKode, data),
+            delete:   (token, kode)        => ipcRenderer.invoke('toko:member:delete', token, kode),
+        },
+        barang: {
+            list:       (params)             => ipcRenderer.invoke('toko:barang:list', params),
+            listSampah: (token, params)      => ipcRenderer.invoke('toko:barang:listSampah', token, params),
+            nextKode:   ()                   => ipcRenderer.invoke('toko:barang:nextKode'),
+            calcHarga:  (beli)               => ipcRenderer.invoke('toko:barang:calcHarga', beli),
+            create:     (token, data)        => ipcRenderer.invoke('toko:barang:create', token, data),
+            update:     (token, oldKode, data) => ipcRenderer.invoke('toko:barang:update', token, oldKode, data),
+            delete:     (token, kode)        => ipcRenderer.invoke('toko:barang:delete', token, kode),
+            restore:    (token, kode)        => ipcRenderer.invoke('toko:barang:restore', token, kode),
+        },
+        opname: {
+            list:   (params)      => ipcRenderer.invoke('toko:opname:list', params),
+            create: (token, data) => ipcRenderer.invoke('toko:opname:create', token, data),
+            delete: (token, data) => ipcRenderer.invoke('toko:opname:delete', token, data),
+        },
+        riwayat: {
+            list: (params) => ipcRenderer.invoke('toko:riwayat:list', params),
+        },
+    },
     // File lampiran (MinIO) — dipakai Surat Masuk/Keluar & modul lain ke
     // depannya yang butuh upload file. `data` HARUS ArrayBuffer/Uint8Array
     // (baca file via `File.arrayBuffer()` di renderer dulu), bukan File object

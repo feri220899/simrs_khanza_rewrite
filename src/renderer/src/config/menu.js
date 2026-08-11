@@ -168,20 +168,21 @@ export const allMenu = [
           { to: '/keuangan/rekening',   label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
         ],
       },
-      // 14. Toko — KOREKSI dari versi sebelumnya: ini SISTEM RETAIL LENGKAP
-      // (33 file di src/toko/: suplier, barang, penjualan, member, piutang,
-      // retur, stok opname — BUKAN cuma 1 baris setting harga seperti klaim
-      // sebelumnya, itu salah, saya cuma nemu DlgSetHargaToko.java yang
-      // memang ada di src/setting/, bukan src/toko/). Migration Postgres buat
-      // fitur penuhnya BELUM dibuat (baru toko_setharga) — expand jadi grup
-      // di sini duluan supaya permission-nya benar, migrasinya menyusul.
+      // 14. Toko — SISTEM RETAIL LENGKAP (33 file di src/toko/), investigasi
+      // penuh selesai (lihat Khanza.md section 14). Master Data + Stok Opname
+      // DIGARAP (tidak sentuh jurnal Keuangan). Penjualan/Pembelian/Pemesanan/
+      // Piutang/Retur* DITUNDA ke Fase 3 — semua itu otomatis posting jurnal
+      // ke modul Keuangan yang belum dibangun, keputusan sadar biar tidak ada
+      // bagian setengah-jadi yang diam-diam skip akuntansi.
       {
         label: 'Toko (Non-Medis)', icon: ShoppingBag,
         children: [
-          { to: '/toko/barang',   label: 'Master Barang & Suplier', icon: Package,     permission: 'toko_barang' },
-          { to: '/toko/penjualan', label: 'Penjualan',              icon: Monitor,     permission: 'toko_penjualan' },
-          { to: '/toko/piutang',  label: 'Piutang',                 icon: FileWarning, permission: 'toko_piutang' },
-          { to: '/toko/retur',    label: 'Retur Beli/Jual',         icon: RefreshCcw,  permission: 'toko_retur_jual' },
+          { to: '/toko/master',    label: 'Master Data',       icon: Package,        permission: 'toko_barang' },
+          { to: '/toko/opname',    label: 'Stok Opname',       icon: ClipboardCheck, permission: 'stok_opname_toko' },
+          { to: '/toko/riwayat',   label: 'Riwayat Barang',    icon: History,        permission: 'toko_riwayat_barang' },
+          { to: '/toko/penjualan', label: 'Penjualan',         icon: Monitor,        permission: 'toko_penjualan' },
+          { to: '/toko/piutang',   label: 'Piutang',           icon: FileWarning,    permission: 'toko_piutang' },
+          { to: '/toko/retur',     label: 'Retur Beli/Jual',   icon: RefreshCcw,     permission: 'toko_retur_jual' },
         ],
       },
       // 15. Parkir — tidak ada flag umum "parkir" (Khanza pisah per aksi:

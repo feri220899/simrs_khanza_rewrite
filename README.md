@@ -93,6 +93,16 @@ server lisensi sungguhan sudah siap.
         Denda (taksonomi % + BayarDenda 2-tabel terpisah), Pengaturan
         Peminjaman (config 1 baris). 3 file WebView (`PerpustakaanCariEbook/
         Ebook/Penelitian`) TIDAK digarap.
+      - **Toko: Master Data + Stok Opname selesai** (investigasi 33 file
+        selesai — TERNYATA POS lengkap, tapi hampir semua transaksi
+        (`TokoPenjualan`/`Pembelian`/`Pemesanan`/`Piutang`/`Retur*`) otomatis
+        posting jurnal ke Keuangan yang belum dibangun → **SENGAJA DITUNDA ke
+        Fase 3**, keputusan eksplisit biar tidak ada bagian setengah-jadi yang
+        diam-diam skip akuntansi). Yang digarap: Jenis Barang, Barang (soft-
+        delete + "Data Sampah" khusus role Administrator + auto-hitung harga
+        jual dari `toko_setharga`), Suplier, Member, Stok Opname (input +
+        riwayat, overwrite stok, TIDAK sentuh jurnal), Riwayat Barang
+        (viewer read-only).
 
       Semua: create/update/delete, validasi & auto-suggest kode 1:1 dengan
       Java asli, permission tulis di-gate server-side lewat
@@ -181,6 +191,27 @@ mendeteksi kalau sebuah modul ternyata lebih besar dari yang kelihatan.
   juga. Direplikasi apa adanya di `SuratMasukKeluarService.create()` (server
   selalu hitung ulang, form cuma preview) — bukan kelalaian port, itu emang
   begitu di PHP-nya.
+
+- **Toko**: investigasi 33 file `src/toko/` ketahuan ini POS lengkap
+  (TokoPenjualan = header+detail, hitung PPN/ongkir/kembalian; TokoPemesanan
+  beda dari TokoPembelian — Pemesanan itu penerimaan barang dgn HUTANG
+  dagang, bukan sekadar "pesanan"), dan HAMPIR SEMUA transaksinya nulis
+  jurnal ke `tampjurnal`/Keuangan. Karena Keuangan (Fase 3) belum dibangun,
+  **modul transaksi (Penjualan/Pembelian/Pemesanan/Piutang/Retur*) SENGAJA
+  DITUNDA** — cuma Master Data + Stok Opname yang digarap (dua-duanya
+  dikonfirmasi TIDAK sentuh jurnal sama sekali). Jangan asumsikan "Toko
+  selesai" dari nama menu-nya — cek Status di atas buat tahu persis bagian
+  mana yang beneran jalan.
+- **Bug kecil tapi jebakan**: JANGAN taruh karakter backtick (`` ` ``) di
+  dalam komentar SQL (`-- ...`) yang ada di dalam template literal JS
+  (`` await client.query(`...`) ``) — backtick itu MENUTUP template literal
+  JS-nya secara prematur meski posisinya "di dalam" komentar SQL, bikin
+  `SyntaxError: missing ) after argument list` yang membingungkan (errornya
+  nunjuk ke baris `client.query(` di awal, bukan ke baris backtick yang
+  sebenarnya salah). Ketahuan pas nulis migration `023_create_toko_master.js`
+  (komentar SQL nulis `` `aktif` `` dan `` `status` ``) — kalau perlu
+  highlight nama kolom di komentar SQL, pakai huruf besar/quote biasa, bukan
+  backtick Markdown.
 
 Sebelum menambah modul baru: **wajib ikuti SOP di Khanza.md** (baca kode Java
 asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI).
