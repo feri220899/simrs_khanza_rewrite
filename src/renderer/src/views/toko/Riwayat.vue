@@ -1,5 +1,5 @@
 <script setup>
-import { h } from 'vue'
+import { h, ref } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { History } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
@@ -9,6 +9,13 @@ import AppPagination from '../../components/AppPagination.vue'
 // insert/update/delete di file aslinya). Untuk saat ini cuma keisi dari
 // Stok Opname (posisi='Opname') — riwayat dari transaksi Penjualan/
 // Pembelian/dst baru muncul kalau modul itu digarap di Fase 3.
+//
+// KOREKSI (hasil audit): Java asli WAJIB filter rentang tanggal (Tgl1/Tgl2)
+// — backend service-nya sudah dukung tgl1/tgl2 sejak awal, tapi UI-nya
+// sempat kelewat tidak dikasih input tanggal sama sekali.
+const tgl1 = ref('')
+const tgl2 = ref('')
+
 const columns = [
     { accessorKey: 'tanggal', header: 'Tanggal', meta: { headerClass: 'w-28' } },
     { accessorKey: 'jam', header: 'Jam', meta: { headerClass: 'w-24' } },
@@ -21,13 +28,23 @@ const columns = [
     { accessorKey: 'petugas', header: 'Petugas', enableSorting: false },
 ]
 
-const { table, loading, search } = useServerTable({
+const { table, loading, search, fetchData } = useServerTable({
     columns,
-    fetchFn: params => window.api.toko.riwayat.list(params),
+    fetchFn: params => window.api.toko.riwayat.list({ ...params, tgl1: tgl1.value, tgl2: tgl2.value }),
     pageSize: 15,
     defaultSortBy: 'tanggal',
     defaultSortOrder: 'desc',
 })
+
+function terapkanFilterTanggal() {
+    fetchData()
+}
+
+function resetFilterTanggal() {
+    tgl1.value = ''
+    tgl2.value = ''
+    fetchData()
+}
 </script>
 
 <template>
@@ -35,6 +52,19 @@ const { table, loading, search } = useServerTable({
         <div class="mb-4 shrink-0">
             <h1 class="text-2xl font-bold tracking-tight">Toko — Riwayat Barang</h1>
             <p class="text-sm text-base-content/60 mt-0.5">Log pergerakan stok, read-only (src/toko/TokoRiwayatBarang.java)</p>
+        </div>
+
+        <div class="flex flex-wrap items-end gap-2 mb-3 shrink-0">
+            <div>
+                <label class="block text-xs font-medium text-base-content/60 mb-1">Dari Tanggal</label>
+                <input v-model="tgl1" type="date" class="input input-bordered input-sm w-40" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai Tanggal</label>
+                <input v-model="tgl2" type="date" class="input input-bordered input-sm w-40" />
+            </div>
+            <button class="btn btn-primary btn-sm" @click="terapkanFilterTanggal">Terapkan</button>
+            <button class="btn btn-ghost btn-sm" @click="resetFilterTanggal">Reset</button>
         </div>
 
         <div class="flex-1 min-h-0 overflow-hidden">

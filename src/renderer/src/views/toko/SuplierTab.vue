@@ -31,8 +31,8 @@ const columns = [
         id: 'aksi', header: 'Aksi', enableSorting: false,
         meta: { headerClass: 'text-center w-32', cellClass: 'text-center' },
         cell: info => h('div', { class: 'flex gap-1 justify-center' }, [
-            h('button', { class: 'btn btn-ghost btn-sm', onClick: () => openEdit(info.row.original) }, 'Edit'),
-            h('button', { class: 'btn btn-ghost btn-sm text-error', onClick: () => hapus(info.row.original) }, 'Hapus'),
+            h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehTulis(), onClick: () => openEdit(info.row.original) }, 'Edit'),
+            h('button', { class: 'btn btn-ghost btn-sm text-error', disabled: !bolehTulis(), onClick: () => hapus(info.row.original) }, 'Hapus'),
         ]),
     },
 ]

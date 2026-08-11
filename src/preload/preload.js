@@ -99,9 +99,10 @@ contextBridge.exposeInMainWorld('api', {
             hardDelete: (token, kode)        => ipcRenderer.invoke('toko:barang:hardDelete', token, kode),
         },
         opname: {
-            list:   (params)      => ipcRenderer.invoke('toko:opname:list', params),
-            create: (token, data) => ipcRenderer.invoke('toko:opname:create', token, data),
-            delete: (token, data) => ipcRenderer.invoke('toko:opname:delete', token, data),
+            listBarang:  (params)      => ipcRenderer.invoke('toko:opname:listBarang', params),
+            list:        (params)      => ipcRenderer.invoke('toko:opname:list', params),
+            createBatch: (token, data) => ipcRenderer.invoke('toko:opname:createBatch', token, data),
+            delete:      (token, data) => ipcRenderer.invoke('toko:opname:delete', token, data),
         },
         riwayat: {
             list: (params) => ipcRenderer.invoke('toko:riwayat:list', params),

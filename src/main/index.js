@@ -272,10 +272,11 @@ app.whenReady().then(async () => {
         return TokoBarangService.hardDelete(kode)
     })
 
+    ipcMain.handle('toko:opname:listBarang', (_, params) => TokoOpnameService.listBarangUntukOpname(params))
     ipcMain.handle('toko:opname:list', (_, params) => TokoOpnameService.listOpname(params))
-    ipcMain.handle('toko:opname:create', (_, token, data) => {
+    ipcMain.handle('toko:opname:createBatch', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'stok_opname_toko')
-        return auth.ok ? TokoOpnameService.createOpname({ ...data, petugas: auth.user.username }) : { success: false, message: auth.message }
+        return auth.ok ? TokoOpnameService.createOpnameBatch({ ...data, petugas: auth.user.username }) : { success: false, message: auth.message }
     })
     ipcMain.handle('toko:opname:delete', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'stok_opname_toko')

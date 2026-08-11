@@ -241,8 +241,22 @@ mendeteksi kalau sebuah modul ternyata lebih besar dari yang kelihatan.
   highlight nama kolom di komentar SQL, pakai huruf besar/quote biasa, bukan
   backtick Markdown.
 
+- **Audit adversarial ke-2 nemu 2 gap serius lagi di Stok Opname, SETELAH modul diumumkan "selesai"**:
+  1. **Alur kerja salah total** — `TokoInputStok.java` itu BATCH (1 layar nampilin SEMUA barang aktif, isi kolom "Real" utk banyak baris, SATU tombol Simpan proses SEMUA baris terisi dalam SATU transaksi + dialog konfirmasi), versi awal cuma bisa 1 barang per submit.
+  2. **Logic kalkulasi salah arah** — `selisih`/`nomihilang` itu OTOMATIS dihitung server (`kurang = stok_sistem - real`; `selisih = kurang>0 ? kurang : 0` — CUMA catat kekurangan, gapernah negatif; `nomihilang = kurang>0 ? kurang*dasar : 0`), versi awal jadikan `nomihilang` input manual & `selisih` bisa negatif.
+
+  Diperbaiki total: `TokoOpnameService.createOpnameBatch()` (transaksi
+  all-or-nothing — satu item bentrok, SEMUA di-rollback, replika persis
+  `sukses`/`RollBack()` Java) + `Opname.vue` (tabel batch-entry, kolom
+  Selisih/Nomi Hilang read-only ter-hitung live per baris). **User
+  menegaskan instruksi standing**: *"lain kali saat mengerjakan fitur lain
+  saya mau 1:1 meski pelan tidak masalah"* — WAJIB audit adversarial (baca
+  ulang Java baris-per-baris vs kode yang dibangun) sebelum modul apapun
+  ditandai selesai, jangan cuma percaya ringkasan investigasi awal.
+
 Sebelum menambah modul baru: **wajib ikuti SOP di Khanza.md** (baca kode Java
-asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI).
+asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI,
+lalu audit adversarial sebelum ditandai selesai — lihat poin 7 di SOP).
 
 ## File lampiran (MinIO): `main/electron/MinioService.js`
 

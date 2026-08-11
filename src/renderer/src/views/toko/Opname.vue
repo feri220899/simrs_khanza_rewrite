@@ -1,34 +1,40 @@
 <script setup>
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
-import { Plus, List, ClipboardCheck } from 'lucide-vue-next'
+import { Plus, List, ClipboardCheck, Eraser } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
-import AppSelect from '../../components/AppSelect.vue'
 
 // src/toko/TokoInputStok.java (input) + TokoStokOpname.java (viewer/hapus).
-// TIDAK menyentuh jurnal Keuangan — aman dibangun sekarang. Efek "Opname" =
-// OVERWRITE stok (bukan tambah/kurang), lihat TokoOpnameService.js.
+// TIDAK menyentuh jurnal Keuangan — aman dibangun sekarang.
+//
+// KOREKSI (hasil audit): alur asli itu BATCH — SEMUA barang aktif tampil
+// sekaligus, user isi kolom "Real" utk banyak baris, SATU tombol Simpan
+// proses SEMUA baris terisi dalam SATU transaksi (dialog konfirmasi dulu),
+// bukan 1 barang per submit. `Selisih`/`Nomi Hilang` DIHITUNG OTOMATIS
+// (kurang = stok - real, cuma dicatat kalau KEKURANGAN — real>=stok berarti
+// selisih=0), bukan diinput manual — lihat TokoOpnameService.js.
 const { showToast } = useToast()
 const authStore = useAuthStore()
 const bolehTulis = () => authStore.can('stok_opname_toko')
 
 const activeTab = ref('list')
-const opsiBarang = ref([])
-async function muatOpsi() {
-    opsiBarang.value = (await window.api.toko.barang.list({ pageSize: 1000 })).data
-}
 
+// ── Tab: Riwayat Opname (viewer, sudah benar sebelumnya) ─────────────────
 const columns = [
     { accessorKey: 'tanggal', header: 'Tanggal', meta: { headerClass: 'w-28' } },
     { accessorKey: 'nama_brng', header: 'Barang' },
     { accessorKey: 'stok', header: 'Stok Sistem', meta: { headerClass: 'w-28 text-right', cellClass: 'text-right tabular-nums' } },
     { accessorKey: 'real', header: 'Stok Real', meta: { headerClass: 'w-28 text-right', cellClass: 'text-right tabular-nums' } },
     {
-        accessorKey: 'selisih', header: 'Selisih', meta: { headerClass: 'w-24 text-right', cellClass: 'text-right tabular-nums' },
-        cell: info => h('span', { class: Number(info.getValue()) < 0 ? 'text-error' : Number(info.getValue()) > 0 ? 'text-success' : '' }, info.getValue()),
+        accessorKey: 'selisih', header: 'Selisih (Kurang)', meta: { headerClass: 'w-32 text-right', cellClass: 'text-right tabular-nums' },
+        cell: info => h('span', { class: Number(info.getValue()) > 0 ? 'text-error' : '' }, info.getValue()),
+    },
+    {
+        accessorKey: 'nomihilang', header: 'Nomi Hilang', meta: { headerClass: 'w-32 text-right', cellClass: 'text-right tabular-nums' },
+        cell: info => 'Rp ' + Number(info.getValue()).toLocaleString('id-ID'),
     },
     { accessorKey: 'keterangan', header: 'Keterangan', enableSorting: false },
     {
@@ -46,31 +52,6 @@ const { table, loading, search, fetchData } = useServerTable({
     defaultSortOrder: 'desc',
 })
 
-const emptyForm = () => ({ kode_brng: '', tanggal: new Date().toISOString().slice(0, 10), real: '', nomihilang: '', keterangan: '' })
-const saving = ref(false)
-const form = reactive(emptyForm())
-const barangTerpilih = ref(null)
-
-function onBarangChange() {
-    barangTerpilih.value = opsiBarang.value.find(b => b.kode_brng === form.kode_brng) || null
-}
-
-async function simpan() {
-    saving.value = true
-    try {
-        const res = await window.api.toko.opname.create(authStore.token, { ...form })
-        if (!res.success) { showToast(res.message, 'error'); return }
-        showToast('Stok opname berhasil disimpan.')
-        Object.assign(form, emptyForm())
-        barangTerpilih.value = null
-        await muatOpsi() // refresh stok terbaru
-        fetchData()
-        activeTab.value = 'list'
-    } finally {
-        saving.value = false
-    }
-}
-
 async function hapus(row) {
     if (!confirm(`Hapus riwayat opname "${row.nama_brng}" tgl ${row.tanggal}? (stok TIDAK dikembalikan, sesuai perilaku asli)`)) return
     const res = await window.api.toko.opname.delete(authStore.token, { tanggal: row.tanggal, kode_brng: row.kode_brng })
@@ -79,7 +60,75 @@ async function hapus(row) {
     fetchData()
 }
 
-onMounted(muatOpsi)
+// ── Tab: Input Opname (BATCH — replika alur Java asli) ──────────────────
+const barangList = ref([]) // [{kode_brng, nama_brng, nm_jenis, kode_sat, dasar, stok, real}]
+const barangLoading = ref(false)
+const cariBarang = ref('')
+const tanggal = ref(new Date().toISOString().slice(0, 10))
+const keterangan = ref('')
+const saving = ref(false)
+
+const barangTampil = computed(() => {
+    if (!cariBarang.value.trim()) return barangList.value
+    const kw = cariBarang.value.trim().toLowerCase()
+    return barangList.value.filter(b =>
+        b.kode_brng.toLowerCase().includes(kw) || b.nama_brng.toLowerCase().includes(kw) ||
+        b.kode_sat.toLowerCase().includes(kw) || b.nm_jenis.toLowerCase().includes(kw)
+    )
+})
+
+// Replika getData() Java: kurang = stok - real, selisih cuma kalau KURANG.
+function hitungSelisih(b) {
+    if (b.real === '' || b.real === null || b.real === undefined) return { selisih: 0, nomihilang: 0 }
+    const kurang = Number(b.stok) - Number(b.real)
+    const selisih = kurang > 0 ? kurang : 0
+    const nomihilang = kurang > 0 ? kurang * Number(b.dasar) : 0
+    return { selisih, nomihilang }
+}
+
+async function muatBarang() {
+    barangLoading.value = true
+    try {
+        const data = await window.api.toko.opname.listBarang({})
+        // Pertahankan nilai "Real" yang sudah diketik user (kalau ada) saat refresh.
+        const realLama = new Map(barangList.value.map(b => [b.kode_brng, b.real]))
+        barangList.value = data.map(b => ({ ...b, real: realLama.get(b.kode_brng) ?? '' }))
+    } finally {
+        barangLoading.value = false
+    }
+}
+
+function bersihkan() {
+    if (!confirm('Bersihkan semua isian "Real" yang sudah diketik?')) return
+    barangList.value.forEach(b => { b.real = '' })
+}
+
+async function simpan() {
+    if (!keterangan.value.trim()) { showToast('Keterangan tidak boleh kosong', 'error'); return }
+    const terisi = barangList.value.filter(b => b.real !== '' && b.real !== null && b.real !== undefined)
+    if (terisi.length === 0) { showToast('Maaf, data kosong', 'error'); return }
+    if (!confirm(`Sudah yakin dengan data yang mau disimpan? (${terisi.length} barang akan diproses)`)) return
+
+    saving.value = true
+    try {
+        const res = await window.api.toko.opname.createBatch(authStore.token, {
+            tanggal: tanggal.value,
+            keterangan: keterangan.value,
+            items: terisi.map(b => ({ kode_brng: b.kode_brng, real: b.real })),
+        })
+        if (!res.success) { showToast(res.message, 'error'); return }
+        showToast(`Stok opname berhasil disimpan (${res.diproses} barang diproses).`)
+        keterangan.value = ''
+        await muatBarang()
+        barangList.value.forEach(b => { b.real = '' })
+        fetchData()
+        activeTab.value = 'list'
+    } finally {
+        saving.value = false
+    }
+}
+
+onMounted(muatBarang)
 </script>
 
 <template>
@@ -124,9 +173,9 @@ onMounted(muatOpsi)
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="loading"><td colspan="7" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
+                            <tr v-if="loading"><td colspan="8" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
                             <tr v-else-if="table.getRowModel().rows.length === 0">
-                                <td colspan="7" class="py-16 text-center">
+                                <td colspan="8" class="py-16 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <div class="size-14 rounded-2xl bg-base-200 flex items-center justify-center">
                                             <ClipboardCheck class="size-7 text-base-content/30" />
@@ -146,45 +195,65 @@ onMounted(muatOpsi)
             </div>
         </div>
 
-        <div v-show="activeTab === 'tambah'" class="flex-1 overflow-y-auto pb-6">
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden max-w-2xl">
-                <div class="px-5 py-3.5 border-b border-base-200 flex items-center gap-3">
-                    <div class="w-1 h-5 bg-primary rounded-full"></div>
-                    <h3 class="font-semibold text-base-content">Input Stok Opname</h3>
+        <div v-show="activeTab === 'tambah'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-base-200 flex flex-wrap items-end gap-3 shrink-0">
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Tanggal</label>
+                        <input v-model="tanggal" type="date" class="input input-bordered input-sm w-36" />
+                    </div>
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Keterangan <span class="text-error">*</span></label>
+                        <input v-model="keterangan" type="text" class="input input-bordered input-sm w-full" placeholder="Contoh: Opname bulanan Januari" />
+                    </div>
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Cari Barang</label>
+                        <input v-model="cariBarang" type="text" class="input input-bordered input-sm w-full" placeholder="Kode / nama / jenis / satuan" />
+                    </div>
+                    <button class="btn btn-ghost btn-sm gap-1" @click="bersihkan">
+                        <Eraser class="size-4" />
+                        Bersihkan
+                    </button>
+                    <button class="btn btn-primary btn-sm gap-2" :disabled="saving || !bolehTulis()" @click="simpan">
+                        <span v-if="saving" class="loading loading-spinner loading-xs"></span>
+                        Simpan Semua
+                    </button>
                 </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-base-content/80 mb-1.5">Barang <span class="text-error">*</span></label>
-                            <AppSelect v-model="form.kode_brng" :options="opsiBarang" value-prop="kode_brng" label="nama_brng" placeholder="Pilih Barang" @change="onBarangChange" />
-                        </div>
-                        <div v-if="barangTerpilih" class="sm:col-span-2 text-sm text-base-content/60 -mt-2">
-                            Stok sistem saat ini: <b>{{ barangTerpilih.stok }}</b> {{ barangTerpilih.kode_sat }}
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal</label>
-                            <input v-model="form.tanggal" type="date" class="input input-bordered w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-base-content/80 mb-1.5">Stok Real (hasil hitung fisik) <span class="text-error">*</span></label>
-                            <input v-model="form.real" type="number" min="0" class="input input-bordered w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nomi Hilang</label>
-                            <input v-model="form.nomihilang" type="text" class="input input-bordered w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-base-content/80 mb-1.5">Keterangan <span class="text-error">*</span></label>
-                            <input v-model="form.keterangan" type="text" class="input input-bordered w-full" @keyup.enter="simpan" />
-                        </div>
-                    </div>
-                    <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>
-                    <div class="mt-4">
-                        <button class="btn btn-primary gap-2" :disabled="saving || !bolehTulis()" @click="simpan">
-                            <span v-if="saving" class="loading loading-spinner loading-xs"></span>
-                            Simpan
-                        </button>
-                    </div>
+                <p v-if="!bolehTulis()" class="text-warning text-sm px-5 pt-2 shrink-0">Anda tidak punya akses menambah data ini.</p>
+
+                <div class="flex-1 min-h-0 overflow-y-auto">
+                    <table class="table">
+                        <thead class="sticky top-0 z-10 bg-base-100">
+                            <tr class="bg-base-200 border-b-2 border-base-300">
+                                <th class="text-sm font-medium py-2 w-32">Kode</th>
+                                <th class="text-sm font-medium py-2">Nama Barang</th>
+                                <th class="text-sm font-medium py-2 w-28">Jenis</th>
+                                <th class="text-sm font-medium py-2 w-20">Satuan</th>
+                                <th class="text-sm font-medium py-2 w-28 text-right">Stok Sistem</th>
+                                <th class="text-sm font-medium py-2 w-32 text-center">Stok Real</th>
+                                <th class="text-sm font-medium py-2 w-28 text-right">Selisih</th>
+                                <th class="text-sm font-medium py-2 w-32 text-right">Nomi Hilang</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="barangLoading"><td colspan="8" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
+                            <tr v-else-if="barangTampil.length === 0"><td colspan="8" class="py-16 text-center text-base-content/50">Tidak ada barang cocok</td></tr>
+                            <tr v-else v-for="b in barangTampil" :key="b.kode_brng" class="border-b border-base-200 hover:bg-primary/5">
+                                <td class="py-1.5 font-medium">{{ b.kode_brng }}</td>
+                                <td class="py-1.5">{{ b.nama_brng }}</td>
+                                <td class="py-1.5">{{ b.nm_jenis }}</td>
+                                <td class="py-1.5">{{ b.kode_sat }}</td>
+                                <td class="py-1.5 text-right tabular-nums">{{ b.stok }}</td>
+                                <td class="py-1.5">
+                                    <input v-model="b.real" type="number" min="0" class="input input-bordered input-xs w-full text-right" />
+                                </td>
+                                <td class="py-1.5 text-right tabular-nums" :class="hitungSelisih(b).selisih > 0 ? 'text-error' : ''">
+                                    {{ hitungSelisih(b).selisih }}
+                                </td>
+                                <td class="py-1.5 text-right tabular-nums">Rp {{ hitungSelisih(b).nomihilang.toLocaleString('id-ID') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
