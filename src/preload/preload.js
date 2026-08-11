@@ -32,8 +32,18 @@ contextBridge.exposeInMainWorld('api', {
     // handler-nya sendiri di src/main/modules/<modul>.js — lihat SOP sebelum
     // menambah aksi baru.
     parkir: {
-        listJenis: ()        => ipcRenderer.invoke('parkir:listJenis'),
-        cekBarcode: (kode)   => ipcRenderer.invoke('parkir:cekBarcode', kode),
+        listJenis:      (params)             => ipcRenderer.invoke('parkir:listJenis', params),
+        nextJenisKode:  ()                   => ipcRenderer.invoke('parkir:nextJenisKode'),
+        createJenis:    (token, data)        => ipcRenderer.invoke('parkir:createJenis', token, data),
+        updateJenis:    (token, oldKode, data) => ipcRenderer.invoke('parkir:updateJenis', token, oldKode, data),
+        deleteJenis:    (token, kode)        => ipcRenderer.invoke('parkir:deleteJenis', token, kode),
+
+        listBarcode:    (params)             => ipcRenderer.invoke('parkir:listBarcode', params),
+        cekBarcode:     (kode)                => ipcRenderer.invoke('parkir:cekBarcode', kode),
+        nextKartuNomor: ()                   => ipcRenderer.invoke('parkir:nextKartuNomor'),
+        createBarcode:  (token, data)        => ipcRenderer.invoke('parkir:createBarcode', token, data),
+        updateBarcode:  (token, oldKode, data) => ipcRenderer.invoke('parkir:updateBarcode', token, oldKode, data),
+        deleteBarcode:  (token, kode)        => ipcRenderer.invoke('parkir:deleteBarcode', token, kode),
     },
     // Migration DB — status boleh dibaca siapa saja yang login, tapi jalankan
     // migration divalidasi ulang role-nya di main process (lihat main/index.js),

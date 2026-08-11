@@ -79,9 +79,42 @@ app.whenReady().then(async () => {
     ipcMain.handle('auth:me',             (_, token)       => AuthService.verifySession(token))
     ipcMain.handle('auth:changePassword', (_, t, oldPw, newPw) => AuthService.changePassword(t, oldPw, newPw))
 
-    // Parkir (Fase 1 — contoh modul pertama)
-    ipcMain.handle('parkir:listJenis',       ()        => ParkirService.listJenis())
-    ipcMain.handle('parkir:cekBarcode',      (_, kode) => ParkirService.cekBarcode(kode))
+    // Parkir (Fase 1 — contoh modul pertama). Baca (list/cek) tidak di-gate
+    // permission khusus (sama seperti Java asli — dialognya sendiri yang
+    // dibuka lewat menu ber-permission, isi tabelnya terbuka begitu dialog
+    // kebuka). Tulis (create/update/delete) DI-GATE server-side ke permission
+    // 'parkir_jenis'/'parkir_barcode' — beda dari Java asli yang cuma
+    // disable tombolnya di UI (isCek()), di sini dicek ulang tiap request.
+    ipcMain.handle('parkir:listJenis',   (_, params) => ParkirService.listJenis(params))
+    ipcMain.handle('parkir:nextJenisKode', () => ParkirService.nextJenisKode())
+    ipcMain.handle('parkir:createJenis', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'parkir_jenis')
+        return auth.ok ? ParkirService.createJenis(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('parkir:updateJenis', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'parkir_jenis')
+        return auth.ok ? ParkirService.updateJenis(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('parkir:deleteJenis', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'parkir_jenis')
+        return auth.ok ? ParkirService.deleteJenis(kode) : { success: false, message: auth.message }
+    })
+
+    ipcMain.handle('parkir:listBarcode',    (_, params) => ParkirService.listBarcode(params))
+    ipcMain.handle('parkir:cekBarcode',     (_, kode) => ParkirService.cekBarcode(kode))
+    ipcMain.handle('parkir:nextKartuNomor', () => ParkirService.nextKartuNomor())
+    ipcMain.handle('parkir:createBarcode', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'parkir_barcode')
+        return auth.ok ? ParkirService.createBarcode(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('parkir:updateBarcode', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'parkir_barcode')
+        return auth.ok ? ParkirService.updateBarcode(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('parkir:deleteBarcode', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'parkir_barcode')
+        return auth.ok ? ParkirService.deleteBarcode(kode) : { success: false, message: auth.message }
+    })
 
     // Migration database — cek status boleh siapa saja yang login (buat
     // nampilin badge "N migrasi tertunda"), tapi EKSEKUSI wajib role

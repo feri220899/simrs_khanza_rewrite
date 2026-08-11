@@ -19,6 +19,7 @@ import m015 from './015_create_ipsrs_suplier_jenis.js'
 import m016 from './016_create_ipsrs_pembelian.js'
 import m017 from './017_seed_permissions_khanza_asli.js'
 import m018 from './018_seed_permissions_electron_extra.js'
+import m019 from './019_add_parkir_jenis_check.js'
 
 // CATATAN: SuratMasuk/SuratKeluar sengaja TIDAK punya migration — kode aslinya
 // (src/surat/SuratMasuk.java, SuratKeluar.java) tidak menyentuh database sama
@@ -27,5 +28,5 @@ import m018 from './018_seed_permissions_electron_extra.js'
 
 export default [
     m001, m002, m003, m004, m005,
-    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018,
+    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019,
 ]

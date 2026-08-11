@@ -71,8 +71,11 @@ server lisensi sungguhan sudah siap.
 
 - [x] Fase 0 — Auth (roles, permissions, users, login, ganti password service)
 - [x] Fase 1 (sebagian) — migration Parkir/Toko/Perpustakaan/Surat/IPSRS sudah
-      ada & tervalidasi jalan di Postgres. **UI CRUD baru Parkir yang jalan
-      beneran** (baca dari DB via IPC) — sisanya masih halaman placeholder.
+      ada & tervalidasi jalan di Postgres. **Parkir CRUD selesai penuh**:
+      Jenis & Tarif + Kartu/Barcode (create/update/delete, validasi & auto-suggest
+      kode 1:1 dengan `DlgParkirJenis.java`/`DlgParkirBarcode.java`, permission
+      tulis di-gate server-side lewat `AuthService.requirePermission()`) —
+      Toko/Perpustakaan/Surat/IPSRS masih halaman placeholder.
 - [ ] Fase -1 — Aktivasi Lisensi: halaman `Aktivasi.vue` + `LisensiService.js`
       sudah ada strukturnya, TAPI `PUBLIC_KEY` & `LISENSI_BASE_URL` masih
       PLACEHOLDER — server lisensi Khanza sendiri belum dibangun.
@@ -115,3 +118,37 @@ sebuah modul ternyata lebih besar dari yang kelihatan dari nama file.
 
 Sebelum menambah modul baru: **wajib ikuti SOP di Khanza.md** (baca kode Java
 asli dulu, trace query SQL & logic bisnis, baru desain migration+IPC+UI).
+
+## Pola CRUD modul — contoh: Parkir
+
+Parkir (`src/main/db/modules/ParkirService.js`, `views/parkir/JenisTarif.vue` +
+`KartuBarcode.vue` + `Masuk.vue`) jadi referensi pola buat modul CRUD berikutnya.
+**Tampilan (modal vs tab, pagination) ikut Konvensi UI di Khanza.md** — jangan
+didesain ulang dari nol tiap modul:
+
+1. **Baca kode Java asli SAMPAI HABIS** (bukan cuma grep sepintas) — urutan
+   validasi, field mana yang boleh diedit/di-rename, logic auto-suggest kode
+   (`Valid.autoNomer`), semua ditelusuri dari situ, bukan ditebak.
+2. **Service layer** (`ParkirService.js`) isinya query DB polos + validasi yang
+   MENIRU URUTAN pengecekan Java asli — return `{ success, message }`, bukan
+   throw, supaya UI bisa nampilin pesan yang sama persis.
+3. **Tulis (create/update/delete) di-gate permission server-side** lewat
+   `AuthService.requirePermission(token, 'slug_permission')` di IPC handler
+   (`main/index.js`) — baca/list TIDAK di-gate tambahan (konsisten dengan
+   Java asli yang cuma disable tombol, bukan proteksi per-query).
+4. **Constraint DB (mis. `CHECK`) yang ketinggalan di migration pertama**
+   ditambahkan lewat migration BARU (lihat `019_add_parkir_jenis_check.js`),
+   bukan edit migration lama — sesuai prinsip di Khanza.md.
+5. **Kalau ada layar asli yang TERNYATA bukan CRUD** (kayak `DlgParkirMasuk.java`
+   yang cuma cetak karcis) — jangan dipaksa jadi CRUD, cukup kasih catatan di
+   UI kenapa tab/menu itu tidak ada form-nya (lihat `views/parkir/Masuk.vue`).
+6. **1 file Vue per route**, bukan 1 file besar dengan tab internal buat
+   beberapa route — Jenis, Barcode, dan Masuk masing-masing file+route sendiri,
+   meski sama-sama "modul Parkir", karena di Java asli juga 3 `Dlg` terpisah.
+7. **List pakai `useServerTable` + `AppPagination`** (di-port dari pos-desktop,
+   lihat `composables/`, `components/`) — fungsi list di service WAJIB terima
+   `{page, pageSize, sortBy, sortOrder, search}` dan balikin `{data, total}`.
+   `sortBy` di-whitelist lewat object lookup (`JENIS_SORTABLE`) sebelum masuk
+   SQL, tidak pernah interpolasi langsung dari input user.
+8. **Toast** (`useToast`/`AppToast`, sudah di-mount di `App.vue`) buat feedback
+   sukses/gagal — bukan teks error statis di kartu form.

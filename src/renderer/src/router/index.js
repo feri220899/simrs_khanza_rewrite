@@ -4,7 +4,9 @@ import { useAuthStore } from '../stores/auth'
 import Aktivasi  from '../views/base/Aktivasi.vue'
 import Login     from '../views/base/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
-import Parkir    from '../views/parkir/Parkir.vue'
+import ParkirJenis   from '../views/parkir/JenisTarif.vue'
+import ParkirBarcode from '../views/parkir/KartuBarcode.vue'
+import ParkirMasuk   from '../views/parkir/Masuk.vue'
 import Toko          from '../views/toko/Toko.vue'
 import Perpustakaan  from '../views/perpustakaan/Perpustakaan.vue'
 import Surat         from '../views/surat/Surat.vue'
@@ -16,8 +18,9 @@ import Placeholder   from '../views/base/Placeholder.vue'
 // nyata. Modul Fase 2-6 masih Placeholder — sengaja BUKAN 404, biar sidebar
 // tetap bisa dites lengkap sebelum tiap modul dikerjakan sesuai SOP.
 const FASE_1_ROUTES = [
-    { path: '/parkir/masuk', component: Parkir },
-    { path: '/parkir/jenis', component: Parkir },
+    { path: '/parkir/masuk', component: ParkirMasuk },
+    { path: '/parkir/jenis', component: ParkirJenis },
+    { path: '/parkir/barcode', component: ParkirBarcode },
     // Toko jadi grup 4 anak di menu.js (barang/penjualan/piutang/retur) —
     // semua diarahkan ke komponen placeholder Toko.vue yang sama dulu,
     // sampai tiap sub-fiturnya digarap beneran sesuai SOP.

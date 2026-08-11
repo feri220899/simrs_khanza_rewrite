@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppHeader from './components/AppHeader.vue'
+import AppToast from './components/AppToast.vue'
 
 const route = useRoute()
 const hasLayout = computed(() => route.meta.layout !== false)
@@ -20,4 +21,6 @@ const hasLayout = computed(() => route.meta.layout !== false)
             </main>
         </div>
     </div>
+
+    <AppToast />
 </template>

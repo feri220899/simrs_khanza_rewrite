@@ -85,4 +85,19 @@ async function changePassword(token, currentPassword, newPassword) {
     return { success: true }
 }
 
-export default { login, verifySession, changePassword }
+// Helper generik buat IPC handler modul lain (mis. Parkir) yang mau gate
+// aksi tulis (create/update/delete) ke permission tertentu — sama prinsipnya
+// dengan db:runMigrations: dicek DI SINI (server-side), bukan cuma
+// disembunyikan tombolnya di UI. Ini setara `akses.getparkir_jenis()` dkk di
+// Java asli, tapi divalidasi ulang tiap request (JWT bisa kadaluarsa/dicabut),
+// bukan cuma di-cache sekali saat login seperti `akses` di Java.
+function requirePermission(token, slug) {
+    const session = verifySession(token)
+    if (!session.success) return { ok: false, message: 'Sesi tidak valid, silakan login ulang' }
+    if (!session.user.permissions.includes(slug)) {
+        return { ok: false, message: `Anda tidak punya akses '${slug}' untuk aksi ini` }
+    }
+    return { ok: true, user: session.user }
+}
+
+export default { login, verifySession, changePassword, requirePermission }

@@ -191,6 +191,7 @@ export const allMenu = [
           // varian: 'parkir_out' (keluar) permission terpisah dari 'parkir_in' (masuk)
           { to: '/parkir/masuk', label: 'Parkir Masuk/Keluar', icon: CarFront, permission: 'parkir_in' },
           { to: '/parkir/jenis', label: 'Jenis & Tarif',       icon: Tag,      permission: 'parkir_jenis' },
+          { to: '/parkir/barcode', label: 'Kartu / Barcode',   icon: IdCard,   permission: 'parkir_barcode' },
         ],
       },
     ],
