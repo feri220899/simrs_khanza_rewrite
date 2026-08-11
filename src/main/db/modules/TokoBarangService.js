@@ -22,9 +22,10 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_brng', sortOrder =
     const like = `%${search}%`
 
     const { rows } = await db.query(
-        `SELECT b.*, j.nm_jenis
+        `SELECT b.*, j.nm_jenis, s.satuan AS nama_satuan
          FROM tokobarang b
          JOIN tokojenisbarang j ON j.kd_jenis = b.jenis
+         JOIN kodesatuan s ON s.kode_sat = b.kode_sat
          WHERE b.aktif = TRUE AND (b.kode_brng ILIKE $1 OR b.nama_brng ILIKE $1)
          ORDER BY ${col} ${dir}
          LIMIT $2 OFFSET $3`,
@@ -108,7 +109,7 @@ async function create(data) {
         return { success: true }
     } catch (e) {
         if (e.code === '23505') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Jenis Barang yang dipilih tidak valid' }
+        if (e.code === '23503') return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
         throw e
     }
 }
@@ -130,7 +131,7 @@ async function update(oldKode, data) {
         return { success: true }
     } catch (e) {
         if (e.code === '23505') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Jenis Barang yang dipilih tidak valid' }
+        if (e.code === '23503') return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
         throw e
     }
 }
@@ -147,4 +148,20 @@ async function restore(kode) {
     return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan di sampah' : undefined }
 }
 
-export default { list, listSampah, nextKode, calcHarga, create, update, deleteOne, restore }
+// Replika BtnHapus di src/restore/DlgRestoreTokoBarang.java — HAPUS PERMANEN
+// (`Sequel.meghapus`, DELETE beneran), beda dari `deleteOne()` di atas yang
+// cuma soft-delete. Cuma boleh dipakai ke baris yang SUDAH di sampah
+// (aktif=FALSE) — sama seperti aslinya, tombol ini cuma ada di dalam dialog
+// "Data Sampah" yang isinya emang cuma barang non-aktif.
+async function hardDelete(kode) {
+    const db = await DatabaseService.get()
+    try {
+        const { rowCount } = await db.query('DELETE FROM tokobarang WHERE kode_brng=$1 AND aktif=FALSE', [kode])
+        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan di sampah' : undefined }
+    } catch (e) {
+        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus permanen — masih ada riwayat opname/transaksi yang mengacu ke barang ini' }
+        throw e
+    }
+}
+
+export default { list, listSampah, nextKode, calcHarga, create, update, deleteOne, restore, hardDelete }

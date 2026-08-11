@@ -96,6 +96,7 @@ contextBridge.exposeInMainWorld('api', {
             update:     (token, oldKode, data) => ipcRenderer.invoke('toko:barang:update', token, oldKode, data),
             delete:     (token, kode)        => ipcRenderer.invoke('toko:barang:delete', token, kode),
             restore:    (token, kode)        => ipcRenderer.invoke('toko:barang:restore', token, kode),
+            hardDelete: (token, kode)        => ipcRenderer.invoke('toko:barang:hardDelete', token, kode),
         },
         opname: {
             list:   (params)      => ipcRenderer.invoke('toko:opname:list', params),
@@ -105,6 +106,14 @@ contextBridge.exposeInMainWorld('api', {
         riwayat: {
             list: (params) => ipcRenderer.invoke('toko:riwayat:list', params),
         },
+    },
+    // Satuan — SHARED lintas modul (bukan eksklusif Toko), lihat SatuanService.js.
+    satuan: {
+        list:     (params)             => ipcRenderer.invoke('satuan:list', params),
+        nextKode: ()                   => ipcRenderer.invoke('satuan:nextKode'),
+        create:   (token, data)        => ipcRenderer.invoke('satuan:create', token, data),
+        update:   (token, oldKode, data) => ipcRenderer.invoke('satuan:update', token, oldKode, data),
+        delete:   (token, kode)        => ipcRenderer.invoke('satuan:delete', token, kode),
     },
     // File lampiran (MinIO) — dipakai Surat Masuk/Keluar & modul lain ke
     // depannya yang butuh upload file. `data` HARUS ArrayBuffer/Uint8Array

@@ -99,10 +99,15 @@ server lisensi sungguhan sudah siap.
         posting jurnal ke Keuangan yang belum dibangun → **SENGAJA DITUNDA ke
         Fase 3**, keputusan eksplisit biar tidak ada bagian setengah-jadi yang
         diam-diam skip akuntansi). Yang digarap: Jenis Barang, Barang (soft-
-        delete + "Data Sampah" khusus role Administrator + auto-hitung harga
-        jual dari `toko_setharga`), Suplier, Member, Stok Opname (input +
+        delete + "Data Sampah" khusus role Administrator, ADA 2 aksi di sana:
+        Restore & **Hapus Permanen** — replika `src/restore/DlgRestoreTokoBarang.java`
+        yang punya `BtnSimpan`("Restore")+`BtnHapus`("Hapus", DELETE beneran)
+        + auto-hitung harga jual dari `toko_setharga`), Suplier, Member, Stok Opname (input +
         riwayat, overwrite stok, TIDAK sentuh jurnal), Riwayat Barang
-        (viewer read-only).
+        (viewer read-only), dan **Satuan** (`SatuanService.js`, tabel shared
+        `kodesatuan` dari `src/inventory/DlgSatuan.java` — FK sungguhan dari
+        `TokoBarang.kode_sat`, BUKAN teks bebas seperti sempat direncanakan;
+        lihat "Temuan penting" di bawah).
 
       Semua: create/update/delete, validasi & auto-suggest kode 1:1 dengan
       Java asli, permission tulis di-gate server-side lewat
@@ -202,6 +207,29 @@ mendeteksi kalau sebuah modul ternyata lebih besar dari yang kelihatan.
   dikonfirmasi TIDAK sentuh jurnal sama sekali). Jangan asumsikan "Toko
   selesai" dari nama menu-nya — cek Status di atas buat tahu persis bagian
   mana yang beneran jalan.
+- **Kesalahan proses (penting, jangan diulang)**: field "Satuan" di
+  `TokoBarang` awalnya mau dibuat teks bebas (bukan FK) dengan alasan
+  "tabel `kodesatuan` ada di `src/inventory/` yang besar & belum
+  diinvestigasi". User menegur ini — proyek ini REWRITE 1:1, bukan MVP,
+  jadi tidak boleh ada penyederhanaan sepihak tanpa cek dulu. Setelah
+  diinvestigasi, `kodesatuan` (dikelola `src/inventory/DlgSatuan.java`,
+  permission `satuan_barang`) ternyata cuma 2 kolom (`kode_sat`, `satuan`)
+  — kecil & gampang dibangun penuh, langsung diperbaiki jadi FK sungguhan
+  (migration `024_create_kodesatuan.js`, `SatuanService.js`, service &
+  namespace IPC-nya SENGAJA netral/tidak di-prefix "toko" karena tabel ini
+  shared lintas modul Java asli). **Pelajaran**: sebelum defer/sederhanakan
+  field yang merujuk ke modul/package lain yang belum digarap, WAJIB cek
+  dulu ukuran & kompleksitas tabelnya (grep file Java yang kelola tabel
+  itu) — kalau kecil, bangun saja; jangan asumsikan "besar" dari nama
+  package induknya. **Follow-up bug**: migration `024` awalnya langsung
+  `ADD CONSTRAINT ... FOREIGN KEY` tanpa backfill — gagal di database yang
+  sudah kepakai (`tokobarang.kode_sat` sudah ada isinya sebelum FK ini
+  ditambahkan, mis. "PCS"/"BOX" hasil input manual sebelum tabel
+  `kodesatuan` ada). Diperbaiki dengan INSERT backfill
+  (`kode_sat`+`satuan` = nilai lama apa adanya, `ON CONFLICT DO NOTHING`)
+  SEBELUM `ADD CONSTRAINT` — **pola umum ini berlaku tiap kali nambah FK ke
+  kolom yang sebelumnya teks bebas & sudah ada isinya**, bukan cuma kasus
+  ini.
 - **Bug kecil tapi jebakan**: JANGAN taruh karakter backtick (`` ` ``) di
   dalam komentar SQL (`-- ...`) yang ada di dalam template literal JS
   (`` await client.query(`...`) ``) — backtick itu MENUTUP template literal

@@ -24,6 +24,7 @@ import TokoSuplierService from './db/modules/TokoSuplierService.js'
 import TokoMemberService from './db/modules/TokoMemberService.js'
 import TokoBarangService from './db/modules/TokoBarangService.js'
 import TokoOpnameService from './db/modules/TokoOpnameService.js'
+import SatuanService from './db/modules/SatuanService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -262,6 +263,14 @@ app.whenReady().then(async () => {
         if (session.user.role !== 'Administrator') return { success: false, message: 'Cuma Administrator yang boleh memulihkan data' }
         return TokoBarangService.restore(kode)
     })
+    ipcMain.handle('toko:barang:hardDelete', (_, token, kode) => {
+        // Replika BtnHapus di DlgRestoreTokoBarang.java — hapus PERMANEN,
+        // sama-sama "Admin Utama only" (satu dialog, dua tombol, gate sama).
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (session.user.role !== 'Administrator') return { success: false, message: 'Cuma Administrator yang boleh menghapus permanen' }
+        return TokoBarangService.hardDelete(kode)
+    })
 
     ipcMain.handle('toko:opname:list', (_, params) => TokoOpnameService.listOpname(params))
     ipcMain.handle('toko:opname:create', (_, token, data) => {
@@ -273,6 +282,24 @@ app.whenReady().then(async () => {
         return auth.ok ? TokoOpnameService.deleteOpname(data) : { success: false, message: auth.message }
     })
     ipcMain.handle('toko:riwayat:list', (_, params) => TokoOpnameService.listRiwayat(params))
+
+    // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
+    // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
+    // bawah 'toko'), biar jelas ini bukan eksklusif Toko.
+    ipcMain.handle('satuan:list',     (_, params) => SatuanService.list(params))
+    ipcMain.handle('satuan:nextKode', () => SatuanService.nextKode())
+    ipcMain.handle('satuan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'satuan_barang')
+        return auth.ok ? SatuanService.create(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('satuan:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'satuan_barang')
+        return auth.ok ? SatuanService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('satuan:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'satuan_barang')
+        return auth.ok ? SatuanService.deleteOne(kode) : { success: false, message: auth.message }
+    })
 
     // Perpustakaan — taksonomi (Jenis/Ruang/Pengarang/Kategori), pola generik
     // sama seperti Surat.

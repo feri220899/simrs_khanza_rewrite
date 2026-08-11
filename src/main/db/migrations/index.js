@@ -24,6 +24,7 @@ import m020 from './020_add_surat_master_missing.js'
 import m021 from './021_fix_perpustakaan_schema.js'
 import m022 from './022_create_surat_masuk_keluar.js'
 import m023 from './023_create_toko_master.js'
+import m024 from './024_create_kodesatuan.js'
 
 // CATATAN (sudah tidak berlaku, dibiarkan buat histori): SuratMasuk/SuratKeluar
 // sempat TIDAK punya migration karena src/surat/SuratMasuk.java/SuratKeluar.java
@@ -34,5 +35,5 @@ import m023 from './023_create_toko_master.js'
 
 export default [
     m001, m002, m003, m004, m005,
-    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019, m020, m021, m022, m023,
+    m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019, m020, m021, m022, m023, m024,
 ]

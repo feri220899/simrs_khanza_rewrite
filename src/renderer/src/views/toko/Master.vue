@@ -5,13 +5,17 @@ import JenisTab from './JenisTab.vue'
 import BarangTab from './BarangTab.vue'
 import SuplierTab from './SuplierTab.vue'
 import MemberTab from './MemberTab.vue'
+import SatuanTab from './SatuanTab.vue'
 
-// Master Data Toko — Jenis Barang, Barang, Suplier, Member. Modul transaksi
-// (Penjualan/Pembelian/Pemesanan/Piutang/Retur) DITUNDA ke Fase 3 (butuh
-// integrasi jurnal Keuangan yang belum dibangun), lihat Khanza.md section 14.
+// Master Data Toko — Jenis Barang, Barang, Suplier, Member, Satuan. Modul
+// transaksi (Penjualan/Pembelian/Pemesanan/Piutang/Retur) DITUNDA ke Fase 3
+// (butuh integrasi jurnal Keuangan yang belum dibangun), lihat Khanza.md
+// section 14. Satuan (src/inventory/DlgSatuan.java) SHARED lintas modul,
+// lihat SatuanTab.vue — ditaruh di sini krn Toko konsumen pertamanya.
 const TABS = [
     { key: 'jenis',   label: 'Jenis Barang', permission: 'toko_jenis' },
     { key: 'barang',  label: 'Barang',       permission: 'toko_barang' },
+    { key: 'satuan',  label: 'Satuan',       permission: 'satuan_barang' },
     { key: 'suplier', label: 'Suplier',      permission: 'toko_suplier' },
     { key: 'member',  label: 'Member',       permission: 'toko_member' },
 ]
@@ -42,6 +46,7 @@ const active = ref(visible[0]?.key || TABS[0].key)
         </p>
         <JenisTab v-else-if="active === 'jenis'" />
         <BarangTab v-else-if="active === 'barang'" />
+        <SatuanTab v-else-if="active === 'satuan'" />
         <SuplierTab v-else-if="active === 'suplier'" />
         <MemberTab v-else />
     </div>

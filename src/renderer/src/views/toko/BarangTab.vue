@@ -21,15 +21,17 @@ const isAdmin = authStore.user?.role === 'Administrator'
 
 const activeTab = ref('list')
 const opsiJenis = ref([])
+const opsiSatuan = ref([])
 async function muatOpsi() {
     opsiJenis.value = (await window.api.toko.jenis.list({ pageSize: 1000 })).data
+    opsiSatuan.value = (await window.api.satuan.list({ pageSize: 1000 })).data
 }
 
 const columns = [
     { accessorKey: 'kode_brng', header: 'Kode', meta: { headerClass: 'w-32', cellClass: 'font-medium' } },
     { accessorKey: 'nama_brng', header: 'Nama Barang' },
     { accessorKey: 'nm_jenis', header: 'Jenis', enableSorting: false },
-    { accessorKey: 'kode_sat', header: 'Satuan', enableSorting: false, meta: { headerClass: 'w-24' } },
+    { accessorKey: 'nama_satuan', header: 'Satuan', enableSorting: false, meta: { headerClass: 'w-24' } },
     { accessorKey: 'stok', header: 'Stok', meta: { headerClass: 'w-24 text-right', cellClass: 'text-right tabular-nums' } },
     {
         accessorKey: 'retail', header: 'Harga Retail', meta: { headerClass: 'text-right w-32', cellClass: 'text-right tabular-nums' },
@@ -141,6 +143,17 @@ async function restore(row) {
     fetchData()
 }
 
+// Replika BtnHapus di DlgRestoreTokoBarang.java — HAPUS PERMANEN (DELETE
+// beneran, bukan soft-delete lagi), TIDAK BISA dibatalkan. Konfirmasi lebih
+// tegas dari hapus biasa karena efeknya ireversibel.
+async function hapusPermanen(row) {
+    if (!confirm(`HAPUS PERMANEN barang "${row.nama_brng}"?\n\nIni TIDAK BISA dibatalkan — data tidak akan bisa dipulihkan lagi.`)) return
+    const res = await window.api.toko.barang.hardDelete(authStore.token, row.kode_brng)
+    if (!res.success) { showToast(res.message, 'error'); return }
+    showToast('Barang berhasil dihapus permanen.')
+    muatSampah()
+}
+
 function onTabChange(tab) {
     activeTab.value = tab
     if (tab === 'sampah') muatSampah()
@@ -248,7 +261,7 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan <span class="text-error">*</span></label>
-                            <input v-model="form.kode_sat" type="text" placeholder="Contoh: PCS, BOX" class="input input-bordered w-full" />
+                            <AppSelect v-model="form.kode_sat" :options="opsiSatuan" value-prop="kode_sat" label="satuan" placeholder="Pilih Satuan" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Barang <span class="text-error">*</span></label>
@@ -305,7 +318,7 @@ onMounted(async () => {
                             <tr class="bg-base-200 border-b-2 border-base-300">
                                 <th class="text-sm font-medium py-2">Kode</th>
                                 <th class="text-sm font-medium py-2">Nama Barang</th>
-                                <th class="text-sm font-medium py-2 text-center w-32">Aksi</th>
+                                <th class="text-sm font-medium py-2 text-center w-56">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -316,6 +329,7 @@ onMounted(async () => {
                                 <td class="py-2">{{ row.nama_brng }}</td>
                                 <td class="py-2 text-center">
                                     <button class="btn btn-ghost btn-sm text-success" @click="restore(row)">Pulihkan</button>
+                                    <button class="btn btn-ghost btn-sm text-error" @click="hapusPermanen(row)">Hapus Permanen</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -339,7 +353,7 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan</label>
-                    <input v-model="editForm.kode_sat" type="text" class="input input-bordered w-full" />
+                    <AppSelect v-model="editForm.kode_sat" :options="opsiSatuan" value-prop="kode_sat" label="satuan" placeholder="Pilih Satuan" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Barang</label>
