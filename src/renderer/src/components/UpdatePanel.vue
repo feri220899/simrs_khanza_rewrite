@@ -50,10 +50,16 @@ async function cekUpdate() {
             </button>
 
             <div v-if="result" class="mt-3 text-sm">
-                <span v-if="!result.ok" class="text-warning flex items-center gap-1">
-                    <X class="size-3.5" />
-                    {{ result.reason === 'dev' ? 'Cek pembaruan cuma tersedia di aplikasi yang sudah di-install' : 'Gagal memeriksa pembaruan' }}
-                </span>
+                <div v-if="!result.ok" class="text-warning">
+                    <span class="flex items-center gap-1">
+                        <X class="size-3.5" />
+                        {{ result.reason === 'dev' ? 'Cek pembaruan cuma tersedia di aplikasi yang sudah di-install' : 'Gagal memeriksa pembaruan' }}
+                    </span>
+                    <!-- Pesan asli dari electron-updater — WAJIB ditampilkan, jangan cuma
+                         "gagal" generik, biar penyebabnya (draft release/repo private/
+                         tidak ada internet) langsung ketahuan tanpa nebak. -->
+                    <p v-if="result.error" class="text-xs font-mono text-base-content/50 mt-1 break-all">{{ result.error }}</p>
+                </div>
                 <span v-else-if="result.available" class="text-success flex items-center gap-1">
                     <Check class="size-3.5" /> Versi baru v{{ result.version }} tersedia — lihat kotak pembaruan di pojok kanan bawah
                 </span>
