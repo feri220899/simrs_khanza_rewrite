@@ -135,7 +135,7 @@ async function importKonfigurasi() {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-base-100 rounded-xl p-3 border border-base-200">
-                        <label class="label text-xs flex items-center gap-1.5"><FileDown class="size-3.5" /> Export — buat passphrase baru</label>
+                        <label class="label text-xs flex items-center gap-1.5 mb-1.5"><FileDown class="size-3.5" /> Export — buat passphrase baru</label>
                         <label class="input input-bordered input-sm w-full flex items-center gap-2">
                             <KeyRound class="size-3.5 text-base-content/40" />
                             <input v-model="exportPass" type="password" class="grow" placeholder="Passphrase" />
@@ -148,7 +148,7 @@ async function importKonfigurasi() {
                         <p v-else-if="exportResult && !exportResult.success" class="text-error text-xs mt-1.5">{{ exportResult.message }}</p>
                     </div>
                     <div class="bg-base-100 rounded-xl p-3 border border-base-200">
-                        <label class="label text-xs flex items-center gap-1.5"><FileUp class="size-3.5" /> Import — passphrase dari file</label>
+                        <label class="label text-xs flex items-center gap-1.5 mb-1.5"><FileUp class="size-3.5" /> Import — passphrase dari file</label>
                         <label class="input input-bordered input-sm w-full flex items-center gap-2">
                             <KeyRound class="size-3.5 text-base-content/40" />
                             <input v-model="importPass" type="password" class="grow" placeholder="Passphrase" />

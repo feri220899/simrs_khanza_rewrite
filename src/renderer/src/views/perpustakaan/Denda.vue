@@ -22,7 +22,7 @@ const active = ref('jenis')
         </p>
 
         <div role="tablist" class="tabs tabs-boxed mb-3 w-fit shrink-0">
-            <a v-for="t in TABS" :key="t.key" role="tab" class="tab"
+            <a v-for="t in TABS" :key="t.key" role="tab" class="tab cursor-pointer"
                 :class="active === t.key ? 'tab-active' : ''"
                 @click="active = t.key">
                 {{ t.label }}

@@ -269,7 +269,7 @@ onMounted(muatAwal)
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pinjam</label>
-                        <input v-model="form.tgl_pinjam" type="date" class="input input-bordered w-full" @change="cekPreview" />
+                        <input v-model="form.tgl_pinjam" type="date" class="input input-bordered input-sm w-full" @change="cekPreview" />
                     </div>
                 </template>
                 <template v-else>
@@ -280,7 +280,7 @@ onMounted(muatAwal)
                     </p>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Kembali</label>
-                        <input v-model="form.tgl_kembali" type="date" class="input input-bordered w-full" @change="cekPreview" />
+                        <input v-model="form.tgl_kembali" type="date" class="input input-bordered input-sm w-full" @change="cekPreview" />
                     </div>
                 </template>
 
@@ -313,7 +313,7 @@ onMounted(muatAwal)
                 <span class="text-base-content/60">Buku:</span> <b>{{ perpanjangForm.judul_buku }}</b>
             </p>
             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pinjam Baru</label>
-            <input v-model="perpanjangForm.tgl_pinjam_baru" type="date" class="input input-bordered w-full" />
+            <input v-model="perpanjangForm.tgl_pinjam_baru" type="date" class="input input-bordered input-sm w-full" />
             <div class="mt-3">
                 <label class="block text-sm font-medium text-base-content/80 mb-1.5">Petugas <span class="text-error">*</span></label>
                 <AppSelect v-model="perpanjangForm.nip" :options="opsiPetugas" value-prop="nip" label="nama" placeholder="Pilih Petugas" />

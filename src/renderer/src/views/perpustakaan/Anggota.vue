@@ -127,14 +127,14 @@ onMounted(siapkanFormBaru)
 
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Anggota
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -179,7 +179,7 @@ onMounted(siapkanFormBaru)
                                             <p class="font-semibold text-base-content/60">Belum ada anggota</p>
                                             <p class="text-sm text-base-content/40 mt-0.5">
                                                 Klik tab
-                                                <button class="text-primary font-semibold hover:underline"
+                                                <button class="text-primary font-semibold hover:underline cursor-pointer"
                                                     @click="activeTab = 'tambah'">Tambah Anggota</button>
                                                 untuk menambahkan
                                             </p>
@@ -210,54 +210,54 @@ onMounted(siapkanFormBaru)
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Anggota</label>
-                            <input v-model="form.no_anggota" type="text" maxlength="30" class="input input-bordered w-full" />
+                            <input v-model="form.no_anggota" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama <span class="text-error">*</span></label>
-                            <input v-model="form.nama_anggota" type="text" maxlength="150" class="input input-bordered w-full" />
+                            <input v-model="form.nama_anggota" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tempat Lahir <span class="text-error">*</span></label>
-                            <input v-model="form.tmp_lahir" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.tmp_lahir" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Lahir</label>
-                            <input v-model="form.tgl_lahir" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_lahir" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Kelamin</label>
-                            <select v-model="form.j_kel" class="select select-bordered w-full">
+                            <select v-model="form.j_kel" class="select select-bordered select-sm w-full">
                                 <option>Laki-laki</option>
                                 <option>Perempuan</option>
                             </select>
                         </div>
                         <div class="sm:col-span-3">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Alamat <span class="text-error">*</span></label>
-                            <input v-model="form.alamat" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.alamat" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Telp <span class="text-error">*</span></label>
-                            <input v-model="form.no_telp" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.no_telp" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Email <span class="text-error">*</span></label>
-                            <input v-model="form.email" type="email" class="input input-bordered w-full" />
+                            <input v-model="form.email" type="email" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. RM/NIP/No. KTP <span class="text-error">*</span></label>
-                            <input v-model="form.nomer_id" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.nomer_id" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Gabung</label>
-                            <input v-model="form.tgl_gabung" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_gabung" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Masa Berlaku s/d</label>
-                            <input v-model="form.masa_berlaku" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.masa_berlaku" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Anggota</label>
-                            <select v-model="form.jenis_anggota" class="select select-bordered w-full">
+                            <select v-model="form.jenis_anggota" class="select select-bordered select-sm w-full">
                                 <option>Pasien</option>
                                 <option>Pegawai</option>
                                 <option>Umum</option>
@@ -282,54 +282,54 @@ onMounted(siapkanFormBaru)
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Anggota</label>
-                    <input v-model="editForm.no_anggota" type="text" maxlength="30" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_anggota" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama</label>
-                    <input v-model="editForm.nama_anggota" type="text" maxlength="150" class="input input-bordered w-full" />
+                    <input v-model="editForm.nama_anggota" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tempat Lahir</label>
-                    <input v-model="editForm.tmp_lahir" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.tmp_lahir" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Lahir</label>
-                    <input v-model="editForm.tgl_lahir" type="date" class="input input-bordered w-full" />
+                    <input v-model="editForm.tgl_lahir" type="date" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Kelamin</label>
-                    <select v-model="editForm.j_kel" class="select select-bordered w-full">
+                    <select v-model="editForm.j_kel" class="select select-bordered select-sm w-full">
                         <option>Laki-laki</option>
                         <option>Perempuan</option>
                     </select>
                 </div>
                 <div class="sm:col-span-3">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Alamat</label>
-                    <input v-model="editForm.alamat" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.alamat" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Telp</label>
-                    <input v-model="editForm.no_telp" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_telp" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Email</label>
-                    <input v-model="editForm.email" type="email" class="input input-bordered w-full" />
+                    <input v-model="editForm.email" type="email" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. RM/NIP/No. KTP</label>
-                    <input v-model="editForm.nomer_id" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.nomer_id" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Gabung</label>
-                    <input v-model="editForm.tgl_gabung" type="date" class="input input-bordered w-full" />
+                    <input v-model="editForm.tgl_gabung" type="date" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Masa Berlaku s/d</label>
-                    <input v-model="editForm.masa_berlaku" type="date" class="input input-bordered w-full" />
+                    <input v-model="editForm.masa_berlaku" type="date" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Anggota</label>
-                    <select v-model="editForm.jenis_anggota" class="select select-bordered w-full">
+                    <select v-model="editForm.jenis_anggota" class="select select-bordered select-sm w-full">
                         <option>Pasien</option>
                         <option>Pegawai</option>
                         <option>Umum</option>

@@ -88,14 +88,14 @@ onMounted(muatOpsi)
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Catat Denda
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -141,7 +141,7 @@ onMounted(muatOpsi)
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal</label>
-                            <input v-model="form.tgl_denda" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_denda" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div></div>
                         <div>
@@ -154,7 +154,7 @@ onMounted(muatOpsi)
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Keterlambatan (hari) <span class="text-error">*</span></label>
-                            <input v-model="form.keterlambatan" type="number" min="1" class="input input-bordered w-full" @keyup.enter="simpan" />
+                            <input v-model="form.keterlambatan" type="number" min="1" class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                         </div>
                     </div>
                     <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>

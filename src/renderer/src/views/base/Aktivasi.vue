@@ -59,10 +59,10 @@ async function aktivasi() {
                 <p class="text-sm text-base-content/60">Khanza Desktop perlu diaktivasi sebelum bisa dipakai.</p>
 
                 <label class="label text-xs">License Key</label>
-                <input v-model="licenseKey" type="text" class="input input-bordered w-full" placeholder="XXXX-XXXX-XXXX" />
+                <input v-model="licenseKey" type="text" class="input input-bordered input-sm w-full" placeholder="XXXX-XXXX-XXXX" />
 
                 <label class="label text-xs">Device ID (otomatis)</label>
-                <input :value="deviceId" type="text" readonly class="input input-bordered w-full text-xs opacity-60" />
+                <input :value="deviceId" type="text" readonly class="input input-bordered input-sm w-full text-xs opacity-60" />
 
                 <p v-if="error" class="text-error text-sm mt-2">{{ error }}</p>
 

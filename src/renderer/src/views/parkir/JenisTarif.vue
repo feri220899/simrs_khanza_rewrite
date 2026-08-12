@@ -133,14 +133,14 @@ onMounted(siapkanFormBaru)
         <!-- Tab Navigation -->
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Jenis
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -186,7 +186,7 @@ onMounted(siapkanFormBaru)
                                             <p class="font-semibold text-base-content/60">Belum ada jenis parkir</p>
                                             <p class="text-sm text-base-content/40 mt-0.5">
                                                 Klik tab
-                                                <button class="text-primary font-semibold hover:underline"
+                                                <button class="text-primary font-semibold hover:underline cursor-pointer"
                                                     @click="activeTab = 'tambah'">Tambah Jenis</button>
                                                 untuk menambahkan
                                             </p>
@@ -218,7 +218,7 @@ onMounted(siapkanFormBaru)
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 max-w-3xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                            <input v-model="form.kd_parkir" type="text" maxlength="5" class="input input-bordered w-full" />
+                            <input v-model="form.kd_parkir" type="text" maxlength="5" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
@@ -226,17 +226,17 @@ onMounted(siapkanFormBaru)
                             </label>
                             <input v-model="form.jns_parkir" type="text" maxlength="50"
                                    placeholder="Contoh: Motor, Mobil"
-                                   class="input input-bordered w-full" @keyup.enter="simpan" />
+                                   class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
                                 Tarif (Rp) <span class="text-error">*</span>
                             </label>
-                            <input v-model="form.biaya" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.biaya" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Sistem</label>
-                            <select v-model="form.jenis" class="select select-bordered w-full">
+                            <select v-model="form.jenis" class="select select-bordered select-sm w-full">
                                 <option value="Harian">Harian</option>
                                 <option value="Jam">Jam</option>
                             </select>
@@ -262,19 +262,19 @@ onMounted(siapkanFormBaru)
             <div class="space-y-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                    <input v-model="editForm.kd_parkir" type="text" maxlength="5" class="input input-bordered w-full" />
+                    <input v-model="editForm.kd_parkir" type="text" maxlength="5" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jenis Parkir</label>
-                    <input v-model="editForm.jns_parkir" type="text" maxlength="50" class="input input-bordered w-full" />
+                    <input v-model="editForm.jns_parkir" type="text" maxlength="50" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tarif (Rp)</label>
-                    <input v-model="editForm.biaya" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.biaya" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Sistem</label>
-                    <select v-model="editForm.jenis" class="select select-bordered w-full">
+                    <select v-model="editForm.jenis" class="select select-bordered select-sm w-full">
                         <option value="Harian">Harian</option>
                         <option value="Jam">Jam</option>
                     </select>

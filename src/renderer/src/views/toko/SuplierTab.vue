@@ -107,14 +107,14 @@ onMounted(siapkanFormBaru)
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Suplier
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -180,31 +180,31 @@ onMounted(siapkanFormBaru)
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                            <input v-model="form.kode_suplier" type="text" maxlength="20" class="input input-bordered w-full" />
+                            <input v-model="form.kode_suplier" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Suplier <span class="text-error">*</span></label>
-                            <input v-model="form.nama_suplier" type="text" maxlength="150" class="input input-bordered w-full" />
+                            <input v-model="form.nama_suplier" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Alamat <span class="text-error">*</span></label>
-                            <input v-model="form.alamat" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.alamat" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kota <span class="text-error">*</span></label>
-                            <input v-model="form.kota" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.kota" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Telp <span class="text-error">*</span></label>
-                            <input v-model="form.no_telp" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.no_telp" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Bank <span class="text-error">*</span></label>
-                            <input v-model="form.nama_bank" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.nama_bank" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rekening <span class="text-error">*</span></label>
-                            <input v-model="form.rekening" type="text" class="input input-bordered w-full" @keyup.enter="simpan" />
+                            <input v-model="form.rekening" type="text" class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                         </div>
                     </div>
                     <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>
@@ -225,31 +225,31 @@ onMounted(siapkanFormBaru)
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                    <input v-model="editForm.kode_suplier" type="text" maxlength="20" class="input input-bordered w-full" />
+                    <input v-model="editForm.kode_suplier" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Suplier</label>
-                    <input v-model="editForm.nama_suplier" type="text" maxlength="150" class="input input-bordered w-full" />
+                    <input v-model="editForm.nama_suplier" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Alamat</label>
-                    <input v-model="editForm.alamat" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.alamat" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kota</label>
-                    <input v-model="editForm.kota" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.kota" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Telp</label>
-                    <input v-model="editForm.no_telp" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_telp" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Bank</label>
-                    <input v-model="editForm.nama_bank" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.nama_bank" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rekening</label>
-                    <input v-model="editForm.rekening" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.rekening" type="text" class="input input-bordered input-sm w-full" />
                 </div>
             </div>
             <div class="modal-action mt-4">

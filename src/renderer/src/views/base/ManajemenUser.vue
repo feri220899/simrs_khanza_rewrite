@@ -263,13 +263,13 @@ onMounted(fetchSemua)
 
         <div v-else class="flex bg-base-200 rounded-xl p-1 w-fit mb-4 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'role' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'role'">
                 <ShieldCheck class="size-4" /> Role
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'user' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'user'">
                 <Users class="size-4" /> User
@@ -394,7 +394,7 @@ onMounted(fetchSemua)
             <div class="border border-base-300 rounded-lg h-80 overflow-y-auto p-2 grid grid-cols-2 gap-1">
                 <label v-for="p in filteredPermissions" :key="p.id"
                     class="flex items-center gap-2 text-xs py-1 px-1.5 rounded hover:bg-base-200 cursor-pointer">
-                    <input type="checkbox" class="checkbox checkbox-xs"
+                    <input type="checkbox" class="checkbox checkbox-sm"
                         :checked="editRolePermIds.has(p.id)" @change="togglePerm(p.id)" />
                     <span class="truncate" :title="p.slug">{{ p.label }}</span>
                 </label>

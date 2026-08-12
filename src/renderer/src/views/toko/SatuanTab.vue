@@ -107,14 +107,14 @@ onMounted(siapkanFormBaru)
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Satuan
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -182,11 +182,11 @@ onMounted(siapkanFormBaru)
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                            <input v-model="form.kode_sat" type="text" maxlength="20" class="input input-bordered w-full" />
+                            <input v-model="form.kode_sat" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan <span class="text-error">*</span></label>
-                            <input v-model="form.satuan" type="text" maxlength="150" placeholder="Contoh: PCS, BOX, DUS" class="input input-bordered w-full" @keyup.enter="simpan" />
+                            <input v-model="form.satuan" type="text" maxlength="150" placeholder="Contoh: PCS, BOX, DUS" class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                         </div>
                     </div>
                     <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>
@@ -207,11 +207,11 @@ onMounted(siapkanFormBaru)
             <div class="space-y-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                    <input v-model="editForm.kode_sat" type="text" maxlength="20" class="input input-bordered w-full" />
+                    <input v-model="editForm.kode_sat" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan</label>
-                    <input v-model="editForm.satuan" type="text" maxlength="150" class="input input-bordered w-full" />
+                    <input v-model="editForm.satuan" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                 </div>
             </div>
             <div class="modal-action mt-4">

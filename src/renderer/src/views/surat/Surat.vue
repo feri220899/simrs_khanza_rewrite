@@ -39,7 +39,7 @@ const active = () => JENIS.find(j => j.jenis === activeJenis.value)
         </p>
 
         <div role="tablist" class="tabs tabs-boxed mb-3 w-fit shrink-0 flex-wrap">
-            <a v-for="j in visible" :key="j.jenis" role="tab" class="tab"
+            <a v-for="j in visible" :key="j.jenis" role="tab" class="tab cursor-pointer"
                 :class="activeJenis === j.jenis ? 'tab-active' : ''"
                 @click="activeJenis = j.jenis">
                 {{ j.label }}

@@ -71,7 +71,7 @@ function onMigrated() {
         <!-- Top-level tab -->
         <div class="flex gap-1 border-b border-base-300 mb-3 shrink-0">
             <button v-for="t in PENGATURAN_TABS" :key="t.key"
-                :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px flex items-center gap-2 transition-colors',
+                :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px flex items-center gap-2 transition-colors cursor-pointer',
                     activeTop === t.key ? 'border-primary text-primary' : 'border-transparent text-base-content/50 hover:text-base-content']"
                 @click="pilihTop(t.key)">
                 <component :is="t.icon" class="size-4" /> {{ t.label }}
@@ -81,7 +81,7 @@ function onMigrated() {
         <!-- Child tab (disembunyikan kalau cuma 1 anak, biar tidak berisik) -->
         <div v-if="currentTop.children.length > 1" class="flex bg-base-200 rounded-lg p-1 w-fit mb-4 shrink-0 gap-0.5">
             <button v-for="c in currentTop.children" :key="c.key"
-                :class="['px-4 py-1.5 rounded text-xs font-medium transition-colors',
+                :class="['px-4 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer',
                     activeChildByTop[activeTop] === c.key ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="pilihChild(c.key)">
                 {{ c.label }}
