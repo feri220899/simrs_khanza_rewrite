@@ -148,14 +148,14 @@ onMounted(async () => {
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Surat {{ jenis === 'masuk' ? 'Masuk' : 'Keluar' }}
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -236,31 +236,31 @@ onMounted(async () => {
                                 {{ labelNoUrut }}
                                 <span class="text-base-content/40 font-normal">(otomatis)</span>
                             </label>
-                            <input :value="noUrutPreview" type="text" disabled class="input input-bordered w-full opacity-60" />
+                            <input :value="noUrutPreview" type="text" disabled class="input input-bordered input-sm w-full opacity-60" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Surat <span class="text-error">*</span></label>
-                            <input v-model="form.no_surat" type="text" maxlength="35" class="input input-bordered w-full" />
+                            <input v-model="form.no_surat" type="text" maxlength="35" class="input input-bordered input-sm w-full" />
                         </div>
                         <div v-if="jenis === 'masuk'">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Asal <span class="text-error">*</span></label>
-                            <input v-model="form.asal" type="text" maxlength="300" class="input input-bordered w-full" />
+                            <input v-model="form.asal" type="text" maxlength="300" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tujuan <span class="text-error">*</span></label>
-                            <input v-model="form.tujuan" type="text" maxlength="300" class="input input-bordered w-full" />
+                            <input v-model="form.tujuan" type="text" maxlength="300" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Surat <span class="text-error">*</span></label>
-                            <input v-model="form.tgl_surat" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_surat" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Perihal <span class="text-error">*</span></label>
-                            <input v-model="form.perihal" type="text" maxlength="300" class="input input-bordered w-full" />
+                            <input v-model="form.perihal" type="text" maxlength="300" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">{{ labelTglPokok }} <span class="text-error">*</span></label>
-                            <input v-model="form.tgl_pokok" type="date" class="input input-bordered w-full" @change="refreshNoUrutPreview" />
+                            <input v-model="form.tgl_pokok" type="date" class="input input-bordered input-sm w-full" @change="refreshNoUrutPreview" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Almari Surat <span class="text-error">*</span></label>
@@ -284,15 +284,15 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Lampiran <span class="text-error">*</span></label>
-                            <input v-model="form.lampiran" type="text" maxlength="300" class="input input-bordered w-full" placeholder="Keterangan lampiran fisik" />
+                            <input v-model="form.lampiran" type="text" maxlength="300" class="input input-bordered input-sm w-full" placeholder="Keterangan lampiran fisik" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tembusan <span class="text-error">*</span></label>
-                            <input v-model="form.tembusan" type="text" maxlength="300" class="input input-bordered w-full" />
+                            <input v-model="form.tembusan" type="text" maxlength="300" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Deadline Balas <span class="text-error">*</span></label>
-                            <input v-model="form.tgl_deadline_balas" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_deadline_balas" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Status Balas <span class="text-error">*</span></label>
@@ -300,7 +300,7 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Keterangan <span class="text-error">*</span></label>
-                            <input v-model="form.keterangan" type="text" maxlength="300" class="input input-bordered w-full" />
+                            <input v-model="form.keterangan" type="text" maxlength="300" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Status Surat <span class="text-error">*</span></label>

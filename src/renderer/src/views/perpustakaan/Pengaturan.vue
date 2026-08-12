@@ -63,15 +63,15 @@ onMounted(muat)
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Maksimal Buku Dipinjam <span class="text-error">*</span></label>
-                        <input v-model="form.max_pinjam" type="number" min="1" class="input input-bordered w-full" />
+                        <input v-model="form.max_pinjam" type="number" min="1" class="input input-bordered input-sm w-full" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Lama Peminjaman (hari) <span class="text-error">*</span></label>
-                        <input v-model="form.lama_pinjam" type="number" min="1" class="input input-bordered w-full" />
+                        <input v-model="form.lama_pinjam" type="number" min="1" class="input input-bordered input-sm w-full" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Denda per Hari (Rp) <span class="text-error">*</span></label>
-                        <input v-model="form.denda_perhari" type="number" min="0" class="input input-bordered w-full" @keyup.enter="simpan" />
+                        <input v-model="form.denda_perhari" type="number" min="0" class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                     </div>
                 </div>
                 <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses mengubah pengaturan ini.</p>

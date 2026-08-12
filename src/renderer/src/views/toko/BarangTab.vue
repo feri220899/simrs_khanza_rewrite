@@ -169,14 +169,14 @@ onMounted(async () => {
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="onTabChange('tambah')">
                 <Plus class="size-4" />
                 Tambah Barang
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="onTabChange('list')">
                 <List class="size-4" />
@@ -186,7 +186,7 @@ onMounted(async () => {
                 </span>
             </button>
             <button v-if="isAdmin"
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'sampah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="onTabChange('sampah')">
                 <Trash2 class="size-4" />
@@ -253,11 +253,11 @@ onMounted(async () => {
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                            <input v-model="form.kode_brng" type="text" maxlength="20" class="input input-bordered w-full" />
+                            <input v-model="form.kode_brng" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Barang <span class="text-error">*</span></label>
-                            <input v-model="form.nama_brng" type="text" maxlength="150" class="input input-bordered w-full" />
+                            <input v-model="form.nama_brng" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan <span class="text-error">*</span></label>
@@ -269,32 +269,32 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Dasar <span class="text-error">*</span></label>
-                            <input v-model="form.dasar" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.dasar" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Beli <span class="text-error">*</span></label>
-                            <input v-model="form.h_beli" type="number" min="0" class="input input-bordered w-full" @change="hitungHarga" />
+                            <input v-model="form.h_beli" type="number" min="0" class="input input-bordered input-sm w-full" @change="hitungHarga" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
                                 Harga Distributor <span class="text-error">*</span>
                                 <span class="text-base-content/40 font-normal">(auto)</span>
                             </label>
-                            <input v-model="form.distributor" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.distributor" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
                                 Harga Grosir <span class="text-error">*</span>
                                 <span class="text-base-content/40 font-normal">(auto)</span>
                             </label>
-                            <input v-model="form.grosir" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.grosir" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
                                 Harga Retail <span class="text-error">*</span>
                                 <span class="text-base-content/40 font-normal">(auto)</span>
                             </label>
-                            <input v-model="form.retail" type="number" min="0" class="input input-bordered w-full" @keyup.enter="simpan" />
+                            <input v-model="form.retail" type="number" min="0" class="input input-bordered input-sm w-full" @keyup.enter="simpan" />
                         </div>
                     </div>
                     <p v-if="!bolehTulis()" class="text-warning text-sm mt-3">Anda tidak punya akses menambah data ini.</p>
@@ -345,11 +345,11 @@ onMounted(async () => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                    <input v-model="editForm.kode_brng" type="text" maxlength="20" class="input input-bordered w-full" />
+                    <input v-model="editForm.kode_brng" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Nama Barang</label>
-                    <input v-model="editForm.nama_brng" type="text" maxlength="150" class="input input-bordered w-full" />
+                    <input v-model="editForm.nama_brng" type="text" maxlength="150" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Satuan</label>
@@ -361,23 +361,23 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Dasar</label>
-                    <input v-model="editForm.dasar" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.dasar" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Beli</label>
-                    <input v-model="editForm.h_beli" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.h_beli" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Distributor</label>
-                    <input v-model="editForm.distributor" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.distributor" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Grosir</label>
-                    <input v-model="editForm.grosir" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.grosir" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga Retail</label>
-                    <input v-model="editForm.retail" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.retail" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
             </div>
             <div class="modal-action mt-4">

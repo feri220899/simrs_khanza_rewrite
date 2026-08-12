@@ -142,14 +142,14 @@ onMounted(muatBarang)
 
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Input Opname
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -245,7 +245,7 @@ onMounted(muatBarang)
                                 <td class="py-1.5">{{ b.kode_sat }}</td>
                                 <td class="py-1.5 text-right tabular-nums">{{ b.stok }}</td>
                                 <td class="py-1.5">
-                                    <input v-model="b.real" type="number" min="0" class="input input-bordered input-xs w-full text-right" />
+                                    <input v-model="b.real" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
                                 </td>
                                 <td class="py-1.5 text-right tabular-nums" :class="hitungSelisih(b).selisih > 0 ? 'text-error' : ''">
                                     {{ hitungSelisih(b).selisih }}

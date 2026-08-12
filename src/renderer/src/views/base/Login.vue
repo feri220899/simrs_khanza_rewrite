@@ -42,10 +42,10 @@ async function login() {
                 <h2 class="card-title">Khanza Desktop</h2>
 
                 <label class="label text-xs">Username</label>
-                <input v-model="username" type="text" class="input input-bordered w-full" autofocus />
+                <input v-model="username" type="text" class="input input-bordered input-sm w-full" autofocus />
 
                 <label class="label text-xs">Password</label>
-                <input v-model="password" type="password" class="input input-bordered w-full" />
+                <input v-model="password" type="password" class="input input-bordered input-sm w-full" />
 
                 <p v-if="error" class="text-error text-sm mt-2">{{ error }}</p>
 

@@ -150,14 +150,14 @@ onMounted(async () => {
 
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Koleksi
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -202,7 +202,7 @@ onMounted(async () => {
                                             <p class="font-semibold text-base-content/60">Belum ada koleksi buku</p>
                                             <p class="text-sm text-base-content/40 mt-0.5">
                                                 Klik tab
-                                                <button class="text-primary font-semibold hover:underline"
+                                                <button class="text-primary font-semibold hover:underline cursor-pointer"
                                                     @click="activeTab = 'tambah'">Tambah Koleksi</button>
                                                 untuk menambahkan
                                             </p>
@@ -233,23 +233,23 @@ onMounted(async () => {
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                            <input v-model="form.kode_buku" type="text" maxlength="20" class="input input-bordered w-full" />
+                            <input v-model="form.kode_buku" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul <span class="text-error">*</span></label>
-                            <input v-model="form.judul_buku" type="text" maxlength="255" class="input input-bordered w-full" />
+                            <input v-model="form.judul_buku" type="text" maxlength="255" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jml. Halaman <span class="text-error">*</span></label>
-                            <input v-model="form.jml_halaman" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.jml_halaman" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tahun Terbit</label>
-                            <input v-model="form.thn_terbit" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.thn_terbit" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">ISBN</label>
-                            <input v-model="form.isbn" type="text" maxlength="30" class="input input-bordered w-full" />
+                            <input v-model="form.isbn" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Penerbit <span class="text-error">*</span></label>
@@ -286,23 +286,23 @@ onMounted(async () => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Kode</label>
-                    <input v-model="editForm.kode_buku" type="text" maxlength="20" class="input input-bordered w-full" />
+                    <input v-model="editForm.kode_buku" type="text" maxlength="20" class="input input-bordered input-sm w-full" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul</label>
-                    <input v-model="editForm.judul_buku" type="text" maxlength="255" class="input input-bordered w-full" />
+                    <input v-model="editForm.judul_buku" type="text" maxlength="255" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Jml. Halaman</label>
-                    <input v-model="editForm.jml_halaman" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.jml_halaman" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tahun Terbit</label>
-                    <input v-model="editForm.thn_terbit" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.thn_terbit" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">ISBN</label>
-                    <input v-model="editForm.isbn" type="text" maxlength="30" class="input input-bordered w-full" />
+                    <input v-model="editForm.isbn" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Penerbit</label>

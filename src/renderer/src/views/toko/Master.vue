@@ -34,7 +34,7 @@ const active = ref(visible[0]?.key || TABS[0].key)
         </p>
 
         <div role="tablist" class="tabs tabs-boxed mb-3 w-fit shrink-0">
-            <a v-for="t in visible" :key="t.key" role="tab" class="tab"
+            <a v-for="t in visible" :key="t.key" role="tab" class="tab cursor-pointer"
                 :class="active === t.key ? 'tab-active' : ''"
                 @click="active = t.key">
                 {{ t.label }}

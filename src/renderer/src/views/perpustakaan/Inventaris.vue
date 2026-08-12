@@ -165,14 +165,14 @@ onMounted(async () => {
 
         <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'tambah'">
                 <Plus class="size-4" />
                 Tambah Inventaris
             </button>
             <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2',
+                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
                     activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
                 @click="activeTab = 'list'">
                 <List class="size-4" />
@@ -217,7 +217,7 @@ onMounted(async () => {
                                             <p class="font-semibold text-base-content/60">Belum ada eksemplar inventaris</p>
                                             <p class="text-sm text-base-content/40 mt-0.5">
                                                 Klik tab
-                                                <button class="text-primary font-semibold hover:underline"
+                                                <button class="text-primary font-semibold hover:underline cursor-pointer"
                                                     @click="activeTab = 'tambah'">Tambah Inventaris</button>
                                                 untuk menambahkan
                                             </p>
@@ -248,7 +248,7 @@ onMounted(async () => {
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Inventaris</label>
-                            <input v-model="form.no_inventaris" type="text" maxlength="30" class="input input-bordered w-full" />
+                            <input v-model="form.no_inventaris" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul (Koleksi) <span class="text-error">*</span></label>
@@ -256,11 +256,11 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga <span class="text-error">*</span></label>
-                            <input v-model="form.harga" type="number" min="0" class="input input-bordered w-full" />
+                            <input v-model="form.harga" type="number" min="0" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Asal</label>
-                            <select v-model="form.asal_buku" class="select select-bordered w-full">
+                            <select v-model="form.asal_buku" class="select select-bordered select-sm w-full">
                                 <option>Beli</option>
                                 <option>Bantuan</option>
                                 <option>Hibah</option>
@@ -268,7 +268,7 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pengadaan</label>
-                            <input v-model="form.tgl_pengadaan" type="date" class="input input-bordered w-full" />
+                            <input v-model="form.tgl_pengadaan" type="date" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Ruang <span class="text-error">*</span></label>
@@ -276,18 +276,18 @@ onMounted(async () => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rak</label>
-                            <input v-model="form.no_rak" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.no_rak" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Box</label>
-                            <input v-model="form.no_box" type="text" class="input input-bordered w-full" />
+                            <input v-model="form.no_box" type="text" class="input input-bordered input-sm w-full" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-base-content/80 mb-1.5">
                                 Status
                                 <span class="text-base-content/40 font-normal">(otomatis oleh Sirkulasi saat pinjam/kembali)</span>
                             </label>
-                            <select v-model="form.status_buku" class="select select-bordered w-full">
+                            <select v-model="form.status_buku" class="select select-bordered select-sm w-full">
                                 <option>Ada</option>
                                 <option>Rusak</option>
                                 <option>Hilang</option>
@@ -312,7 +312,7 @@ onMounted(async () => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Inventaris</label>
-                    <input v-model="editForm.no_inventaris" type="text" maxlength="30" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_inventaris" type="text" maxlength="30" class="input input-bordered input-sm w-full" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Judul (Koleksi)</label>
@@ -320,11 +320,11 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Harga</label>
-                    <input v-model="editForm.harga" type="number" min="0" class="input input-bordered w-full" />
+                    <input v-model="editForm.harga" type="number" min="0" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Asal</label>
-                    <select v-model="editForm.asal_buku" class="select select-bordered w-full">
+                    <select v-model="editForm.asal_buku" class="select select-bordered select-sm w-full">
                         <option>Beli</option>
                         <option>Bantuan</option>
                         <option>Hibah</option>
@@ -332,7 +332,7 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pengadaan</label>
-                    <input v-model="editForm.tgl_pengadaan" type="date" class="input input-bordered w-full" />
+                    <input v-model="editForm.tgl_pengadaan" type="date" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Ruang</label>
@@ -340,15 +340,15 @@ onMounted(async () => {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Rak</label>
-                    <input v-model="editForm.no_rak" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_rak" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">No. Box</label>
-                    <input v-model="editForm.no_box" type="text" class="input input-bordered w-full" />
+                    <input v-model="editForm.no_box" type="text" class="input input-bordered input-sm w-full" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-base-content/80 mb-1.5">Status</label>
-                    <select v-model="editForm.status_buku" class="select select-bordered w-full">
+                    <select v-model="editForm.status_buku" class="select select-bordered select-sm w-full">
                         <option>Ada</option>
                         <option>Rusak</option>
                         <option>Hilang</option>
