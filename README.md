@@ -168,14 +168,107 @@ server lisensi sungguhan sudah siap.
       `isFullAdmin` (Admin Utama/Administrator saja — replika "kelola user
       cuma Admin Utama" di Java). Tervalidasi ke database `sik` asli: assign
       ke akun tidak ada ditolak ✓, hapus role yang masih dipakai ditolak ✓.
-- [ ] Fase 1 (sebagian) — migration Postgres LAMA (Parkir/Toko/Perpustakaan/
-      Surat/IPSRS) sudah dihapus dari `migrations/` (lihat Khanza.md), tabelnya
-      ternyata sudah ada 1:1 di `sik.sql`. Service layer-nya (`ParkirService.js`,
-      `TokoBarangService.js`, dst) **BELUM disesuaikan** — masih pakai SQL
-      dialect Postgres (`$1`, dst) yang tidak jalan di MySQL. Riwayat
-      sebelum pivot (tervalidasi di Postgres, referensi desain/logic saja):
-      **Parkir, Surat Menyurat (taksonomi), dan Perpustakaan CRUD selesai
-      penuh (logic-nya, BELUM disesuaikan skema MySQL)**:
+- [x] **Toko — service layer SELESAI disesuaikan ke MySQL + skema `sik.sql`
+      asli** (`TokoJenisService.js`, `TokoSuplierService.js`,
+      `TokoMemberService.js`, `SatuanService.js`, `TokoBarangService.js`,
+      `TokoOpnameService.js`). Perbedaan skema asli vs asumsi Postgres lama
+      yang ketahuan & diperbaiki:
+      - `tokobarang.status` char enum('0','1') — BUKAN kolom `aktif BOOLEAN`
+        hasil migration Postgres yang sudah dibuang. `'1'`=aktif, `'0'`=sampah
+        (dikonfirmasi `src/toko/TokoBarang.java` & `DlgRestoreTokoBarang.java`).
+      - Tabel harga jual namanya `tokosetharga` (TANPA underscore) — beda dari
+        `toko_setharga` yang saya asumsikan sebelumnya — dan tabel ini MyISAM
+        TANPA kolom `id`/PK sama sekali (cuma 1 baris, pola Java "delete
+        semua lalu insert 1 baris baru"), jadi query-nya `LIMIT 1` tanpa WHERE.
+      - `tokoopname` PK KOMPOSIT `(kode_brng, tanggal)`, kolom persis
+        `kode_brng, dasar, tanggal, stok, real, selisih, nomihilang,
+        keterangan` (urutan INSERT dikonfirmasi positional dari
+        `TokoInputStok.java`). `real` itu KATA KUNCI RESERVED MySQL, wajib
+        di-backtick tiap dipakai sebagai nama kolom.
+      - `toko_riwayat_barang` KHUSUS posisi='Opname': `masuk`=nilai Real
+        (bukan kuantitas barang masuk beneran) DAN `stok_akhir`=nilai Real
+        juga (bukan `stok_awal+masuk-keluar` seperti posisi transaksi lain) —
+        dikonfirmasi dari `riwayattoko.catatRiwayat()`, field ditumpangi
+        maknanya karena tabel ini dipakai bareng banyak jenis transaksi.
+      - Logic bisnis (formula selisih/nomihilang, alur batch-transaksi) hasil
+        audit adversarial sebelumnya **sudah benar**, tidak perlu diulang —
+        cuma dialect+skema yang perlu disesuaikan.
+      - **Bug nyata ketemu & diperbaiki**: `nextKode()` di `TokoBarangService`/
+        `TokoMemberService` pakai `MAX(CAST(...AS UNSIGNED))` — mysql2
+        BALIKIN HASIL CAST INI SEBAGAI STRING (beda dari `COUNT(*)` biasa
+        yang balik number), jadi `mx + 1` di JS jadi CONCAT STRING
+        ("2"+1="21") bukan penjumlahan. Ketahuan lewat test nyata: kode
+        barang baru nyeleneh (BT000021 → BT000211 → BT002111, makin panjang
+        tiap dipanggil). Fix: `Number(mx) + 1`. **Pola ini perlu diingat
+        untuk service Postgres lain yang belum disentuh** (Perpustakaan*,
+        SuratMasukKeluarService — sama-sama pakai `MAX(CAST(...AS UNSIGNED))`
+        buat `nextKode()`, belum diverifikasi ke MySQL).
+      Tervalidasi penuh ke database `sik` asli (create/list/update/delete,
+      soft-delete+restore+hardDelete, calcHarga pakai data real tokosetharga,
+      batch opname 3 barang dgn skenario kurang/lebih/pas, rollback-semua saat
+      1 item bentrok, riwayat ter-record dgn mapping khusus Opname) — semua
+      data test dibersihkan lagi setelahnya.
+- [x] **Parkir, Surat, Perpustakaan — service layer SELESAI disesuaikan ke
+      MySQL + skema `sik.sql` asli** (9 file: `ParkirService.js`,
+      `SuratTaksonomiService.js`, `SuratMasukKeluarService.js`, dan 8 file
+      `Perpustakaan*Service.js`). Temuan skema & bug nyata:
+      - `perpustakaan_set_peminjaman` (pengaturan peminjaman) & konsep serupa
+        di Toko (`tokosetharga`) TANPA kolom `id`/PK sama sekali — pola
+        Postgres lama (`id SMALLINT PK` + `ON CONFLICT`) tidak berlaku,
+        `PerpustakaanPengaturanService.upsert()` ditulis ulang jadi
+        transaksi DELETE-ALL-lalu-INSERT (kembali ke pola Java asli
+        sesungguhnya, MySQL `ON DUPLICATE KEY UPDATE` butuh unique key yang
+        memang tidak ada di tabel ini).
+      - `perpustakaan_peminjaman` TANPA PK/UNIQUE constraint apa pun (cuma
+        index biasa) — beda dari asumsi sebelumnya, jadi pengecekan
+        `ER_DUP_ENTRY` di situ jadi jaring pengaman yang kemungkinan besar
+        tidak pernah kepicu (bukan satu-satunya proteksi terhadap duplikat).
+      - Bug `nextKode()` MAX-based (mysql2 balikin `CAST(...AS UNSIGNED)`
+        sebagai string, lihat temuan di Toko) ternyata ADA JUGA di
+        `PerpustakaanPenerbitService`/`KoleksiService`/`InventarisService`/
+        `AnggotaService` dan `SuratMasukKeluarService.nextNoUrut()` — kelima-
+        limanya sudah diperbaiki (`Number(mx)`), bukan cuma di Toko.
+      - **Insiden testing (jangan diulang)**: `perpustakaan_set_peminjaman`
+        ternyata SUDAH ADA data produksi asli (`max_pinjam:2, lama_pinjam:7,
+        denda_perhari:1000`) sebelum test `Pengaturan.upsert()` dijalankan —
+        karena upsert-nya delete-all-lalu-insert, data asli itu KETIMPA data
+        test. Ketahuan & langsung dikembalikan ke nilai asli setelah test.
+        **Pelajaran**: WAJIB `SELECT` isi tabel dulu sebelum testing apa pun
+        yang sifatnya delete-all/single-row-config, jangan asumsikan kosong.
+      - **Bug nyata ketemu dari testing user (sudah diperbaiki)**: field
+        "Petugas" (`nip`) di Sirkulasi sempat di-auto-isi dari
+        `auth.user.username` (siapa yang login) — kelihatan benar untuk staf
+        biasa (`id_user` sering kebetulan = `nip` asli), tapi Admin Utama
+        (tabel `admin`, username bebas mis. `spv`) BUKAN `nip` valid di tabel
+        `petugas`, jadi `perpustakaan_peminjaman_ibfk_3` gagal FK. Re-baca
+        `PerpustakaanSirkulasi.java`: Java asli pakai dialog terpisah
+        `kepegawaian.DlgCariPetugas` (pilih petugas AKTIF, independen dari
+        akun yang login — satu meja sirkulasi bisa dipakai bergantian).
+        Fix: `nip` sekarang dropdown eksplisit (`listPetugas()`,
+        `WHERE status='1'`) di form pinjam/kembali/perpanjang, IPC handler
+        tidak lagi menimpa `nip` dari session. Tervalidasi ulang end-to-end
+        (pinjam dgn nip tidak valid tetap ditolak FK, dgn nip valid dari
+        dropdown berhasil di ketiga alur), data test dikembalikan persis.
+      - **Bug nyata ke-2 (sudah diperbaiki)**: `previewKembali()`/`kembali()`
+        identifikasi baris pinjaman cuma pakai `no_anggota+no_inventaris+
+        tgl_pinjam` — tabel `perpustakaan_peminjaman` TANPA PK/UNIQUE, jadi
+        kombinasi itu BISA duplikat kalau buku yang sama dipinjam-kembalikan-
+        dipinjam lagi oleh anggota yang sama di hari yang sama (2+ baris
+        dgn 3 kolom identik). Query tanpa filter tambahan bisa salah tangkap
+        baris LAMA yang sudah dikembalikan, lalu menolak dgn pesan "sudah
+        pernah dikembalikan" padahal baris AKTIF-nya masih ada — dilaporkan
+        user lewat testing nyata. Cek Java asli (`PerpustakaanSirkulasi.java`
+        baris ~1048): ternyata validasi ini TIDAK ADA sama sekali di Java
+        (murni tambahan di rewrite ini). Fix: tambah `AND status_pinjam=
+        'Masih Dipinjam'` di WHERE — aman krn `pinjam()` menjamin maks 1
+        baris "Masih Dipinjam" per `no_inventaris`. Tervalidasi ulang dgn
+        skenario duplikat nyata (2 baris sama persis, salah satu sudah
+        kembali), data test dibersihkan.
+      Semua tervalidasi end-to-end ke database `sik` asli (termasuk alur
+      pinjam→kembali dengan preview denda keterlambatan yang match hitungan
+      manual, dan bayar denda 2-tabel terpisah) — data test dibersihkan.
+
+      Detail modul (riwayat sebelum pivot, fitur-fiturnya tidak berubah):
       - Parkir: Jenis & Tarif + Kartu/Barcode (`DlgParkirJenis.java`/`DlgParkirBarcode.java`)
       - Surat: 9 taksonomi arsip fisik identik (Rak/Almari/Klasifikasi/Sifat/
         Map/Indeks/Ruang/Status/Balas) lewat **1 service generik**

@@ -1,12 +1,20 @@
-// CRUD Master Barang Toko — src/toko/TokoBarang.java.
+// CRUD Master Barang Toko — src/toko/TokoBarang.java. Tabel ASLI sik.sql
+// `tokobarang(kode_brng, nama_brng, kode_sat char(4), jenis char(5), stok,
+// dasar, h_beli, distributor, grosir, retail, status enum('0','1'))` —
+// PENTING: kolom aslinya `status` char ('1'=aktif, '0'=terhapus/sampah,
+// dikonfirmasi dari src/toko/TokoBarang.java baris 817 & src/restore/
+// DlgRestoreTokoBarang.java baris 428), BUKAN `aktif BOOLEAN` hasil migration
+// Postgres yang sudah dibuang (lihat Khanza.md > "Prinsip Migrasi Data").
 // - Harga jual (distributor/grosir/retail) DIHITUNG OTOMATIS dari field
-//   "Beli" x persentase markup di `toko_setharga` (migration 008, dipakai
-//   ulang di sini) — tapi tetap bisa ditimpa manual sebelum simpan, sama
-//   seperti Java asli (auto-fill, bukan lock).
-// - Hapus = SOFT DELETE (`aktif=false`), bukan hard delete — ada menu
+//   "Beli" x persentase markup di `tokosetharga` (BUKAN `toko_setharga` —
+//   nama tabel asli tanpa underscore, tabel MyISAM TANPA kolom `id` sama
+//   sekali, cuma 1 baris data, pola Java-nya "delete semua lalu insert 1
+//   baris baru", lihat src/setting/DlgSetHargaToko.java) — tapi tetap bisa
+//   ditimpa manual sebelum simpan, sama seperti Java asli (auto-fill, bukan lock).
+// - Hapus = SOFT DELETE (`status='0'`), bukan hard delete — ada menu
 //   restore ("Data Sampah") yang di Java asli DIBATASI role "Admin Utama"
 //   secara khusus (bukan cuma permission `toko_barang` biasa) — replikasi
-//   lewat requirePermission + cek role Administrator di IPC (main/index.js).
+//   lewat requirePermission + cek isFullAdmin di IPC (main/index.js).
 import DatabaseService from '../DatabaseService.js'
 
 const SORTABLE = { kode_brng: 'b.kode_brng', nama_brng: 'b.nama_brng', stok: 'b.stok' }
@@ -26,14 +34,14 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_brng', sortOrder =
          FROM tokobarang b
          JOIN tokojenisbarang j ON j.kd_jenis = b.jenis
          JOIN kodesatuan s ON s.kode_sat = b.kode_sat
-         WHERE b.aktif = TRUE AND (b.kode_brng ILIKE $1 OR b.nama_brng ILIKE $1)
+         WHERE b.status = '1' AND (b.kode_brng LIKE ? OR b.nama_brng LIKE ?)
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM tokobarang WHERE aktif = TRUE AND (kode_brng ILIKE $1 OR nama_brng ILIKE $1)`,
-        [like]
+        `SELECT COUNT(*) AS count FROM tokobarang WHERE status = '1' AND (kode_brng LIKE ? OR nama_brng LIKE ?)`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -46,14 +54,14 @@ async function listSampah({ page = 1, pageSize = 10, search = '' } = {}) {
         `SELECT b.*, j.nm_jenis
          FROM tokobarang b
          JOIN tokojenisbarang j ON j.kd_jenis = b.jenis
-         WHERE b.aktif = FALSE AND (b.kode_brng ILIKE $1 OR b.nama_brng ILIKE $1)
+         WHERE b.status = '0' AND (b.kode_brng LIKE ? OR b.nama_brng LIKE ?)
          ORDER BY b.kode_brng
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM tokobarang WHERE aktif = FALSE AND (kode_brng ILIKE $1 OR nama_brng ILIKE $1)`,
-        [like]
+        `SELECT COUNT(*) AS count FROM tokobarang WHERE status = '0' AND (kode_brng LIKE ? OR nama_brng LIKE ?)`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -61,16 +69,22 @@ async function listSampah({ page = 1, pageSize = 10, search = '' } = {}) {
 async function nextKode() {
     const db = await DatabaseService.get()
     const { rows: [{ mx }] } = await db.query(
-        `SELECT COALESCE(MAX(NULLIF(regexp_replace(RIGHT(kode_brng, 5), '\\D', '', 'g'), '')::int), 0) AS mx
+        `SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(RIGHT(kode_brng, 5), '[^0-9]', ''), '') AS UNSIGNED)), 0) AS mx
          FROM tokobarang`
     )
-    return 'BT' + String(mx + 1).padStart(6, '0')
+    // mysql2 balikin hasil CAST(...AS UNSIGNED) sebagai STRING (bukan number,
+    // beda dari COUNT(*) biasa) — WAJIB Number() dulu, kalau tidak `mx + 1`
+    // jadi concat string ("2"+1="21") bukan penjumlahan. Ketahuan lewat test
+    // nyata: nextKode() berulang kali balikin kode yang sama/nyeleneh.
+    return 'BT' + String(Number(mx) + 1).padStart(6, '0')
 }
 
-// Replika hitung harga jual otomatis dari toko_setharga (persentase markup).
+// Replika hitung harga jual otomatis dari tokosetharga (persentase markup).
+// Tabel ini SELALU cuma 1 baris (tanpa kolom id, tanpa PK) — Java-nya hapus
+// semua+insert baru tiap kali diubah, jadi cukup SELECT tanpa WHERE.
 async function calcHarga(beli) {
     const db = await DatabaseService.get()
-    const { rows: [setharga] } = await db.query('SELECT distributor, grosir, retail FROM toko_setharga WHERE id=1')
+    const { rows: [setharga] } = await db.query('SELECT distributor, grosir, retail FROM tokosetharga LIMIT 1')
     if (!setharga || !beli) return { distributor: 0, grosir: 0, retail: 0 }
     const b = Number(beli)
     return {
@@ -101,15 +115,17 @@ async function create(data) {
     const db = await DatabaseService.get()
     try {
         await db.query(
-            `INSERT INTO tokobarang (kode_brng, nama_brng, kode_sat, jenis, stok, dasar, h_beli, distributor, grosir, retail, aktif)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,TRUE)`,
+            `INSERT INTO tokobarang (kode_brng, nama_brng, kode_sat, jenis, stok, dasar, h_beli, distributor, grosir, retail, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')`,
             [data.kode_brng, data.nama_brng, data.kode_sat, data.jenis, data.stok || 0, data.dasar,
              data.h_beli, data.distributor, data.grosir, data.retail]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
+        }
         throw e
     }
 }
@@ -120,46 +136,50 @@ async function update(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
+        const { rows } = await db.query(
             `UPDATE tokobarang
-             SET kode_brng=$1, nama_brng=$2, kode_sat=$3, jenis=$4, dasar=$5, h_beli=$6, distributor=$7, grosir=$8, retail=$9
-             WHERE kode_brng=$10`,
+             SET kode_brng=?, nama_brng=?, kode_sat=?, jenis=?, dasar=?, h_beli=?, distributor=?, grosir=?, retail=?
+             WHERE kode_brng=?`,
             [data.kode_brng, data.nama_brng, data.kode_sat, data.jenis, data.dasar, data.h_beli,
              data.distributor, data.grosir, data.retail, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_brng}" sudah dipakai` }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Jenis Barang/Satuan yang dipilih tidak valid' }
+        }
         throw e
     }
 }
 
 async function deleteOne(kode) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query('UPDATE tokobarang SET aktif=FALSE WHERE kode_brng=$1 AND aktif=TRUE', [kode])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    const { rows } = await db.query(`UPDATE tokobarang SET status='0' WHERE kode_brng=? AND status='1'`, [kode])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 async function restore(kode) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query('UPDATE tokobarang SET aktif=TRUE WHERE kode_brng=$1 AND aktif=FALSE', [kode])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan di sampah' : undefined }
+    const { rows } = await db.query(`UPDATE tokobarang SET status='1' WHERE kode_brng=? AND status='0'`, [kode])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan di sampah' : undefined }
 }
 
 // Replika BtnHapus di src/restore/DlgRestoreTokoBarang.java — HAPUS PERMANEN
 // (`Sequel.meghapus`, DELETE beneran), beda dari `deleteOne()` di atas yang
 // cuma soft-delete. Cuma boleh dipakai ke baris yang SUDAH di sampah
-// (aktif=FALSE) — sama seperti aslinya, tombol ini cuma ada di dalam dialog
+// (status='0') — sama seperti aslinya, tombol ini cuma ada di dalam dialog
 // "Data Sampah" yang isinya emang cuma barang non-aktif.
 async function hardDelete(kode) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM tokobarang WHERE kode_brng=$1 AND aktif=FALSE', [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan di sampah' : undefined }
+        const { rows } = await db.query(`DELETE FROM tokobarang WHERE kode_brng=? AND status='0'`, [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan di sampah' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus permanen — masih ada riwayat opname/transaksi yang mengacu ke barang ini' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus permanen — masih ada riwayat opname/transaksi yang mengacu ke barang ini' }
+        }
         throw e
     }
 }

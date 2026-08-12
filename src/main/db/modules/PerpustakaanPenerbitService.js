@@ -2,6 +2,8 @@
 // taksonomi lain (PerpustakaanTaksonomiService.js): 6 kolom (bukan 2) dan
 // auto-kode pakai query MAX() aktual (bukan row-count) — direplikasi persis
 // dari `Valid.autoNomer3("... MAX(CONVERT(RIGHT(kode_penerbit,4),signed)) ...","PK",8,TKd)`.
+// Tabel ASLI sik.sql `perpustakaan_penerbit(kode_penerbit, nama_penerbit,
+// alamat_penerbit, no_telp, email, website_penerbit)` — field cocok 1:1.
 // Fitur cetak (rptPenerbitPerpustakaan.jasper) TIDAK diimplementasi — belum
 // ada subsistem cetak di khanza-desktop.
 import DatabaseService from '../DatabaseService.js'
@@ -17,14 +19,14 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_penerbit', sortOrd
     const { rows } = await db.query(
         `SELECT kode_penerbit, nama_penerbit, alamat_penerbit, no_telp, email, website_penerbit
          FROM perpustakaan_penerbit
-         WHERE kode_penerbit ILIKE $1 OR nama_penerbit ILIKE $1
+         WHERE kode_penerbit LIKE ? OR nama_penerbit LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM perpustakaan_penerbit WHERE kode_penerbit ILIKE $1 OR nama_penerbit ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM perpustakaan_penerbit WHERE kode_penerbit LIKE ? OR nama_penerbit LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -34,10 +36,12 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_penerbit', sortOrd
 async function nextKode() {
     const db = await DatabaseService.get()
     const { rows: [{ mx }] } = await db.query(
-        `SELECT COALESCE(MAX(NULLIF(regexp_replace(RIGHT(kode_penerbit, 4), '\\D', '', 'g'), '')::int), 0) AS mx
+        `SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(RIGHT(kode_penerbit, 4), '[^0-9]', ''), '') AS UNSIGNED)), 0) AS mx
          FROM perpustakaan_penerbit`
     )
-    return 'PK' + String(mx + 1).padStart(6, '0')
+    // mysql2 balikin CAST(...AS UNSIGNED) sebagai STRING — WAJIB Number(),
+    // lihat catatan panjang di TokoBarangService.nextKode().
+    return 'PK' + String(Number(mx) + 1).padStart(6, '0')
 }
 
 function validate({ kode_penerbit, nama_penerbit }) {
@@ -56,12 +60,12 @@ async function create(data) {
     try {
         await db.query(
             `INSERT INTO perpustakaan_penerbit (kode_penerbit, nama_penerbit, alamat_penerbit, no_telp, email, website_penerbit)
-             VALUES ($1,$2,$3,$4,$5,$6)`,
+             VALUES (?, ?, ?, ?, ?, ?)`,
             [data.kode_penerbit, data.nama_penerbit, data.alamat_penerbit || null, data.no_telp || null, data.email || null, data.website_penerbit || null]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_penerbit}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_penerbit}" sudah dipakai` }
         throw e
     }
 }
@@ -72,16 +76,16 @@ async function update(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
+        const { rows } = await db.query(
             `UPDATE perpustakaan_penerbit
-             SET kode_penerbit=$1, nama_penerbit=$2, alamat_penerbit=$3, no_telp=$4, email=$5, website_penerbit=$6
-             WHERE kode_penerbit=$7`,
+             SET kode_penerbit=?, nama_penerbit=?, alamat_penerbit=?, no_telp=?, email=?, website_penerbit=?
+             WHERE kode_penerbit=?`,
             [data.kode_penerbit, data.nama_penerbit, data.alamat_penerbit || null, data.no_telp || null, data.email || null, data.website_penerbit || null, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_penerbit}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_penerbit}" sudah dipakai` }
         throw e
     }
 }
@@ -89,10 +93,12 @@ async function update(oldKode, data) {
 async function deleteOne(kode) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM perpustakaan_penerbit WHERE kode_penerbit=$1', [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query('DELETE FROM perpustakaan_penerbit WHERE kode_penerbit=?', [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di data Koleksi' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di data Koleksi' }
+        }
         throw e
     }
 }

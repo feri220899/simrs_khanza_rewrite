@@ -2,7 +2,8 @@
 // 1 baris perpustakaan_buku (katalog/judul) bisa punya banyak baris di sini
 // (tiap eksemplar fisik). `status_buku` = state fisik eksemplar saat ini
 // (Ada/Rusak/Hilang/Dipinjam/-) — DIUBAH OTOMATIS oleh PerpustakaanSirkulasiService
-// saat pinjam/kembali, bukan diedit manual dari sini. Fitur cetak barcode
+// saat pinjam/kembali, bukan diedit manual dari sini. Tabel ASLI sik.sql
+// `perpustakaan_inventaris` — field cocok 1:1. Fitur cetak barcode
 // (rptBarcodePerpustakaan.jasper) TIDAK diimplementasi.
 import DatabaseService from '../DatabaseService.js'
 
@@ -20,16 +21,16 @@ async function list({ page = 1, pageSize = 10, sortBy = 'no_inventaris', sortOrd
          FROM perpustakaan_inventaris i
          LEFT JOIN perpustakaan_buku b  ON b.kode_buku = i.kode_buku
          LEFT JOIN perpustakaan_ruang r ON r.kd_ruang  = i.kd_ruang
-         WHERE i.no_inventaris ILIKE $1 OR b.judul_buku ILIKE $1
+         WHERE i.no_inventaris LIKE ? OR b.judul_buku LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM perpustakaan_inventaris i
+        `SELECT COUNT(*) AS count FROM perpustakaan_inventaris i
          LEFT JOIN perpustakaan_buku b ON b.kode_buku = i.kode_buku
-         WHERE i.no_inventaris ILIKE $1 OR b.judul_buku ILIKE $1`,
-        [like]
+         WHERE i.no_inventaris LIKE ? OR b.judul_buku LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -38,7 +39,7 @@ async function list({ page = 1, pageSize = 10, sortBy = 'no_inventaris', sortOrd
 async function summary() {
     const db = await DatabaseService.get()
     const { rows: [row] } = await db.query(
-        'SELECT count(*)::int AS jumlah, COALESCE(SUM(harga),0)::numeric AS nilai_total FROM perpustakaan_inventaris'
+        'SELECT COUNT(*) AS jumlah, COALESCE(SUM(harga),0) AS nilai_total FROM perpustakaan_inventaris'
     )
     return row
 }
@@ -46,10 +47,11 @@ async function summary() {
 async function nextKode() {
     const db = await DatabaseService.get()
     const { rows: [{ mx }] } = await db.query(
-        `SELECT COALESCE(MAX(NULLIF(regexp_replace(RIGHT(no_inventaris, 8), '\\D', '', 'g'), '')::int), 0) AS mx
+        `SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(RIGHT(no_inventaris, 8), '[^0-9]', ''), '') AS UNSIGNED)), 0) AS mx
          FROM perpustakaan_inventaris`
     )
-    return 'IP' + String(mx + 1).padStart(6, '0')
+    // mysql2 balikin CAST(...AS UNSIGNED) sebagai STRING — WAJIB Number().
+    return 'IP' + String(Number(mx) + 1).padStart(6, '0')
 }
 
 function validate({ no_inventaris, kode_buku, harga, kd_ruang }) {
@@ -69,14 +71,16 @@ async function create(data) {
         await db.query(
             `INSERT INTO perpustakaan_inventaris
                 (no_inventaris, kode_buku, asal_buku, tgl_pengadaan, harga, status_buku, kd_ruang, no_rak, no_box)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [data.no_inventaris, data.kode_buku, data.asal_buku || '-', data.tgl_pengadaan || null,
              data.harga, data.status_buku || 'Ada', data.kd_ruang, data.no_rak || null, data.no_box || null]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `No. Inventaris "${data.no_inventaris}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Koleksi/Ruang yang dipilih tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `No. Inventaris "${data.no_inventaris}" sudah dipakai` }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Koleksi/Ruang yang dipilih tidak valid' }
+        }
         throw e
     }
 }
@@ -87,19 +91,21 @@ async function update(oldNoInventaris, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
+        const { rows } = await db.query(
             `UPDATE perpustakaan_inventaris
-             SET no_inventaris=$1, kode_buku=$2, asal_buku=$3, tgl_pengadaan=$4, harga=$5,
-                 status_buku=$6, kd_ruang=$7, no_rak=$8, no_box=$9
-             WHERE no_inventaris=$10`,
+             SET no_inventaris=?, kode_buku=?, asal_buku=?, tgl_pengadaan=?, harga=?,
+                 status_buku=?, kd_ruang=?, no_rak=?, no_box=?
+             WHERE no_inventaris=?`,
             [data.no_inventaris, data.kode_buku, data.asal_buku || '-', data.tgl_pengadaan || null,
              data.harga, data.status_buku || 'Ada', data.kd_ruang, data.no_rak || null, data.no_box || null, oldNoInventaris]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `No. Inventaris "${data.no_inventaris}" sudah dipakai` }
-        if (e.code === '23503') return { success: false, message: 'Koleksi/Ruang yang dipilih tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `No. Inventaris "${data.no_inventaris}" sudah dipakai` }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Koleksi/Ruang yang dipilih tidak valid' }
+        }
         throw e
     }
 }
@@ -107,10 +113,12 @@ async function update(oldNoInventaris, data) {
 async function deleteOne(noInventaris) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM perpustakaan_inventaris WHERE no_inventaris=$1', [noInventaris])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query('DELETE FROM perpustakaan_inventaris WHERE no_inventaris=?', [noInventaris])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih ada riwayat pinjam/denda' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih ada riwayat pinjam/denda' }
+        }
         throw e
     }
 }
