@@ -10,7 +10,7 @@ import {
   CarFront, Tag, Users, CalendarCheck, CalendarDays, History, Boxes, Package,
   AlertTriangle, Wrench, BookOpen, Mail, ShieldCheck, ClipboardCheck, HardHat,
   Building2, FileBarChart, Activity, HandHeart, LineChart, MessageSquare,
-  Link2, IdCard, FileCheck2, ListTree, UserCog, Settings,
+  Link2, IdCard, FileCheck2, ListTree, Settings,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
   Tags, UserCircle, Repeat, Coins, SlidersHorizontal,
 } from 'lucide-vue-next'
@@ -347,11 +347,11 @@ export const bottomMenu = [
   // Khanza.md bagian "Ringkasan Alur Login"), bukan lewat flag permission
   // biasa. Untuk sistem baru: pertimbangkan bikin ini role-check terpisah
   // ("role === 'Administrator'"), bukan entry di tabel permissions.
-  { to: '/pengaturan/user',           label: 'Manajemen User',              icon: UserCog,   permission: 'pengaturan-user' },
-  // TODO-permission: tidak ketemu flag "konfigurasi aplikasi" generik. 'display'
-  // dipakai sbg fallback tapi kemungkinan besar itu soal display antrian, BUKAN
-  // setting aplikasi umum — cek ulang ke DlgSetAplikasi.java.
-  { to: '/pengaturan/aplikasi',       label: 'Konfigurasi Aplikasi',        icon: Settings,  permission: 'display' },
+  // Digabung jadi 1 hub tab-berjenjang (Pengaturan.vue: top-level User/Database,
+  // dst) — dulu 2 entry terpisah ("Manajemen User" + "Konfigurasi Aplikasi",
+  // yang kedua masih placeholder isinya cuma duplikat panel migrasi). Lihat
+  // README.md > "Login & Permission" & Pengaturan.vue buat struktur tab-nya.
+  { to: '/pengaturan/user',           label: 'Pengaturan',                  icon: Settings,  permission: 'pengaturan-user' },
   { to: '/pengaturan/audit-login',    label: 'Audit Login',                 icon: History,   permission: 'tracer_login' },
   // Master data TNI/Polri (pangkat, golongan, jabatan, satuan) — data setup
   // jarang diubah, wajar ditaruh di Pengaturan, bukan sidebar utama.

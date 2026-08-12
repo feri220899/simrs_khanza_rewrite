@@ -1,101 +1,84 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '../../stores/auth'
+import { ref, computed } from 'vue'
+import { Users, DatabaseZap } from 'lucide-vue-next'
+import ManajemenUser from './ManajemenUser.vue'
+import MigrationPanel from '../../components/MigrationPanel.vue'
 
-const authStore = useAuthStore()
-const status = ref(null) // { applied, pending, upToDate }
-const loading = ref(true)
-const running = ref(false)
-const result = ref(null) // { success, message?, ranCount?, names? }
-const showConfirm = ref(false)
+// Hub Pengaturan — tab BERJENJANG (top-level -> children), disengaja
+// terstruktur sebagai array supaya penambahan section baru ke depan (bakal
+// banyak: Konfigurasi Aplikasi, Audit Login, dst — lihat config/menu.js
+// bottomMenu) tinggal nambah entry di sini, bukan restructure ulang
+// template. Tiap top-level minimal 1 child; child nampilin 1 komponen.
+const PENGATURAN_TABS = [
+    {
+        key: 'user', label: 'User', icon: Users,
+        children: [
+            { key: 'pengaturan-user', label: 'Pengaturan User', component: ManajemenUser },
+        ],
+    },
+    {
+        key: 'database', label: 'Database', icon: DatabaseZap,
+        children: [
+            { key: 'migrasi', label: 'Migrasi', component: MigrationPanel },
+        ],
+    },
+]
 
-const isAdmin = authStore.user?.role === 'Administrator'
+const activeTop = ref(PENGATURAN_TABS[0].key)
+const activeChildByTop = ref(Object.fromEntries(PENGATURAN_TABS.map(t => [t.key, t.children[0].key])))
+const manajemenUserRef = ref(null)
 
-async function loadStatus() {
-    loading.value = true
-    status.value = await window.api.db.migrationStatus()
-    loading.value = false
+const currentTop = computed(() => PENGATURAN_TABS.find(t => t.key === activeTop.value))
+const currentChild = computed(() => currentTop.value.children.find(c => c.key === activeChildByTop.value[activeTop.value]))
+
+function pilihTop(key) {
+    activeTop.value = key
 }
 
-async function runMigrations() {
-    showConfirm.value = false
-    running.value = true
-    result.value = null
-    try {
-        result.value = await window.api.db.runMigrations(authStore.token)
-    } finally {
-        running.value = false
-        await loadStatus()
-    }
+function pilihChild(key) {
+    activeChildByTop.value[activeTop.value] = key
 }
 
-onMounted(loadStatus)
+// Kalau migration baru saja dijalankan dari tab Database > Migrasi, tab
+// User > Pengaturan User (kalau tadinya gagal fetch krn tabel belum ada)
+// perlu dicoba muat ulang — tanpa ini admin harus pindah tab manual/reload.
+function onMigrated() {
+    manajemenUserRef.value?.fetchSemua?.()
+}
 </script>
 
 <template>
-    <div>
+    <div class="flex-1 flex flex-col min-h-0">
         <h1 class="text-xl font-bold mb-1">Pengaturan</h1>
-        <p class="text-sm text-base-content/60 mb-6">
-            Manajemen user, konfigurasi aplikasi, audit login — TODO, ikuti SOP di Khanza.md (section 28, Setting/Keamanan).
+        <p class="text-sm text-base-content/60 mb-4">
+            Konfigurasi aplikasi, audit login, dst — TODO, ikuti SOP di Khanza.md (section 28, Setting/Keamanan).
         </p>
 
-        <div class="card bg-base-100 border border-base-300 max-w-2xl">
-            <div class="card-body">
-                <h2 class="card-title text-base">Migrasi Database</h2>
-                <p class="text-xs text-base-content/50 mb-2">
-                    Migrasi skema TIDAK jalan otomatis saat app dibuka — app ini di-install di banyak
-                    komputer RS sekaligus, jadi migrasi cuma boleh dipicu manual sekali oleh Administrator
-                    di sini (atau lewat <code>npm run migrate</code> dari CLI untuk cek ke staging dulu).
-                </p>
-
-                <p v-if="loading" class="text-sm text-base-content/50">Memeriksa status...</p>
-
-                <template v-else-if="status">
-                    <div v-if="status.upToDate" class="alert alert-success text-sm py-2">
-                        Sudah up to date — semua {{ status.applied.length }} migrasi sudah diterapkan.
-                    </div>
-                    <div v-else class="alert alert-warning text-sm py-2 flex-col items-start gap-1">
-                        <p class="font-medium">{{ status.pending.length }} migrasi tertunda:</p>
-                        <ul class="list-disc list-inside text-xs opacity-80">
-                            <li v-for="name in status.pending" :key="name">{{ name }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="mt-3">
-                        <button v-if="isAdmin && !status.upToDate" class="btn btn-warning btn-sm"
-                            :disabled="running" @click="showConfirm = true">
-                            {{ running ? 'Menjalankan...' : 'Jalankan Migration Sekarang' }}
-                        </button>
-                        <p v-else-if="!isAdmin && !status.upToDate" class="text-xs text-error">
-                            Cuma Administrator yang bisa menjalankan migration. Hubungi admin RS.
-                        </p>
-                    </div>
-
-                    <div v-if="result" class="mt-3 alert text-sm py-2"
-                        :class="result.success ? 'alert-success' : 'alert-error'">
-                        <span v-if="result.success && result.ranCount > 0">
-                            Berhasil: {{ result.ranCount }} migrasi dijalankan ({{ result.names.join(', ') }}).
-                        </span>
-                        <span v-else-if="result.success">Tidak ada yang perlu dijalankan.</span>
-                        <span v-else>Gagal: {{ result.message }}</span>
-                    </div>
-                </template>
-            </div>
+        <!-- Top-level tab -->
+        <div class="flex gap-1 border-b border-base-300 mb-3 shrink-0">
+            <button v-for="t in PENGATURAN_TABS" :key="t.key"
+                :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px flex items-center gap-2 transition-colors',
+                    activeTop === t.key ? 'border-primary text-primary' : 'border-transparent text-base-content/50 hover:text-base-content']"
+                @click="pilihTop(t.key)">
+                <component :is="t.icon" class="size-4" /> {{ t.label }}
+            </button>
         </div>
 
-        <!-- Konfirmasi sebelum eksekusi — migrasi mengubah skema, jangan sampai kepencet tidak sengaja -->
-        <div v-if="showConfirm" class="modal modal-open">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg">Jalankan migration?</h3>
-                <p class="py-2 text-sm">
-                    Ini akan mengubah skema database yang dipakai BERSAMA oleh semua komputer di RS.
-                    Pastikan tidak ada komputer lain yang sedang aktif dipakai transaksi penting saat ini.
-                </p>
-                <div class="modal-action">
-                    <button class="btn btn-ghost btn-sm" @click="showConfirm = false">Batal</button>
-                    <button class="btn btn-warning btn-sm" @click="runMigrations">Ya, Jalankan</button>
-                </div>
-            </div>
+        <!-- Child tab (disembunyikan kalau cuma 1 anak, biar tidak berisik) -->
+        <div v-if="currentTop.children.length > 1" class="flex bg-base-200 rounded-lg p-1 w-fit mb-4 shrink-0 gap-0.5">
+            <button v-for="c in currentTop.children" :key="c.key"
+                :class="['px-4 py-1.5 rounded text-xs font-medium transition-colors',
+                    activeChildByTop[activeTop] === c.key ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
+                @click="pilihChild(c.key)">
+                {{ c.label }}
+            </button>
+        </div>
+
+        <div class="flex-1 min-h-0 flex flex-col overflow-y-auto">
+            <!-- :is dari config PENGATURAN_TABS — nambah child baru ke depan
+                 (banyak, lihat komentar di atas) cukup nambah entry di array,
+                 TIDAK perlu sentuh template ini lagi. -->
+            <component :is="currentChild.component" ref="manajemenUserRef" @migrated="onMigrated" />
         </div>
     </div>
 </template>

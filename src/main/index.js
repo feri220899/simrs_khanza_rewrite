@@ -5,6 +5,7 @@ import LisensiService from './electron/LisensiService.js'
 import ConfigService  from './electron/ConfigService.js'
 import DeviceService  from './electron/DeviceService.js'
 import AuthService    from './db/AuthService.js'
+import RoleService    from './db/modules/RoleService.js'
 import DatabaseService from './db/DatabaseService.js'
 import ParkirService  from './db/modules/ParkirService.js'
 import SuratTaksonomiService from './db/modules/SuratTaksonomiService.js'
@@ -92,10 +93,77 @@ app.whenReady().then(async () => {
     // App
     ipcMain.handle('app:getVersion', () => app.getVersion())
 
-    // Auth
-    ipcMain.handle('auth:login',          (_, u, p)        => AuthService.login(u, p))
-    ipcMain.handle('auth:me',             (_, token)       => AuthService.verifySession(token))
-    ipcMain.handle('auth:changePassword', (_, t, oldPw, newPw) => AuthService.changePassword(t, oldPw, newPw))
+    // Auth — login ke akun ASLI Khanza (tabel `admin`/`user`), lihat
+    // README.md > "Login & Permission (pivot MySQL)". TIDAK ADA ganti-password
+    // dari Electron — itu mengubah kredensial produksi RS yang dipakai
+    // bareng app Java, sengaja belum digarap (keputusan sengaja, bukan lupa;
+    // butuh desain terpisah kalau memang diperlukan nanti).
+    ipcMain.handle('auth:login', (_, u, p)  => AuthService.login(u, p))
+    ipcMain.handle('auth:me',    (_, token) => AuthService.verifySession(token))
+
+    // Kelola Role — "kelola user cuma bisa Admin Utama" di Khanza asli
+    // (dicek via jumlah baris cocok tabel `admin` saat login), jadi SEMUA
+    // handler di sini di-gate isFullAdmin (Admin Utama ATAU role
+    // Administrator), bukan slug permission biasa.
+    function requireFullAdmin(token) {
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { ok: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (!AuthService.isFullAdmin(session.user.role)) return { ok: false, message: 'Cuma Admin Utama/Administrator yang boleh mengelola role & user' }
+        return { ok: true }
+    }
+
+    ipcMain.handle('role:list', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.listRoles() : []
+    })
+    ipcMain.handle('role:create', (_, token, nama) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.createRole(nama) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:update', (_, token, id, nama) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.updateRole(id, nama) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:delete', (_, token, id) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.deleteRole(id) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:duplicate', (_, token, id, namaBaru) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.duplicateRole(id, namaBaru) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:permissions:listAll', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.listPermissions() : []
+    })
+    ipcMain.handle('role:permissions:get', (_, token, roleId) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.getRolePermissionIds(roleId) : []
+    })
+    ipcMain.handle('role:permissions:set', (_, token, roleId, permissionIds) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.setRolePermissions(roleId, permissionIds) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:user:list', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.listUserRoleAssignments() : []
+    })
+    ipcMain.handle('role:user:assign', (_, token, idUser, roleId) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.assignUserRole(idUser, roleId) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:user:remove', (_, token, idUser) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.removeUserRole(idUser) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:user:create', (_, token, data) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.createUserAccount(data) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('role:user:listOrang', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? RoleService.listOrangUntukUser() : []
+    })
 
     // Parkir (Fase 1 — contoh modul pertama). Baca (list/cek) tidak di-gate
     // permission khusus (sama seperti Java asli — dialognya sendiri yang
@@ -234,11 +302,11 @@ app.whenReady().then(async () => {
 
     ipcMain.handle('toko:barang:list',       (_, params) => TokoBarangService.list(params))
     ipcMain.handle('toko:barang:listSampah', (_, token, params) => {
-        // "Data Sampah" cuma boleh dilihat Administrator (Admin Utama di
-        // Java asli) — bukan cuma permission toko_barang biasa.
+        // "Data Sampah" cuma boleh dilihat Admin Utama/Administrator —
+        // bukan cuma permission toko_barang biasa.
         const session = AuthService.verifySession(token)
         if (!session.success) return { data: [], total: 0 }
-        if (session.user.role !== 'Administrator') return { data: [], total: 0 }
+        if (!AuthService.isFullAdmin(session.user.role)) return { data: [], total: 0 }
         return TokoBarangService.listSampah(params)
     })
     ipcMain.handle('toko:barang:nextKode', () => TokoBarangService.nextKode())
@@ -256,11 +324,11 @@ app.whenReady().then(async () => {
         return auth.ok ? TokoBarangService.deleteOne(kode) : { success: false, message: auth.message }
     })
     ipcMain.handle('toko:barang:restore', (_, token, kode) => {
-        // Replika "Admin Utama only" — role Administrator secara eksplisit,
-        // bukan cuma permission toko_barang (yang bisa saja dipunya role lain).
+        // Replika "Admin Utama only" — bukan cuma permission toko_barang
+        // (yang bisa saja dipunya role lain).
         const session = AuthService.verifySession(token)
         if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
-        if (session.user.role !== 'Administrator') return { success: false, message: 'Cuma Administrator yang boleh memulihkan data' }
+        if (!AuthService.isFullAdmin(session.user.role)) return { success: false, message: 'Cuma Admin Utama/Administrator yang boleh memulihkan data' }
         return TokoBarangService.restore(kode)
     })
     ipcMain.handle('toko:barang:hardDelete', (_, token, kode) => {
@@ -268,7 +336,7 @@ app.whenReady().then(async () => {
         // sama-sama "Admin Utama only" (satu dialog, dua tombol, gate sama).
         const session = AuthService.verifySession(token)
         if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
-        if (session.user.role !== 'Administrator') return { success: false, message: 'Cuma Administrator yang boleh menghapus permanen' }
+        if (!AuthService.isFullAdmin(session.user.role)) return { success: false, message: 'Cuma Admin Utama/Administrator yang boleh menghapus permanen' }
         return TokoBarangService.hardDelete(kode)
     })
 
@@ -466,33 +534,22 @@ app.whenReady().then(async () => {
     // token session-nya divalidasi ulang tiap kali sebelum migration jalan.
     ipcMain.handle('db:migrationStatus', () => DatabaseService.getMigrationStatus())
 
-    // Bootstrap instalasi pertama — TANPA token. Sengaja dikecualikan dari
-    // gate Administrator, tapi HANYA kalau `applied.length === 0` (database
-    // benar-benar virgin, belum ada migrasi SATU PUN yang pernah jalan).
-    // Alasan: di kondisi itu memang belum mungkin ada Administrator yang bisa
-    // login sama sekali (chicken-and-egg, lihat Khanza.md > "Bootstrap
-    // instalasi pertama") — jadi mensyaratkan auth di sini justru bikin
-    // sistem tidak bisa di-setup sama sekali tanpa buka terminal.
-    // Begitu ada satu migrasi yang jalan (lewat jalur ini ATAUPUN `npm run
-    // migrate`), jalur ini otomatis terkunci lagi — migrasi berikutnya WAJIB
-    // lewat db:runMigrations (bawah ini) yang di-gate token Administrator.
-    ipcMain.handle('db:runInitialMigration', async () => {
-        const status = await DatabaseService.getMigrationStatus()
-        if (status.applied.length > 0) {
-            return { success: false, message: 'Sistem sudah pernah di-setup sebagian — gunakan tombol migrasi di Pengaturan dengan akun Administrator, atau `npm run migrate` dari CLI.' }
-        }
-        return DatabaseService.runMigrations()
-            .then(result => ({ success: true, ...result }))
-            .catch(err => ({ success: false, message: err.message }))
-    })
-
+    // PIVOT: tidak ada lagi jalur bootstrap tanpa-login (`db:runInitialMigration`
+    // versi lama dihapus) — akun "Admin Utama" (tabel `admin`) sudah ADA di
+    // data `sik.sql` sejak awal, jadi TIDAK PERNAH ada kondisi virgin-database
+    // yang bikin tidak ada satu pun akun bisa login (lihat README.md > "Login
+    // & Permission"). Admin Utama login normal lewat layar Login biasa, lalu
+    // migration electron_* dijalankan lewat handler token-gated di bawah ini
+    // seperti alur admin biasa — isFullAdmin() meloloskan Admin Utama meski
+    // migration electron_* belum pernah jalan sama sekali (AuthService.login
+    // tidak bergantung tabel electron_* buat cabang Admin Utama).
     ipcMain.handle('db:runMigrations', (_, token) => {
         const session = AuthService.verifySession(token)
         if (!session.success) {
             return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
         }
-        if (session.user.role !== 'Administrator') {
-            return { success: false, message: 'Cuma Administrator yang boleh menjalankan migration' }
+        if (!AuthService.isFullAdmin(session.user.role)) {
+            return { success: false, message: 'Cuma Admin Utama/Administrator yang boleh menjalankan migration' }
         }
         return DatabaseService.runMigrations()
             .then(result => ({ success: true, ...result }))

@@ -1,7 +1,7 @@
 // Seed SEMUA 1211 permission asli dari sik.sql (CREATE TABLE `user`, tiap
 // kolom `xxx enum('true','false')` = 1 hak akses). Diambil apa adanya (nama
 // kolom asli, snake_case), BUKAN dikarang ulang — lihat catatan di
-// 002_create_permissions.js. Master list-nya juga disimpan di
+// 002_create_electron_permissions.js. Master list-nya juga disimpan di
 // src/main/db/reference/khanza-permissions-asli.txt (satu nama per baris)
 // buat dokumentasi/audit, meski migration ini yang jadi sumber insert-nya
 // (di-hardcode di sini, bukan baca file .txt saat runtime, supaya tetap jalan
@@ -261,22 +261,23 @@ function humanize(slug) {
 }
 
 export default {
-    name: '017_seed_permissions_khanza_asli',
+    name: '005_seed_electron_permissions_khanza_asli',
     async up(client) {
-        const values = PERMISSION_SLUGS.map((slug, i) => `($${i * 2 + 1}, $${i * 2 + 2})`).join(', ')
+        const values = PERMISSION_SLUGS.map(() => '(?, ?)').join(', ')
         const params = PERMISSION_SLUGS.flatMap(slug => [slug, humanize(slug)])
         await client.query(
-            `INSERT INTO permissions (slug, label) VALUES ${values} ON CONFLICT (slug) DO NOTHING`,
+            `INSERT IGNORE INTO electron_permissions (slug, label) VALUES ${values}`,
             params
         )
 
-        // Administrator (dibuat di 005_seed_default_admin.js) dapat SEMUA
-        // permission — mencerminkan admin utama Khanza asli yang selalu true
-        // di semua kolom.
+        // Role 'Administrator' (diseed di 001_create_electron_roles.js) dapat
+        // SEMUA permission — mencerminkan admin utama Khanza asli yang selalu
+        // true di semua kolom. (Beda dari "Admin Utama" via tabel `admin`,
+        // yang hardcode akses penuh tanpa peduli tabel role sama sekali —
+        // lihat README.md > "Login & Permission".)
         await client.query(`
-            INSERT INTO role_permissions (role_id, permission_id)
-            SELECT r.id, p.id FROM roles r CROSS JOIN permissions p WHERE r.nama = 'Administrator'
-            ON CONFLICT DO NOTHING
+            INSERT IGNORE INTO electron_role_permissions (role_id, permission_id)
+            SELECT r.id, p.id FROM electron_roles r CROSS JOIN electron_permissions p WHERE r.nama = 'Administrator'
         `)
     },
 }

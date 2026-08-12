@@ -10,45 +10,91 @@ lisensi & UI). File ini cuma catatan teknis cara jalankan project.
 Struktur folder & pola UI (sidebar, permission, komponen) mengikuti
 `~/Documents/PRIBADI/Wails/POS_LISENSI/pos-desktop`, tapi:
 
-- **Postgres**, bukan SQLite — dan dipakai **untuk semua modul sejak awal**
-  (keputusan eksplisit, lihat Khanza.md > "Prinsip Migrasi Data"). Konsekuensi:
-  modul yang masih dipakai bareng app Java (MySQL) butuh strategi ETL/cutover
-  sendiri, tidak bisa share tabel real-time.
+> **PIVOT (membatalkan keputusan Postgres di bawah)** — backend pindah ke
+> **MySQL**, connect ke database `sik` yang SAMA PERSIS dengan yang dipakai
+> app Java, pakai skema `sik.sql` APA ADANYA untuk semua tabel bisnis
+> (bukan lagi migration Postgres custom per modul). Lihat detail lengkap +
+> alasan di `../SIMRS-Khanza/Khanza.md` > "Prinsip Migrasi Data". Ringkasnya:
+> - Driver `pg` → `mysql2`. Tidak ada lagi ETL/cutover dua-mesin-DB — Electron
+>   & Java baca/tulis tabel yang sama secara real-time sejak modul itu digarap.
+> - Migration business-data yang sudah ditulis untuk Postgres (023 Toko, 024
+>   kodesatuan, 006–022 Parkir/Perpustakaan/Surat/IPSRS) **dibuang** — tabelnya
+>   sudah ada 1:1 di `sik.sql` (sudah diverifikasi table-existence check).
+> - Auth/permission TETAP ternormalisasi (`electron_roles/permissions/
+>   role_permissions/user_roles`, prefix `electron_`), tapi **tanpa
+>   `electron_users`** — login pakai tabel `admin`/`user` ASLI langsung (lihat
+>   "Login & Permission (pivot MySQL)" di bawah untuk mekanisme lengkap).
+
+- ~~**Postgres**, bukan SQLite — dan dipakai **untuk semua modul sejak awal**~~
+  **(DIBATALKAN, lihat pivot di atas)**. Konsekuensi lama yang juga batal:
+  modul yang masih dipakai bareng app Java tidak lagi butuh strategi
+  ETL/cutover — sekarang share tabel MySQL yang sama, real-time.
 - **Tidak ada Express/backend server terpisah.** Tiap komputer klien connect
-  langsung ke Postgres pusat lewat koneksi di main process (`pg` Pool),
-  di-expose ke renderer lewat IPC (`ipcMain.handle` + `contextBridge`), bukan
-  HTTP/axios ke `localhost:<port>`.
+  langsung ke MySQL `sik` pusat lewat koneksi di main process (`mysql2`
+  Pool), di-expose ke renderer lewat IPC (`ipcMain.handle` + `contextBridge`),
+  bukan HTTP/axios ke `localhost:<port>`.
 - Migration pakai runner custom (numbered files, tabel `migrations`, backup
-  `pg_dump` sebelum migrasi jalan pada instalasi yang sudah ada datanya) — pola
-  sama seperti referensi, cuma ganti `better-sqlite3` → `pg`.
+  `mysqldump` sebelum migrasi jalan pada instalasi yang sudah ada datanya) —
+  pola sama seperti referensi, cuma ganti `better-sqlite3` → `mysql2`.
 - **Migration TIDAK auto-run saat app start** (beda dari referensi) — app ini
-  di-install di banyak PC RS sekaligus ke satu Postgres pusat, auto-migrate
+  di-install di banyak PC RS sekaligus ke satu MySQL pusat, auto-migrate
   tiap boot berisiko race condition. Migration cuma bisa dipicu manual oleh
   **Administrator** lewat tombol di Pengaturan (role dicek ulang di IPC
   handler, bukan cuma disembunyikan di UI) atau `npm run migrate` dari CLI.
+
+## Login & Permission (pivot MySQL)
+
+Tidak ada tabel `electron_users` — akun tetap satu sumber (tabel asli Khanza),
+cuma lapisan role/permission-nya baru:
+
+| Kebutuhan | Sumber |
+|---|---|
+| Login **Admin Utama** | Tabel `admin` asli (`usere`/`passworde`, `AES_ENCRYPT` key `'nur'`/`'windi'` — sama persis `src/fungsi/akses.java`). Cocok → akses penuh **hardcode**, skip pengecekan role/permission sama sekali (persis kelakuan Java). |
+| Login **user biasa** | Tabel `user` asli (`id_user`/`password`, `AES_ENCRYPT` sama). Cocok → role dicari di `electron_user_roles`. |
+| Role | `electron_roles` |
+| Daftar permission (1211 slug asli + slug baru Electron) | `electron_permissions` (seed dari `017_seed_permissions_khanza_asli.js` + `018_seed_permissions_electron_extra.js`) |
+| Role ↔ permission | `electron_role_permissions` |
+| User ↔ role | `electron_user_roles` (`id_user` VARCHAR(700) — **tidak ada FK formal** ke `user.id_user`, tabel `user` bermesin MyISAM yang tidak mendukung FOREIGN KEY sama sekali; divalidasi di level aplikasi) |
+
+**Penting**: nilai 1211 kolom boolean individual di tiap baris `user` asli
+**tidak pernah dibaca** sebagai sumber otorisasi Electron — cuma dipakai
+SEKALI sebagai daftar nama slug. Semua cek izin di Electron 100% role-based
+lewat `electron_role_permissions`. Konsekuensi: toggle permission individual
+di app Java untuk 1 staff tertentu TIDAK otomatis kebawa ke Electron — dua
+sistem independen sejak titik ini.
+
+**Bootstrap akun pertama tidak perlu wizard khusus** (beda dari rencana lama
+Postgres) — akun `admin` (Admin Utama) sudah ADA di data real `sik.sql`
+sejak awal, aksesnya hardcode penuh tanpa bergantung tabel `electron_*` apa
+pun. Login normal lewat layar Login biasa, lalu jalankan migration
+`electron_*` (kalau belum) dari Pengaturan seperti alur admin biasa.
+
+**Fitur menyusul (prioritas rendah)**: Pengaturan → Pembanding Skema — upload
+`sik.sql` versi baru, dibandingkan ke `information_schema` MySQL yang
+berjalan (bukan tabel snapshot manual), deteksi tabel/kolom baru, usulkan
+`CREATE`/`ALTER` sebagai draft (tidak auto-apply, wajib backup dulu); kolom
+baru di tabel `user` otomatis diusulkan jadi slug baru di `electron_permissions`.
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env   # isi kredensial Postgres & JWT_SECRET yang sebenarnya
-npm run migrate         # WAJIB dijalankan manual sekali di awal — app TIDAK auto-migrate
+cp .env.example .env   # isi kredensial MySQL (host/port/user/pass/database=sik) & JWT_SECRET
+npm run migrate         # jalankan migration electron_* (roles/permissions/role_permissions/user_roles)
 npm run dev              # jalankan app
 ```
 
-Alternatif buat instalasi pertama: **tidak perlu buka terminal** — cukup jalankan
-`npm run dev`/app-nya, layar Login otomatis mendeteksi database masih kosong dan
-menampilkan tombol **"Siapkan Database Sekarang"** (bootstrap tanpa perlu login dulu,
-tapi cuma bisa dipakai SEKALI selagi database benar-benar virgin — lihat guard-nya di
-`main/index.js` > `db:runInitialMigration` dan Khanza.md > "Bootstrap instalasi pertama").
-`npm run migrate` dari CLI tetap tersedia sebagai opsi buat IT/automasi.
+Tidak perlu wizard bootstrap tanpa-login — akun `admin` (Admin Utama) sudah
+ADA di data `sik.sql` sejak awal, akses penuh hardcode tanpa bergantung
+migration `electron_*` sudah jalan atau belum. Login pakai akun `admin` itu
+langsung, lalu (kalau migration `electron_*` belum jalan) jalankan lewat
+tombol "Jalankan Migration" di Pengaturan atau `npm run migrate` dari CLI.
 
-Di instalasi produksi (banyak PC), migrasi pertama ini cukup dilakukan **sekali** dari
-satu PC — bukan per-PC. Migrasi-migrasi BERIKUTNYA (update rilis di masa depan) baru bisa lewat tombol "Jalankan
-Migration" di Pengaturan, karena saat itu admin sudah bisa login.
+Di instalasi produksi (banyak PC), migrasi cukup dilakukan **sekali** dari
+satu PC — bukan per-PC.
 
-Login default setelah migrasi: `admin` / `admin123` (dipaksa ganti password —
-`must_change_password = true`, tapi UI ganti password belum dibuat, masih TODO).
+Login: pakai akun `admin`/`user` yang SUDAH ADA di `sik.sql` Anda (lihat
+"Login & Permission" di atas) — bukan seed `admin`/`admin123` baru.
 
 ### Linux: error FATAL sandbox saat `npm run dev`
 
@@ -69,10 +115,39 @@ server lisensi sungguhan sudah siap.
 
 ## Status implementasi (lihat checklist penuh di Khanza.md)
 
-- [x] Fase 0 — Auth (roles, permissions, users, login, ganti password service)
-- [x] Fase 1 (sebagian) — migration Parkir/Toko/Perpustakaan/Surat/IPSRS sudah
-      ada & tervalidasi jalan di Postgres. **Parkir, Surat Menyurat (taksonomi),
-      dan Perpustakaan CRUD selesai penuh**:
+> **Pivot Postgres → MySQL SEDANG BERJALAN** (lihat "Beda dari referensi" &
+> "Login & Permission" di atas). Fase 0 (Auth) **sudah pindah & tervalidasi
+> di MySQL asli** (database `sik` sungguhan, bukan cuma konsep). Modul Fase 1
+> (Parkir/Toko/dkk) MASIH tervalidasi di Postgres lama — service layer-nya
+> belum disesuaikan ke skema `sik.sql` asli, jadi IPC `toko:*`/`satuan:*`
+> (34 handler) akan ERROR sampai itu dikerjakan (langkah berikutnya setelah
+> Kelola Role).
+
+- [x] Fase 0 — Auth: **jalan di MySQL, tervalidasi ke database `sik` asli**
+      — migration `electron_roles/permissions/role_permissions/user_roles`
+      (6 migration, 1213 permission slug ter-seed), `AuthService.js` login
+      ke tabel `admin`/`user` ASLI (AES_ENCRYPT 'nur'/'windi', persis Java),
+      role "Admin Utama" (tabel `admin`) dapat akses penuh hardcode, role
+      "Administrator" (electron_roles) dapat semua permission juga. Test
+      end-to-end: login admin utama ✓, login user tanpa role ditolak ✓, login
+      user setelah di-assign role ✓, password salah ditolak ✓. **Kelola
+      Role/User SELESAI**: `RoleService.js` (CRUD role, set permission
+      per-role, assign/cabut role ke akun `user` asli — validasi akun
+      beneran ada di tabel `user` sebelum di-assign, karena tabel itu
+      MyISAM/tanpa FK), UI `ManajemenUser.vue` (tab Role: nama + checklist
+      1213 permission dgn search; tab User: daftar akun asli ter-dekripsi +
+      pilih role per akun) di `/pengaturan/user`. Semua IPC di-gate
+      `isFullAdmin` (Admin Utama/Administrator saja — replika "kelola user
+      cuma Admin Utama" di Java). Tervalidasi ke database `sik` asli: assign
+      ke akun tidak ada ditolak ✓, hapus role yang masih dipakai ditolak ✓.
+- [ ] Fase 1 (sebagian) — migration Postgres LAMA (Parkir/Toko/Perpustakaan/
+      Surat/IPSRS) sudah dihapus dari `migrations/` (lihat Khanza.md), tabelnya
+      ternyata sudah ada 1:1 di `sik.sql`. Service layer-nya (`ParkirService.js`,
+      `TokoBarangService.js`, dst) **BELUM disesuaikan** — masih pakai SQL
+      dialect Postgres (`$1`, dst) yang tidak jalan di MySQL. Riwayat
+      sebelum pivot (tervalidasi di Postgres, referensi desain/logic saja):
+      **Parkir, Surat Menyurat (taksonomi), dan Perpustakaan CRUD selesai
+      penuh (logic-nya, BELUM disesuaikan skema MySQL)**:
       - Parkir: Jenis & Tarif + Kartu/Barcode (`DlgParkirJenis.java`/`DlgParkirBarcode.java`)
       - Surat: 9 taksonomi arsip fisik identik (Rak/Almari/Klasifikasi/Sifat/
         Map/Indeks/Ruang/Status/Balas) lewat **1 service generik**

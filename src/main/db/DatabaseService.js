@@ -1,28 +1,23 @@
-// BEDA UTAMA dari referensi pos-desktop: referensi pakai better-sqlite3 (1 file
-// SQLite lokal per device, offline-first). Khanza-desktop pakai Postgres TERPUSAT
-// yang di-hit LANGSUNG oleh tiap komputer klien (tidak ada Express/API perantara —
-// lihat Khanza.md > "Arsitektur UI & Koneksi Data"). Konsekuensinya di sini:
-//   - koneksi pakai `pg` Pool, bukan file lokal
-//   - "backup sebelum migrasi" pakai pg_dump ke folder lokal (bukan copy file .db)
-//   - migration runner tetap pola yang sama (numbered files, tabel migrations,
-//     backup-lalu-stop-kalau-gagal) supaya konsisten dengan referensi
-import pg from 'pg'
+// PIVOT (lihat Khanza.md > "Prinsip Migrasi Data"): backend pindah dari Postgres
+// ke MySQL, connect ke database `sik` YANG SAMA PERSIS dengan app Java asli
+// (bukan lagi database Postgres terpisah) — tidak ada Express/API perantara,
+// tiap komputer klien connect langsung (lihat "Arsitektur UI & Koneksi Data").
+//
+// `pool` di bawah ini SENGAJA dibungkus (bukan langsung `mysql2` Pool apa
+// adanya) supaya permukaan API-nya (`db.query()` balikin `{rows}`, `db.connect()`
+// balikin client dengan `.query()`/`.release()`) TETAP SAMA seperti pola pg
+// lama yang sudah dipakai di seluruh service (`AuthService.js`, migration
+// files, dst) — jadi migrasi driver ini tidak memaksa tulis ulang SETIAP file
+// yang query DB sekaligus. Yang WAJIB disesuaikan per-file tetap ada
+// (placeholder `$1`→`?`, fungsi khusus Postgres kayak `array_agg`/`now()`
+// case-sensitive dst) — itu dikerjakan bertahap per modul, bukan di sini.
+import mysql from 'mysql2/promise'
 import { spawnSync } from 'child_process'
 import { join } from 'path'
 import { mkdirSync, readdirSync, unlinkSync, statSync } from 'fs'
 import { createRequire } from 'module'
 import { homedir } from 'os'
 import migrations from './migrations/index.js'
-
-const { Pool, types } = pg
-
-// `pg` secara default parsing kolom DATE (OID 1082) jadi objek JS `Date` —
-// TAPI seluruh renderer (Vue) nulis kode dengan asumsi kolom tanggal balik
-// sebagai string 'YYYY-MM-DD' (dipakai langsung di `<input type="date">`
-// v-model, `.slice(0,10)`, dst — lihat Parkir/Surat/Perpustakaan). Daripada
-// tambal tiap komponen, override di SATU tempat ini: balikin string mentah
-// apa adanya dari Postgres (sudah 'YYYY-MM-DD'), jangan di-parse jadi Date.
-types.setTypeParser(1082, val => val)
 
 let pool = null
 
@@ -35,17 +30,45 @@ function userDataPath() {
     return process.env.KHANZA_USER_DATA_DIR || join(homedir(), '.config', 'khanza-desktop')
 }
 
+// Bungkus PoolConnection (dari `rawPool.getConnection()`) supaya bentuknya
+// sama seperti `pg` Client: `.query(sql, params)` balikin `{rows}` (bukan
+// tuple `[rows, fields]`), dan `.release()` tetap ada.
+function wrapConnection(conn) {
+    return {
+        query: async (sql, params) => {
+            const [rows] = await conn.query(sql, params)
+            return { rows }
+        },
+        release: () => conn.release(),
+    }
+}
+
 function connect() {
     if (pool) return pool
 
-    pool = new Pool({
-        host:     process.env.PGHOST     || 'localhost',
-        port:     Number(process.env.PGPORT) || 5432,
-        database: process.env.PGDATABASE || 'khanza',
-        user:     process.env.PGUSER     || 'khanza_app',
-        password: process.env.PGPASSWORD || '',
-        max: 10,
+    const rawPool = mysql.createPool({
+        host:     process.env.DB_HOST     || 'localhost',
+        port:     Number(process.env.DB_PORT) || 3306,
+        database: process.env.DB_DATABASE || 'sik',
+        user:     process.env.DB_USER     || 'root',
+        password: process.env.DB_PASSWORD || '',
+        waitForConnections: true,
+        connectionLimit: 10,
+        // Cuma kolom DATE murni yang dipaksa balik sebagai string 'YYYY-MM-DD'
+        // (dipakai renderer Vue langsung di <input type="date"> v-model, dst) —
+        // DATETIME/TIMESTAMP dibiarkan default (balik sebagai Date), sama
+        // prinsipnya dengan override type parser OID 1082 di versi pg lama.
+        dateStrings: ['DATE'],
     })
+
+    pool = {
+        query: async (sql, params) => {
+            const [rows] = await rawPool.query(sql, params)
+            return { rows }
+        },
+        connect: async () => wrapConnection(await rawPool.getConnection()),
+        end: () => rawPool.end(),
+    }
 
     return pool
 }
@@ -57,10 +80,10 @@ function connect() {
 async function ensureMigrationsTable() {
     const db = connect()
     await db.query(`
-        CREATE TABLE IF NOT EXISTS migrations (
-            name    TEXT PRIMARY KEY,
-            ran_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
+        CREATE TABLE IF NOT EXISTS electron_migrations (
+            name    VARCHAR(255) PRIMARY KEY,
+            ran_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB
     `)
     return db
 }
@@ -70,7 +93,7 @@ async function ensureMigrationsTable() {
 // "Jalankan Migration".
 async function getMigrationStatus() {
     const db = await ensureMigrationsTable()
-    const { rows } = await db.query('SELECT name FROM migrations')
+    const { rows } = await db.query('SELECT name FROM electron_migrations')
     const applied = rows.map(r => r.name)
     const pending = migrations.filter(m => !applied.includes(m.name)).map(m => m.name)
     return { applied, pending, upToDate: pending.length === 0 }
@@ -79,7 +102,7 @@ async function getMigrationStatus() {
 // PENTING: fungsi ini SENGAJA TIDAK dipanggil otomatis saat app start (lihat
 // main/index.js). Aplikasi ini di-install di banyak komputer RS sekaligus —
 // kalau migration jalan otomatis tiap boot, beberapa PC bisa mencoba
-// menjalankan migration yang sama ke Postgres terpusat yang sama secara
+// menjalankan migration yang sama ke MySQL terpusat yang sama secara
 // bersamaan (race condition), atau migration destruktif kejalanan tanpa ada
 // yang sadar/mengawasi. Migration cuma boleh dipicu MANUAL oleh Administrator
 // — lewat tombol di Pengaturan (IPC 'db:runMigrations', dicek role-nya di
@@ -88,14 +111,17 @@ async function getMigrationStatus() {
 async function runMigrations() {
     const db = await ensureMigrationsTable()
 
-    const { rows } = await db.query('SELECT name FROM migrations')
+    const { rows } = await db.query('SELECT name FROM electron_migrations')
     const ran     = rows.map(r => r.name)
     const pending = migrations.filter(m => !ran.includes(m.name))
     if (pending.length === 0) return { ranCount: 0, names: [] }
 
     // Backup sebelum migrasi jalan pada instalasi yang SUDAH punya data (bukan
     // fresh install). Gagal backup = HENTIKAN migrasi (jangan sampai migrasi
-    // destruktif jalan tanpa jaring pengaman) — sama seperti prinsip di referensi.
+    // destruktif jalan tanpa jaring pengaman) — sama seperti prinsip lama.
+    // NB: ini backup SELURUH database `sik` (dipakai bareng app Java), bukan
+    // cuma tabel electron_* — jaring pengaman tambahan, BUKAN pengganti
+    // backup rutin DBA/infra RS yang tetap wajib ada terpisah.
     if (ran.length > 0) {
         const dest = backupBeforeMigrations()
         if (!dest) throw new Error('[migrasi] backup gagal — migrasi DIHENTIKAN demi keamanan data')
@@ -105,9 +131,9 @@ async function runMigrations() {
     for (const { name, up } of pending) {
         const client = await db.connect()
         try {
-            await client.query('BEGIN')
+            await client.query('START TRANSACTION')
             await up(client)
-            await client.query('INSERT INTO migrations (name) VALUES ($1)', [name])
+            await client.query('INSERT INTO electron_migrations (name) VALUES (?)', [name])
             await client.query('COMMIT')
         } catch (err) {
             await client.query('ROLLBACK')
@@ -120,30 +146,29 @@ async function runMigrations() {
     return { ranCount: pending.length, names: pending.map(m => m.name) }
 }
 
-// Backup pakai pg_dump (custom format) ke folder lokal komputer yang menjalankan
-// migrasi. Beda dari referensi (copy file SQLite) karena Postgres adalah server
-// terpusat — backup di sini sifatnya jaring pengaman TAMBAHAN untuk proses migrasi,
-// BUKAN pengganti backup rutin DB oleh DBA/infra RS (itu tetap wajib ada terpisah).
+// Backup pakai mysqldump ke folder lokal komputer yang menjalankan migrasi.
+// Password dikirim lewat env MYSQL_PWD (bukan argumen CLI) supaya tidak
+// kelihatan di daftar proses (`ps`).
 function backupBeforeMigrations() {
     const dataPath   = userDataPath()
     const backupsDir = join(dataPath, 'backups')
     mkdirSync(backupsDir, { recursive: true })
 
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const dest  = join(backupsDir, `khanza-pra-migrasi-${stamp}.dump`)
+    const dest  = join(backupsDir, `khanza-pra-migrasi-${stamp}.sql`)
 
-    const result = spawnSync('pg_dump', [
-        '-h', process.env.PGHOST     || 'localhost',
-        '-p', process.env.PGPORT     || '5432',
-        '-U', process.env.PGUSER     || 'khanza_app',
-        '-Fc', '-f', dest,
-        process.env.PGDATABASE || 'khanza',
+    const result = spawnSync('mysqldump', [
+        '-h', process.env.DB_HOST || 'localhost',
+        '-P', process.env.DB_PORT || '3306',
+        '-u', process.env.DB_USER || 'root',
+        '--result-file', dest,
+        process.env.DB_DATABASE || 'sik',
     ], {
-        env: { ...process.env, PGPASSWORD: process.env.PGPASSWORD || '' },
+        env: { ...process.env, MYSQL_PWD: process.env.DB_PASSWORD || '' },
     })
 
     if (result.status !== 0) {
-        console.error('[migrasi] pg_dump gagal:', result.stderr?.toString())
+        console.error('[migrasi] mysqldump gagal:', result.stderr?.toString())
         return null
     }
 
@@ -154,7 +179,7 @@ function backupBeforeMigrations() {
 function pruneBackups(dir, keep) {
     try {
         const files = readdirSync(dir)
-            .filter(f => f.startsWith('khanza-pra-migrasi-') && f.endsWith('.dump'))
+            .filter(f => f.startsWith('khanza-pra-migrasi-') && f.endsWith('.sql'))
             .map(f => ({ f, t: statSync(join(dir, f)).mtimeMs }))
             .sort((a, b) => b.t - a.t)
         for (const { f } of files.slice(keep)) {

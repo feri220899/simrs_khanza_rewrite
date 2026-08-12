@@ -23,9 +23,23 @@ contextBridge.exposeInMainWorld('api', {
         getVersion: () => ipcRenderer.invoke('app:getVersion'),
     },
     auth: {
-        login:          (username, password) => ipcRenderer.invoke('auth:login', username, password),
-        me:             (token)              => ipcRenderer.invoke('auth:me', token),
-        changePassword: (token, oldPw, newPw) => ipcRenderer.invoke('auth:changePassword', token, oldPw, newPw),
+        login: (username, password) => ipcRenderer.invoke('auth:login', username, password),
+        me:    (token)               => ipcRenderer.invoke('auth:me', token),
+    },
+    role: {
+        list:            (token)                 => ipcRenderer.invoke('role:list', token),
+        create:          (token, nama)           => ipcRenderer.invoke('role:create', token, nama),
+        update:          (token, id, nama)       => ipcRenderer.invoke('role:update', token, id, nama),
+        delete:          (token, id)             => ipcRenderer.invoke('role:delete', token, id),
+        duplicate:       (token, id, namaBaru)   => ipcRenderer.invoke('role:duplicate', token, id, namaBaru),
+        listAllPermissions: (token)              => ipcRenderer.invoke('role:permissions:listAll', token),
+        getPermissions:  (token, roleId)         => ipcRenderer.invoke('role:permissions:get', token, roleId),
+        setPermissions:  (token, roleId, ids)    => ipcRenderer.invoke('role:permissions:set', token, roleId, ids),
+        listUsers:       (token)                 => ipcRenderer.invoke('role:user:list', token),
+        assignUser:      (token, idUser, roleId) => ipcRenderer.invoke('role:user:assign', token, idUser, roleId),
+        removeUser:      (token, idUser)         => ipcRenderer.invoke('role:user:remove', token, idUser),
+        createUser:      (token, data)           => ipcRenderer.invoke('role:user:create', token, data),
+        listOrang:       (token)                  => ipcRenderer.invoke('role:user:listOrang', token),
     },
     // Satu channel generik per modul Fase 1, bukan 1 file Controller per modul
     // kayak referensi (Express dibuang, lihat Khanza.md). Tiap modul daftar
@@ -199,11 +213,7 @@ contextBridge.exposeInMainWorld('api', {
     // migration divalidasi ulang role-nya di main process (lihat main/index.js),
     // bukan cuma disembunyikan tombolnya di renderer.
     db: {
-        migrationStatus:    ()      => ipcRenderer.invoke('db:migrationStatus'),
-        runMigrations:      (token) => ipcRenderer.invoke('db:runMigrations', token),
-        // Cuma jalan kalau database benar-benar belum pernah di-migration
-        // sama sekali — lihat guard-nya di main/index.js. Dipakai dari
-        // Login.vue saat layar "Database Belum Disiapkan" muncul.
-        runInitialMigration: () => ipcRenderer.invoke('db:runInitialMigration'),
+        migrationStatus: ()      => ipcRenderer.invoke('db:migrationStatus'),
+        runMigrations:   (token) => ipcRenderer.invoke('db:runMigrations', token),
     },
 })
