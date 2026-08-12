@@ -31,6 +31,13 @@ contextBridge.exposeInMainWorld('api', {
     app: {
         getVersion: () => ipcRenderer.invoke('app:getVersion'),
     },
+    updater: {
+        check:    ()   => ipcRenderer.invoke('updater:check'),
+        download: ()   => ipcRenderer.invoke('updater:download'),
+        install:  ()   => ipcRenderer.invoke('updater:install'),
+        onEvent:  (cb) => ipcRenderer.on('updater:event', (_, payload) => cb(payload)),
+        offEvent: ()   => ipcRenderer.removeAllListeners('updater:event'),
+    },
     auth: {
         login: (username, password) => ipcRenderer.invoke('auth:login', username, password),
         me:    (token)               => ipcRenderer.invoke('auth:me', token),

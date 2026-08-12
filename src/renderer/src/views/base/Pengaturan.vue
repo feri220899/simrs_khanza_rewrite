@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Users, DatabaseZap, Server } from 'lucide-vue-next'
+import { Users, DatabaseZap, Server, Info } from 'lucide-vue-next'
 import ManajemenUser from './ManajemenUser.vue'
 import MigrationPanel from '../../components/MigrationPanel.vue'
 import SchemaComparePanel from '../../components/SchemaComparePanel.vue'
 import EnvironmentPanel from '../../components/EnvironmentPanel.vue'
+import UpdatePanel from '../../components/UpdatePanel.vue'
 
 // Hub Pengaturan — tab BERJENJANG (top-level -> children), disengaja
 // terstruktur sebagai array supaya penambahan section baru ke depan (bakal
@@ -34,6 +35,15 @@ const PENGATURAN_TABS = [
         key: 'environment', label: 'Environment', icon: Server,
         children: [
             { key: 'environment', label: 'Environment', component: EnvironmentPanel },
+        ],
+    },
+    {
+        // Versi aplikasi & cek pembaruan (electron-updater, sumber GitHub
+        // Releases repo ini) — dipisah dari "Environment" karena beda
+        // konteks: itu infra/koneksi service, ini identitas versi aplikasi.
+        key: 'tentang', label: 'Informasi', icon: Info,
+        children: [
+            { key: 'tentang', label: 'Informasi', component: UpdatePanel },
         ],
     },
 ]

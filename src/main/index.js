@@ -4,6 +4,7 @@ import { join } from 'path'
 import LisensiService from './electron/LisensiService.js'
 import ConfigService  from './electron/ConfigService.js'
 import DeviceService  from './electron/DeviceService.js'
+import UpdaterService from './electron/UpdaterService.js'
 import AuthService    from './db/AuthService.js'
 import RoleService    from './db/modules/RoleService.js'
 import SchemaCompareService from './db/modules/SchemaCompareService.js'
@@ -58,6 +59,8 @@ function createWindow() {
         Menu.setApplicationMenu(null)
         win.loadFile(join(__dirname, '../renderer/index.html'))
     }
+
+    return win
 }
 
 // ─── IPC ─────────────────────────────────────────────────────────────────────
@@ -140,6 +143,15 @@ app.whenReady().then(async () => {
 
     // App
     ipcMain.handle('app:getVersion', () => app.getVersion())
+
+    // Auto-update — sumber rilis GitHub Releases repo ini sendiri (lihat
+    // `publish` di package.json + .github/workflows/rilis.yml). Hanya CEK &
+    // BERI TAHU otomatis saat start (lihat UpdaterService.init()), unduh &
+    // pasang SELALU manual lewat tombol (tidak ada auto-download/install
+    // diam-diam yang bisa mengganggu shift RS).
+    ipcMain.handle('updater:check',    () => UpdaterService.check())
+    ipcMain.handle('updater:download', () => UpdaterService.download())
+    ipcMain.handle('updater:install',  () => UpdaterService.quitAndInstall())
 
     // Auth — login ke akun ASLI Khanza (tabel `admin`/`user`), lihat
     // README.md > "Login & Permission (pivot MySQL)". TIDAK ADA ganti-password
@@ -640,7 +652,7 @@ app.whenReady().then(async () => {
         return auth.ok ? SchemaCompareService.removeOrphanPermission(slug) : { success: false, message: auth.message }
     })
 
-    createWindow()
+    UpdaterService.init(createWindow())
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow()

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppHeader from './components/AppHeader.vue'
 import AppToast from './components/AppToast.vue'
+import AppUpdater from './components/AppUpdater.vue'
 
 const route = useRoute()
 const hasLayout = computed(() => route.meta.layout !== false)
@@ -23,4 +24,5 @@ const hasLayout = computed(() => route.meta.layout !== false)
     </div>
 
     <AppToast />
+    <AppUpdater />
 </template>
