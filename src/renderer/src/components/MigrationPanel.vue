@@ -86,7 +86,10 @@ onMounted(loadStatus)
         </div>
     </div>
 
-    <!-- Konfirmasi sebelum eksekusi — migrasi mengubah skema, jangan sampai kepencet tidak sengaja -->
+    <!-- Konfirmasi sebelum eksekusi — migrasi mengubah skema, jangan sampai kepencet tidak sengaja.
+         TIDAK ADA backup otomatis dari app ini (keputusan sengaja — backup
+         database sudah rutin di sisi server/DBA), jadi konfirmasi ini WAJIB
+         tegaskan itu secara eksplisit, bukan cuma peringatan umum. -->
     <div v-if="showConfirm" class="modal modal-open">
         <div class="modal-box">
             <h3 class="font-bold text-lg">Jalankan migration?</h3>
@@ -94,9 +97,13 @@ onMounted(loadStatus)
                 Ini akan mengubah skema database yang dipakai BERSAMA oleh semua komputer di RS.
                 Pastikan tidak ada komputer lain yang sedang aktif dipakai transaksi penting saat ini.
             </p>
+            <p class="py-1 text-sm font-semibold text-warning">
+                Aplikasi ini TIDAK membuat backup otomatis. Pastikan backup database sudah
+                dilakukan secara manual di sisi server sebelum melanjutkan.
+            </p>
             <div class="modal-action">
                 <button class="btn btn-ghost btn-sm" @click="showConfirm = false">Batal</button>
-                <button class="btn btn-warning btn-sm" @click="runMigrations">Ya, Jalankan</button>
+                <button class="btn btn-warning btn-sm" @click="runMigrations">Ya, Backup Sudah Dilakukan — Jalankan</button>
             </div>
         </div>
     </div>

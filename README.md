@@ -33,9 +33,13 @@ Struktur folder & pola UI (sidebar, permission, komponen) mengikuti
   langsung ke MySQL `sik` pusat lewat koneksi di main process (`mysql2`
   Pool), di-expose ke renderer lewat IPC (`ipcMain.handle` + `contextBridge`),
   bukan HTTP/axios ke `localhost:<port>`.
-- Migration pakai runner custom (numbered files, tabel `migrations`, backup
-  `mysqldump` sebelum migrasi jalan pada instalasi yang sudah ada datanya) —
-  pola sama seperti referensi, cuma ganti `better-sqlite3` → `mysql2`.
+- Migration pakai runner custom (numbered files, tabel `electron_migrations`)
+  — pola sama seperti referensi, cuma ganti `better-sqlite3` → `mysql2`.
+  **TIDAK ADA backup otomatis** dari app ini (keputusan sengaja — `mysqldump`
+  tidak selalu tersedia di tiap komputer klien, dan backup database `sik`
+  sudah rutin di sisi server/DBA) — UI (Pengaturan > Database, Migrasi &
+  Pembanding Skema) menegaskan lewat konfirmasi eksplisit bahwa backup
+  manual WAJIB sudah dilakukan sebelum menjalankan aksi yang ubah skema.
 - **Migration TIDAK auto-run saat app start** (beda dari referensi) — app ini
   di-install di banyak PC RS sekaligus ke satu MySQL pusat, auto-migrate
   tiap boot berisiko race condition. Migration cuma bisa dipicu manual oleh
@@ -69,11 +73,35 @@ sejak awal, aksesnya hardcode penuh tanpa bergantung tabel `electron_*` apa
 pun. Login normal lewat layar Login biasa, lalu jalankan migration
 `electron_*` (kalau belum) dari Pengaturan seperti alur admin biasa.
 
-**Fitur menyusul (prioritas rendah)**: Pengaturan → Pembanding Skema — upload
-`sik.sql` versi baru, dibandingkan ke `information_schema` MySQL yang
-berjalan (bukan tabel snapshot manual), deteksi tabel/kolom baru, usulkan
-`CREATE`/`ALTER` sebagai draft (tidak auto-apply, wajib backup dulu); kolom
-baru di tabel `user` otomatis diusulkan jadi slug baru di `electron_permissions`.
+**Pengaturan → Database → Pembanding Skema: SELESAI.** Upload `sik.sql`
+versi baru (native file dialog di main process, isi file tidak pernah lewat
+IPC), dibandingkan ke `information_schema` MySQL yang berjalan (parser regex
+`CREATE TABLE`, bukan full SQL parser — cukup buat format mysqldump standar).
+Deteksi tabel baru/kolom baru (ada tombol "Terapkan" per item, WAJIB
+konfirmasi eksplisit "backup sudah dilakukan manual" dulu — tidak ada backup
+otomatis, lihat "Beda dari referensi" di atas) dan kolom berubah tipe/tabel-
+kolom hilang (info doang, TIDAK PERNAH ditawarkan tombol apply — risiko data
+loss). Kolom baru di tabel `user` otomatis diusulkan jadi slug baru di
+`electron_permissions`. **Temuan penting saat validasi** (dites lawan
+`sik.sql` asli vs database live — harus 0 beda):
+- MySQL 8.0.19+ tidak lagi melaporkan display-width kolom `int`/`year` lewat
+  `information_schema` (`int(11)` di dump balik jadi cuma `int`) meski
+  kolomnya beneran dibuat dengan width itu — tanpa normalisasi ini, RATUSAN
+  kolom salah terdeteksi "berubah tipe" padahal sama persis (702 false
+  positive sebelum fix).
+- Parsing `DEFAULT` yang isinya string literal WAJIB ikut aturan escaping
+  MySQL (`''` = 1 literal quote, BUKAN backslash) — dump asli punya kolom
+  dgn `DEFAULT ''''''`, regex naive salah berhenti di kutip pertama.
+
+**Sinkronisasi Permission (terpisah dari diff skema)**: diff skema di atas
+cuma bandingkan kolom FILE vs LIVE — kalau slug di `electron_permissions`
+kehapus manual (bukan kolom `user`-nya yang hilang), diff skema tidak akan
+mendeteksi apa-apa (kolomnya memang tidak berubah). Ditambahkan pengecekan
+terpisah `getMissingPermissions()`: bandingkan kolom `user` LIVE langsung ke
+isi `electron_permissions`, independen dari upload file — jalan otomatis
+begitu tab dibuka + tombol "Cek Ulang" manual. Tervalidasi: hapus slug `igd`
+manual dari `electron_permissions` → terdeteksi sebagai "belum punya
+permission" → tombol Tambahkan mengembalikannya.
 
 ## Setup
 

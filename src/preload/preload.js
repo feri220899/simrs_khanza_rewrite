@@ -41,6 +41,14 @@ contextBridge.exposeInMainWorld('api', {
         createUser:      (token, data)           => ipcRenderer.invoke('role:user:create', token, data),
         listOrang:       (token)                  => ipcRenderer.invoke('role:user:listOrang', token),
     },
+    schema: {
+        compareFile:          (token)                     => ipcRenderer.invoke('schema:compareFile', token),
+        applyTable:           (token, tableName)           => ipcRenderer.invoke('schema:applyTable', token, tableName),
+        applyColumn:          (token, table, column, type) => ipcRenderer.invoke('schema:applyColumn', token, table, column, type),
+        checkPermissionSync:  (token)                      => ipcRenderer.invoke('schema:checkPermissionSync', token),
+        applyPermission:      (token, slug)                => ipcRenderer.invoke('schema:applyPermission', token, slug),
+        removeOrphanPermission: (token, slug)              => ipcRenderer.invoke('schema:removeOrphanPermission', token, slug),
+    },
     // Satu channel generik per modul Fase 1, bukan 1 file Controller per modul
     // kayak referensi (Express dibuang, lihat Khanza.md). Tiap modul daftar
     // handler-nya sendiri di src/main/modules/<modul>.js — lihat SOP sebelum

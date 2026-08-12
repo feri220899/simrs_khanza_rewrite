@@ -6,6 +6,7 @@ import ConfigService  from './electron/ConfigService.js'
 import DeviceService  from './electron/DeviceService.js'
 import AuthService    from './db/AuthService.js'
 import RoleService    from './db/modules/RoleService.js'
+import SchemaCompareService from './db/modules/SchemaCompareService.js'
 import DatabaseService from './db/DatabaseService.js'
 import ParkirService  from './db/modules/ParkirService.js'
 import SuratTaksonomiService from './db/modules/SuratTaksonomiService.js'
@@ -554,6 +555,39 @@ app.whenReady().then(async () => {
         return DatabaseService.runMigrations()
             .then(result => ({ success: true, ...result }))
             .catch(err => ({ success: false, message: err.message }))
+    })
+
+    // Pembanding Skema — upload sik.sql baru, bandingkan ke information_schema
+    // yang berjalan. Sama seperti migration: gated isFullAdmin, WAJIB backup
+    // sebelum apply (lihat SchemaCompareService.js), tidak ada auto-apply.
+    ipcMain.handle('schema:compareFile', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.pickAndCompareFile() : { canceled: true, error: auth.message }
+    })
+    ipcMain.handle('schema:applyTable', (_, token, tableName) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.applyNewTable(tableName) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('schema:applyColumn', (_, token, table, column, type) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.applyNewColumn(table, column, type) : { success: false, message: auth.message }
+    })
+    // Cek cakupan permission independen dari upload file — dua arah: kolom
+    // `user` LIVE yang belum punya slug (missing), DAN slug yang kolom
+    // `user`-nya sudah tidak ada (orphan). Apa pun sebabnya (kolom baru
+    // belum di-apply, atau baris electron_permissions kehapus/ketinggalan
+    // manual).
+    ipcMain.handle('schema:checkPermissionSync', (_, token) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.checkPermissionSync() : { missing: [], orphan: [] }
+    })
+    ipcMain.handle('schema:applyPermission', (_, token, slug) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.applyPermission(slug) : { success: false, message: auth.message }
+    })
+    ipcMain.handle('schema:removeOrphanPermission', (_, token, slug) => {
+        const auth = requireFullAdmin(token)
+        return auth.ok ? SchemaCompareService.removeOrphanPermission(slug) : { success: false, message: auth.message }
     })
 
     createWindow()

@@ -12,23 +12,9 @@
 // (placeholder `$1`→`?`, fungsi khusus Postgres kayak `array_agg`/`now()`
 // case-sensitive dst) — itu dikerjakan bertahap per modul, bukan di sini.
 import mysql from 'mysql2/promise'
-import { spawnSync } from 'child_process'
-import { join } from 'path'
-import { mkdirSync, readdirSync, unlinkSync, statSync } from 'fs'
-import { createRequire } from 'module'
-import { homedir } from 'os'
 import migrations from './migrations/index.js'
 
 let pool = null
-
-function userDataPath() {
-    try {
-        const require = createRequire(import.meta.url)
-        const electron = require('electron')
-        if (electron?.app?.getPath) return electron.app.getPath('userData')
-    } catch {}
-    return process.env.KHANZA_USER_DATA_DIR || join(homedir(), '.config', 'khanza-desktop')
-}
 
 // Bungkus PoolConnection (dari `rawPool.getConnection()`) supaya bentuknya
 // sama seperti `pg` Client: `.query(sql, params)` balikin `{rows}` (bukan
@@ -116,18 +102,12 @@ async function runMigrations() {
     const pending = migrations.filter(m => !ran.includes(m.name))
     if (pending.length === 0) return { ranCount: 0, names: [] }
 
-    // Backup sebelum migrasi jalan pada instalasi yang SUDAH punya data (bukan
-    // fresh install). Gagal backup = HENTIKAN migrasi (jangan sampai migrasi
-    // destruktif jalan tanpa jaring pengaman) — sama seperti prinsip lama.
-    // NB: ini backup SELURUH database `sik` (dipakai bareng app Java), bukan
-    // cuma tabel electron_* — jaring pengaman tambahan, BUKAN pengganti
-    // backup rutin DBA/infra RS yang tetap wajib ada terpisah.
-    if (ran.length > 0) {
-        const dest = backupBeforeMigrations()
-        if (!dest) throw new Error('[migrasi] backup gagal — migrasi DIHENTIKAN demi keamanan data')
-        console.log(`[migrasi] ${pending.length} migrasi tertunda — backup dibuat di ${dest}`)
-    }
-
+    // TIDAK ADA backup otomatis dari app ini (keputusan sengaja) — backup
+    // database `sik` sudah jadi tanggung jawab rutin DBA/infra RS di sisi
+    // server (mysqldump/snapshot terjadwal), bukan sesuatu yang dipicu dari
+    // sini. UI (Pengaturan > Database > Migrasi) WAJIB tetap tegaskan lewat
+    // konfirmasi eksplisit bahwa backup manual harus sudah dilakukan sebelum
+    // klik jalankan — lihat MigrationPanel.vue.
     for (const { name, up } of pending) {
         const client = await db.connect()
         try {
@@ -144,48 +124,6 @@ async function runMigrations() {
     }
 
     return { ranCount: pending.length, names: pending.map(m => m.name) }
-}
-
-// Backup pakai mysqldump ke folder lokal komputer yang menjalankan migrasi.
-// Password dikirim lewat env MYSQL_PWD (bukan argumen CLI) supaya tidak
-// kelihatan di daftar proses (`ps`).
-function backupBeforeMigrations() {
-    const dataPath   = userDataPath()
-    const backupsDir = join(dataPath, 'backups')
-    mkdirSync(backupsDir, { recursive: true })
-
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const dest  = join(backupsDir, `khanza-pra-migrasi-${stamp}.sql`)
-
-    const result = spawnSync('mysqldump', [
-        '-h', process.env.DB_HOST || 'localhost',
-        '-P', process.env.DB_PORT || '3306',
-        '-u', process.env.DB_USER || 'root',
-        '--result-file', dest,
-        process.env.DB_DATABASE || 'sik',
-    ], {
-        env: { ...process.env, MYSQL_PWD: process.env.DB_PASSWORD || '' },
-    })
-
-    if (result.status !== 0) {
-        console.error('[migrasi] mysqldump gagal:', result.stderr?.toString())
-        return null
-    }
-
-    pruneBackups(backupsDir, 3)
-    return dest
-}
-
-function pruneBackups(dir, keep) {
-    try {
-        const files = readdirSync(dir)
-            .filter(f => f.startsWith('khanza-pra-migrasi-') && f.endsWith('.sql'))
-            .map(f => ({ f, t: statSync(join(dir, f)).mtimeMs }))
-            .sort((a, b) => b.t - a.t)
-        for (const { f } of files.slice(keep)) {
-            try { unlinkSync(join(dir, f)) } catch {}
-        }
-    } catch {}
 }
 
 async function get() {

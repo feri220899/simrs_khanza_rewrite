@@ -13,7 +13,11 @@
 // tidak akan lolos pengecekan authStore.can('dashboard') /
 // can('pengaturan-user') — menu Dashboard & Manajemen User akan hilang dari
 // sidebar meski role-nya sudah diberi akses penuh.
-const EXTRA_SLUGS = ['dashboard', 'pengaturan-user']
+// Diekspor (bukan cuma const lokal) — dipakai lagi oleh
+// SchemaCompareService.getOrphanPermissions() supaya dua slug non-Khanza ini
+// tidak salah dilaporkan sebagai "permission tidak punya kolom `user`" (satu
+// sumber kebenaran, bukan daftar duplikat yang bisa drift).
+export const EXTRA_SLUGS = ['dashboard', 'pengaturan-user']
 
 export default {
     name: '006_seed_electron_permissions_extra',

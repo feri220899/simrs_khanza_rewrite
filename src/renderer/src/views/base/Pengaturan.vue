@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Users, DatabaseZap } from 'lucide-vue-next'
 import ManajemenUser from './ManajemenUser.vue'
 import MigrationPanel from '../../components/MigrationPanel.vue'
+import SchemaComparePanel from '../../components/SchemaComparePanel.vue'
 
 // Hub Pengaturan — tab BERJENJANG (top-level -> children), disengaja
 // terstruktur sebagai array supaya penambahan section baru ke depan (bakal
@@ -20,6 +21,7 @@ const PENGATURAN_TABS = [
         key: 'database', label: 'Database', icon: DatabaseZap,
         children: [
             { key: 'migrasi', label: 'Migrasi', component: MigrationPanel },
+            { key: 'pembanding-skema', label: 'Pembanding Skema', component: SchemaComparePanel },
         ],
     },
 ]
