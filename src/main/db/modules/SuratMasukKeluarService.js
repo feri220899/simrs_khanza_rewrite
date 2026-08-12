@@ -19,9 +19,11 @@
 // yang sama), cuma query-nya lebih aman/tepat.
 //
 // File lampiran WAJIB (persis asli, divalidasi 3 lapis ekstensi/MIME di PHP)
-// — disimpan ke MinIO (bukan folor lokal `pages/upload/`), Postgres cuma
-// nyimpan OBJECT KEY-nya di kolom `file_url` (nama kolom dipertahankan sama
-// dengan asli meski isinya sekarang object key, bukan path lokal).
+// — disimpan ke MinIO (bukan folder lokal `pages/upload/`), DB cuma nyimpan
+// OBJECT KEY-nya di kolom `file_url` (nama kolom dipertahankan sama dengan
+// asli meski isinya sekarang object key, bukan path lokal). Tabel ASLI
+// sik.sql `surat_masuk`/`surat_keluar` — field-nya cocok 1:1 dgn yang sudah
+// dibangun, cuma dialect yang disesuaikan ke MySQL.
 import DatabaseService from '../DatabaseService.js'
 import MinioService from '../../electron/MinioService.js'
 
@@ -53,12 +55,12 @@ async function list(jenis, { page = 1, pageSize = 10, sortBy = 'no_urut', sortOr
     const dir = sortOrder === 'asc' ? 'ASC' : 'DESC'
     const like = `%${search}%`
 
-    const where = [`($1::text = '' OR (${searchCols.map(c => `t.${c} ILIKE $1`).join(' OR ')}))`]
-    const params = [like]
-    if (kd_status) { params.push(kd_status); where.push(`t.kd_status = $${params.length}`) }
-    if (kd_ruang)  { params.push(kd_ruang);  where.push(`t.kd_ruang = $${params.length}`) }
-    if (kd_balas)  { params.push(kd_balas);  where.push(`t.kd_balas = $${params.length}`) }
-    if (tgl1 && tgl2) { params.push(tgl1, tgl2); where.push(`t.${tglField} BETWEEN $${params.length - 1} AND $${params.length}`) }
+    const where = [`(? = '' OR (${searchCols.map(c => `t.${c} LIKE ?`).join(' OR ')}))`]
+    const params = [search, ...searchCols.map(() => like)]
+    if (kd_status) { where.push('t.kd_status = ?'); params.push(kd_status) }
+    if (kd_ruang)  { where.push('t.kd_ruang = ?');  params.push(kd_ruang) }
+    if (kd_balas)  { where.push('t.kd_balas = ?');  params.push(kd_balas) }
+    if (tgl1 && tgl2) { where.push(`t.${tglField} BETWEEN ? AND ?`); params.push(tgl1, tgl2) }
 
     const { rows } = await db.query(
         `SELECT t.*, l.lemari, r.rak, m.map, ru.ruang, s.sifat, b.balas, st.status, k.klasifikasi
@@ -73,11 +75,11 @@ async function list(jenis, { page = 1, pageSize = 10, sortBy = 'no_urut', sortOr
          JOIN surat_klasifikasi k ON k.kd = t.kd_klasifikasi
          WHERE ${where.join(' AND ')}
          ORDER BY ${col} ${dir}
-         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+         LIMIT ? OFFSET ?`,
         [...params, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM ${table} t WHERE ${where.join(' AND ')}`,
+        `SELECT COUNT(*) AS count FROM ${table} t WHERE ${where.join(' AND ')}`,
         params
     )
     return { data: rows, total: count }
@@ -89,11 +91,14 @@ async function nextNoUrut(jenis, tgl) {
     const db = await DatabaseService.get()
     const tanggal = tgl || new Date().toISOString().slice(0, 10)
     const { rows: [{ mx }] } = await db.query(
-        `SELECT COALESCE(MAX(NULLIF(regexp_replace(RIGHT(no_urut, 3), '\\D', '', 'g'), '')::int), 0) AS mx
-         FROM ${table} WHERE ${tglField} = $1`,
+        `SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(RIGHT(no_urut, 3), '[^0-9]', ''), '') AS UNSIGNED)), 0) AS mx
+         FROM ${table} WHERE ${tglField} = ?`,
         [tanggal]
     )
-    return prefix + tanggal.replaceAll('-', '') + String(mx + 1).padStart(3, '0')
+    // mysql2 balikin hasil CAST(...AS UNSIGNED) sebagai STRING, WAJIB Number()
+    // dulu — lihat catatan panjang di TokoBarangService.nextKode() soal bug
+    // nyata yang ketemu dari pola persis ini ("2"+1="21" bukan 3).
+    return prefix + tanggal.replaceAll('-', '') + String(Number(mx) + 1).padStart(3, '0')
 }
 
 // Urutan validasi SAMA seperti chain !empty() di PHP asli.
@@ -139,14 +144,16 @@ async function create(jenis, data) {
         data.tgl_pokok, data.kd_lemari, data.kd_rak, data.kd_map, data.kd_ruang, data.kd_sifat, data.lampiran,
         data.tembusan, data.tgl_deadline_balas, data.kd_balas, data.keterangan, data.kd_status, data.kd_klasifikasi,
         data.file_url]
-    const placeholders = nilai.map((_, i) => `$${i + 1}`).join(',')
+    const placeholders = nilai.map(() => '?').join(',')
 
     try {
         await db.query(`INSERT INTO ${table} (${kolom.join(',')}) VALUES (${placeholders})`, nilai)
         return { success: true, no_urut: noUrut }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: 'Nomor Surat sudah ada' }
-        if (e.code === '23503') return { success: false, message: 'Almari/Rak/Map/Ruang/Sifat/Balas/Status/Klasifikasi yang dipilih tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: 'Nomor Surat sudah ada' }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Almari/Rak/Map/Ruang/Sifat/Balas/Status/Klasifikasi yang dipilih tidak valid' }
+        }
         throw e
     }
 }
@@ -157,14 +164,14 @@ async function create(jenis, data) {
 async function deleteOne(jenis, noUrut) {
     const { table } = getConfig(jenis)
     const db = await DatabaseService.get()
-    const { rows: [row] } = await db.query(`SELECT file_url FROM ${table} WHERE no_urut=$1`, [noUrut])
+    const { rows: [row] } = await db.query(`SELECT file_url FROM ${table} WHERE no_urut=?`, [noUrut])
     if (!row) return { success: false, message: 'Data tidak ditemukan' }
 
     if (row.file_url) {
         await MinioService.remove(row.file_url).catch(() => {})
     }
-    const { rowCount } = await db.query(`DELETE FROM ${table} WHERE no_urut=$1`, [noUrut])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    const { rows: result } = await db.query(`DELETE FROM ${table} WHERE no_urut=?`, [noUrut])
+    return { success: result.affectedRows > 0, message: result.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 export default { list, nextNoUrut, create, deleteOne }

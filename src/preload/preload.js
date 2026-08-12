@@ -188,6 +188,7 @@ contextBridge.exposeInMainWorld('api', {
         },
         sirkulasi: {
             getSetting:     ()             => ipcRenderer.invoke('perpustakaan:sirkulasi:getSetting'),
+            listPetugas:    ()             => ipcRenderer.invoke('perpustakaan:sirkulasi:listPetugas'),
             list:           (params)       => ipcRenderer.invoke('perpustakaan:sirkulasi:list', params),
             previewPinjam:  (data)         => ipcRenderer.invoke('perpustakaan:sirkulasi:previewPinjam', data),
             pinjam:         (token, data)  => ipcRenderer.invoke('perpustakaan:sirkulasi:pinjam', token, data),

@@ -21,6 +21,10 @@ const setting = ref(null)
 const statusFilter = ref('')
 const opsiAnggota = ref([])
 const opsiInventaris = ref([])
+// "Petugas" (nip) — replika src/kepegawaian/DlgCariPetugas.java: dipilih
+// eksplisit dari daftar petugas AKTIF, BUKAN otomatis dari akun yang login
+// (lihat catatan koreksi di PerpustakaanSirkulasiService.listPetugas()).
+const opsiPetugas = ref([])
 
 // AppSelect (dropdown pencarian) nonaktifkan opsi lewat field `disabled` —
 // buku yang statusnya bukan 'Ada' tidak boleh dipinjam lagi.
@@ -32,12 +36,14 @@ const opsiInventarisPinjam = computed(() => opsiInventaris.value.map(o => ({
 
 async function muatAwal() {
     setting.value = await window.api.perpustakaan.sirkulasi.getSetting()
-    const [a, i] = await Promise.all([
+    const [a, i, p] = await Promise.all([
         window.api.perpustakaan.anggota.list({ pageSize: 1000 }),
         window.api.perpustakaan.inventaris.list({ pageSize: 1000 }),
+        window.api.perpustakaan.sirkulasi.listPetugas(),
     ])
     opsiAnggota.value = a.data
     opsiInventaris.value = i.data
+    opsiPetugas.value = p
 }
 
 const columns = [
@@ -83,13 +89,13 @@ const modal = ref(null)
 const mode = ref('pinjam') // 'pinjam' | 'kembali'
 const saving = ref(false)
 const preview = ref(null)
-const form = reactive({ no_anggota: '', no_inventaris: '', tgl_pinjam: '', tgl_kembali: '' })
+const form = reactive({ no_anggota: '', no_inventaris: '', tgl_pinjam: '', tgl_kembali: '', nip: '' })
 
 function today() { return new Date().toISOString().slice(0, 10) }
 
 function openPinjam() {
     mode.value = 'pinjam'
-    Object.assign(form, { no_anggota: '', no_inventaris: '', tgl_pinjam: today(), tgl_kembali: '' })
+    Object.assign(form, { no_anggota: '', no_inventaris: '', tgl_pinjam: today(), tgl_kembali: '', nip: '' })
     preview.value = null
     modal.value?.showModal()
 }
@@ -98,7 +104,7 @@ function openKembali(row) {
     mode.value = 'kembali'
     Object.assign(form, {
         no_anggota: row.no_anggota, no_inventaris: row.no_inventaris,
-        tgl_pinjam: row.tgl_pinjam?.slice?.(0, 10) || row.tgl_pinjam, tgl_kembali: today(),
+        tgl_pinjam: row.tgl_pinjam?.slice?.(0, 10) || row.tgl_pinjam, tgl_kembali: today(), nip: '',
     })
     preview.value = null
     cekPreview()
@@ -109,7 +115,7 @@ async function cekPreview() {
     preview.value = null
     if (mode.value === 'pinjam') {
         if (!form.no_anggota || !form.no_inventaris || !form.tgl_pinjam) return
-        preview.value = await window.api.perpustakaan.sirkulasi.previewPinjam({ ...form, nip: authStore.user?.username })
+        preview.value = await window.api.perpustakaan.sirkulasi.previewPinjam({ ...form })
     } else {
         if (!form.tgl_kembali) return
         preview.value = await window.api.perpustakaan.sirkulasi.previewKembali({ ...form })
@@ -135,13 +141,13 @@ async function simpanModal() {
 // ── Modal Perpanjang (kecil, terpisah) ──────────────────────────────────
 const modalPerpanjang = ref(null)
 const perpanjangSaving = ref(false)
-const perpanjangForm = reactive({ no_anggota: '', no_inventaris: '', tgl_pinjam_lama: '', tgl_pinjam_baru: '', judul_buku: '', nama_anggota: '' })
+const perpanjangForm = reactive({ no_anggota: '', no_inventaris: '', tgl_pinjam_lama: '', tgl_pinjam_baru: '', judul_buku: '', nama_anggota: '', nip: '' })
 
 function openPerpanjang(row) {
     Object.assign(perpanjangForm, {
         no_anggota: row.no_anggota, no_inventaris: row.no_inventaris,
         tgl_pinjam_lama: row.tgl_pinjam?.slice?.(0, 10) || row.tgl_pinjam, tgl_pinjam_baru: today(),
-        judul_buku: row.judul_buku, nama_anggota: row.nama_anggota,
+        judul_buku: row.judul_buku, nama_anggota: row.nama_anggota, nip: '',
     })
     modalPerpanjang.value?.showModal()
 }
@@ -248,6 +254,10 @@ onMounted(muatAwal)
         <div class="modal-box max-w-md">
             <h3 class="font-bold text-base mb-4">{{ mode === 'pinjam' ? 'Pinjamkan Buku' : 'Kembalikan Buku' }}</h3>
             <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-base-content/80 mb-1.5">Petugas <span class="text-error">*</span></label>
+                    <AppSelect v-model="form.nip" :options="opsiPetugas" value-prop="nip" label="nama" placeholder="Pilih Petugas" @change="cekPreview" />
+                </div>
                 <template v-if="mode === 'pinjam'">
                     <div>
                         <label class="block text-sm font-medium text-base-content/80 mb-1.5">Peminjam (Anggota) <span class="text-error">*</span></label>
@@ -285,7 +295,7 @@ onMounted(muatAwal)
             </div>
             <div class="modal-action mt-4">
                 <button class="btn btn-ghost btn-sm" @click="modal?.close()">Batal</button>
-                <button class="btn btn-primary btn-sm gap-2" :disabled="saving || preview?.success === false" @click="simpanModal">
+                <button class="btn btn-primary btn-sm gap-2" :disabled="saving || !form.nip || preview?.success === false" @click="simpanModal">
                     <span v-if="saving" class="loading loading-spinner loading-xs"></span>
                     {{ mode === 'pinjam' ? 'Pinjamkan' : 'Kembalikan' }}
                 </button>
@@ -304,9 +314,13 @@ onMounted(muatAwal)
             </p>
             <label class="block text-sm font-medium text-base-content/80 mb-1.5">Tanggal Pinjam Baru</label>
             <input v-model="perpanjangForm.tgl_pinjam_baru" type="date" class="input input-bordered w-full" />
+            <div class="mt-3">
+                <label class="block text-sm font-medium text-base-content/80 mb-1.5">Petugas <span class="text-error">*</span></label>
+                <AppSelect v-model="perpanjangForm.nip" :options="opsiPetugas" value-prop="nip" label="nama" placeholder="Pilih Petugas" />
+            </div>
             <div class="modal-action mt-4">
                 <button class="btn btn-ghost btn-sm" @click="modalPerpanjang?.close()">Batal</button>
-                <button class="btn btn-primary btn-sm gap-2" :disabled="perpanjangSaving" @click="simpanPerpanjang">
+                <button class="btn btn-primary btn-sm gap-2" :disabled="perpanjangSaving || !perpanjangForm.nip" @click="simpanPerpanjang">
                     <span v-if="perpanjangSaving" class="loading loading-spinner loading-xs"></span>
                     Simpan
                 </button>

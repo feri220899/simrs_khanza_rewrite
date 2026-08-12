@@ -1,8 +1,9 @@
 // Pencatatan/pembayaran denda — src/perpustakaan/PerpustakaanBayarDenda.java.
 // Dialog asli 1 layar 2-tab (Denda Keterlambatan / Denda Lain-lain), 2 tabel
-// DB terpisah, 2 alur hitung berbeda — direplikasi sebagai 2 set fungsi di
-// sini (harian/lain), BUKAN digabung jadi satu (lihat migration 021 —
-// migration 013 sempat salah nebak jadi 1 tabel gabungan).
+// DB TERPISAH (`perpustakaan_bayar_denda_harian` & `perpustakaan_bayar_denda`
+// — dikonfirmasi ULANG ada di sik.sql, bukan asumsi/sisa migration Postgres),
+// 2 alur hitung berbeda — direplikasi sebagai 2 set fungsi di sini
+// (harian/lain), BUKAN digabung jadi satu.
 //
 // CATATAN (beda kecil dari Java asli): `denda_perhari`/harga buku dibaca
 // LIVE saat simpan (bukan dibaca sekali saat dialog dibuka lalu di-cache
@@ -12,6 +13,9 @@
 // perpustakaan_peminjaman (user bisa input kombinasi anggota/buku apa pun,
 // jumlah hari telat manual, tidak otomatis sinkron dgn preview di Sirkulasi)
 // — ini gap asli, bukan kelalaian di sini.
+//
+// `perpustakaan_set_peminjaman` TANPA kolom `id` (lihat catatan di
+// PerpustakaanSirkulasiService.js) — query LIMIT 1 tanpa WHERE.
 import DatabaseService from '../DatabaseService.js'
 
 // ── Tab 0: Denda Keterlambatan ──────────────────────────────────────────────
@@ -27,18 +31,18 @@ async function listHarian({ page = 1, pageSize = 10, sortOrder = 'desc', search 
          JOIN perpustakaan_anggota a    ON a.no_anggota    = d.no_anggota
          JOIN perpustakaan_inventaris i ON i.no_inventaris = d.no_inventaris
          JOIN perpustakaan_buku b       ON b.kode_buku     = i.kode_buku
-         WHERE a.nama_anggota ILIKE $1 OR b.judul_buku ILIKE $1
+         WHERE a.nama_anggota LIKE ? OR b.judul_buku LIKE ?
          ORDER BY d.tgl_denda ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM perpustakaan_bayar_denda_harian d
+        `SELECT COUNT(*) AS count FROM perpustakaan_bayar_denda_harian d
          JOIN perpustakaan_anggota a    ON a.no_anggota    = d.no_anggota
          JOIN perpustakaan_inventaris i ON i.no_inventaris = d.no_inventaris
          JOIN perpustakaan_buku b       ON b.kode_buku     = i.kode_buku
-         WHERE a.nama_anggota ILIKE $1 OR b.judul_buku ILIKE $1`,
-        [like]
+         WHERE a.nama_anggota LIKE ? OR b.judul_buku LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -49,31 +53,33 @@ async function createHarian({ tgl_denda, no_anggota, no_inventaris, keterlambata
     if (!keterlambatan || Number(keterlambatan) <= 0) return { success: false, message: 'Keterlambatan tidak boleh kosong' }
 
     const db = await DatabaseService.get()
-    const { rows: [setting] } = await db.query('SELECT denda_perhari FROM perpustakaan_set_peminjaman WHERE id=1')
+    const { rows: [setting] } = await db.query('SELECT denda_perhari FROM perpustakaan_set_peminjaman LIMIT 1')
     const besarDenda = Number(keterlambatan) * Number(setting?.denda_perhari || 0)
     if (besarDenda <= 0) return { success: false, message: 'Denda Keterlambatan tidak boleh kosong (cek Pengaturan Peminjaman)' }
 
     try {
         await db.query(
             `INSERT INTO perpustakaan_bayar_denda_harian (tgl_denda, no_anggota, no_inventaris, keterlambatan, besar_denda)
-             VALUES ($1,$2,$3,$4,$5)`,
+             VALUES (?, ?, ?, ?, ?)`,
             [tgl_denda, no_anggota, no_inventaris, keterlambatan, besarDenda]
         )
         return { success: true, besarDenda }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: 'Sudah ada catatan denda untuk kombinasi anggota/buku/tanggal ini' }
-        if (e.code === '23503') return { success: false, message: 'Anggota/Inventaris tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: 'Sudah ada catatan denda untuk kombinasi anggota/buku/tanggal ini' }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Anggota/Inventaris tidak valid' }
+        }
         throw e
     }
 }
 
 async function deleteHarian({ tgl_denda, no_anggota, no_inventaris }) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query(
-        'DELETE FROM perpustakaan_bayar_denda_harian WHERE tgl_denda=$1 AND no_anggota=$2 AND no_inventaris=$3',
+    const { rows } = await db.query(
+        'DELETE FROM perpustakaan_bayar_denda_harian WHERE tgl_denda=? AND no_anggota=? AND no_inventaris=?',
         [tgl_denda, no_anggota, no_inventaris]
     )
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 // ── Tab 1: Denda Lain-lain ───────────────────────────────────────────────────
@@ -91,18 +97,18 @@ async function listLain({ page = 1, pageSize = 10, sortOrder = 'desc', search = 
          JOIN perpustakaan_inventaris i ON i.no_inventaris = d.no_inventaris
          JOIN perpustakaan_buku b       ON b.kode_buku     = i.kode_buku
          JOIN perpustakaan_denda jd     ON jd.kode_denda   = d.kode_denda
-         WHERE a.nama_anggota ILIKE $1 OR b.judul_buku ILIKE $1
+         WHERE a.nama_anggota LIKE ? OR b.judul_buku LIKE ?
          ORDER BY d.tgl_denda ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM perpustakaan_bayar_denda d
+        `SELECT COUNT(*) AS count FROM perpustakaan_bayar_denda d
          JOIN perpustakaan_anggota a    ON a.no_anggota    = d.no_anggota
          JOIN perpustakaan_inventaris i ON i.no_inventaris = d.no_inventaris
          JOIN perpustakaan_buku b       ON b.kode_buku     = i.kode_buku
-         WHERE a.nama_anggota ILIKE $1 OR b.judul_buku ILIKE $1`,
-        [like]
+         WHERE a.nama_anggota LIKE ? OR b.judul_buku LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -115,9 +121,9 @@ async function createLain({ tgl_denda, no_anggota, no_inventaris, kode_denda, ke
 
     const db = await DatabaseService.get()
     const { rows: [inv] } = await db.query(
-        `SELECT i.harga FROM perpustakaan_inventaris i WHERE i.no_inventaris=$1`, [no_inventaris]
+        `SELECT i.harga FROM perpustakaan_inventaris i WHERE i.no_inventaris=?`, [no_inventaris]
     )
-    const { rows: [jenis] } = await db.query('SELECT besar_denda FROM perpustakaan_denda WHERE kode_denda=$1', [kode_denda])
+    const { rows: [jenis] } = await db.query('SELECT besar_denda FROM perpustakaan_denda WHERE kode_denda=?', [kode_denda])
     if (!inv || !jenis) return { success: false, message: 'Inventaris/Jenis Denda tidak valid' }
 
     const besarDenda = Number(inv.harga) * (Number(jenis.besar_denda) / 100)
@@ -126,24 +132,26 @@ async function createLain({ tgl_denda, no_anggota, no_inventaris, kode_denda, ke
     try {
         await db.query(
             `INSERT INTO perpustakaan_bayar_denda (tgl_denda, no_anggota, no_inventaris, kode_denda, besar_denda, keterangan_denda)
-             VALUES ($1,$2,$3,$4,$5,$6)`,
+             VALUES (?, ?, ?, ?, ?, ?)`,
             [tgl_denda, no_anggota, no_inventaris, kode_denda, besarDenda, keterangan_denda]
         )
         return { success: true, besarDenda }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: 'Sudah ada catatan denda untuk kombinasi ini' }
-        if (e.code === '23503') return { success: false, message: 'Anggota/Inventaris/Jenis Denda tidak valid' }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: 'Sudah ada catatan denda untuk kombinasi ini' }
+        if (e.code === 'ER_NO_REFERENCED_ROW_2' || e.code === 'ER_NO_REFERENCED_ROW') {
+            return { success: false, message: 'Anggota/Inventaris/Jenis Denda tidak valid' }
+        }
         throw e
     }
 }
 
 async function deleteLain({ tgl_denda, no_anggota, no_inventaris, kode_denda }) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query(
-        'DELETE FROM perpustakaan_bayar_denda WHERE tgl_denda=$1 AND no_anggota=$2 AND no_inventaris=$3 AND kode_denda=$4',
+    const { rows } = await db.query(
+        'DELETE FROM perpustakaan_bayar_denda WHERE tgl_denda=? AND no_anggota=? AND no_inventaris=? AND kode_denda=?',
         [tgl_denda, no_anggota, no_inventaris, kode_denda]
     )
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 export default { listHarian, createHarian, deleteHarian, listLain, createLain, deleteLain }

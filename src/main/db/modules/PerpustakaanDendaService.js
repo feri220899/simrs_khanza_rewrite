@@ -2,7 +2,8 @@
 // `besar_denda` = PERSENTASE dari harga buku (bukan nominal Rupiah tetap),
 // dipakai PerpustakaanBayarDendaService buat hitung denda tab "Lain-lain".
 // Terpisah total dari `denda_perhari` (perpustakaan_set_peminjaman) yang
-// dipakai utk denda keterlambatan.
+// dipakai utk denda keterlambatan. Tabel ASLI sik.sql `perpustakaan_denda`
+// — field cocok 1:1.
 import DatabaseService from '../DatabaseService.js'
 
 const SORTABLE = { kode_denda: 'kode_denda', jenis_denda: 'jenis_denda' }
@@ -15,21 +16,21 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_denda', sortOrder 
 
     const { rows } = await db.query(
         `SELECT kode_denda, jenis_denda, besar_denda FROM perpustakaan_denda
-         WHERE kode_denda ILIKE $1 OR jenis_denda ILIKE $1
+         WHERE kode_denda LIKE ? OR jenis_denda LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM perpustakaan_denda WHERE kode_denda ILIKE $1 OR jenis_denda ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM perpustakaan_denda WHERE kode_denda LIKE ? OR jenis_denda LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
 
 async function nextKode() {
     const db = await DatabaseService.get()
-    const { rows } = await db.query('SELECT count(*)::int AS n FROM perpustakaan_denda')
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM perpustakaan_denda')
     return 'JD' + String(rows[0].n + 1).padStart(3, '0')
 }
 
@@ -47,12 +48,12 @@ async function create(data) {
     const db = await DatabaseService.get()
     try {
         await db.query(
-            'INSERT INTO perpustakaan_denda (kode_denda, jenis_denda, besar_denda) VALUES ($1,$2,$3)',
+            'INSERT INTO perpustakaan_denda (kode_denda, jenis_denda, besar_denda) VALUES (?, ?, ?)',
             [data.kode_denda, data.jenis_denda, data.besar_denda]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_denda}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_denda}" sudah dipakai` }
         throw e
     }
 }
@@ -63,14 +64,14 @@ async function update(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            'UPDATE perpustakaan_denda SET kode_denda=$1, jenis_denda=$2, besar_denda=$3 WHERE kode_denda=$4',
+        const { rows } = await db.query(
+            'UPDATE perpustakaan_denda SET kode_denda=?, jenis_denda=?, besar_denda=? WHERE kode_denda=?',
             [data.kode_denda, data.jenis_denda, data.besar_denda, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_denda}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_denda}" sudah dipakai` }
         throw e
     }
 }
@@ -78,10 +79,12 @@ async function update(oldKode, data) {
 async function deleteOne(kode) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM perpustakaan_denda WHERE kode_denda=$1', [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query('DELETE FROM perpustakaan_denda WHERE kode_denda=?', [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di riwayat Bayar Denda' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di riwayat Bayar Denda' }
+        }
         throw e
     }
 }

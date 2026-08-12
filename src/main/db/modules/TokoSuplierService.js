@@ -1,4 +1,7 @@
-// CRUD Suplier Toko — src/toko/TokoSuplier.java.
+// CRUD Suplier Toko — src/toko/TokoSuplier.java. Tabel ASLI sik.sql
+// `tokosuplier(kode_suplier, nama_suplier, alamat, kota, no_telp, nama_bank,
+// rekening)` — field-nya cocok 1:1 dgn yang sudah dibangun, cuma dialect-nya
+// yang disesuaikan ke MySQL (lihat Khanza.md > "Prinsip Migrasi Data").
 import DatabaseService from '../DatabaseService.js'
 
 const SORTABLE = { kode_suplier: 'kode_suplier', nama_suplier: 'nama_suplier' }
@@ -12,14 +15,14 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_suplier', sortOrde
     const { rows } = await db.query(
         `SELECT kode_suplier, nama_suplier, alamat, kota, no_telp, nama_bank, rekening
          FROM tokosuplier
-         WHERE kode_suplier ILIKE $1 OR nama_suplier ILIKE $1
+         WHERE kode_suplier LIKE ? OR nama_suplier LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM tokosuplier WHERE kode_suplier ILIKE $1 OR nama_suplier ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM tokosuplier WHERE kode_suplier LIKE ? OR nama_suplier LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -27,7 +30,7 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_suplier', sortOrde
 // Replika Valid.autoNomer("tokosuplier","S",4,Kd) — row-count based.
 async function nextKode() {
     const db = await DatabaseService.get()
-    const { rows } = await db.query('SELECT count(*)::int AS n FROM tokosuplier')
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM tokosuplier')
     return 'S' + String(rows[0].n + 1).padStart(4, '0')
 }
 
@@ -51,12 +54,12 @@ async function create(data) {
     try {
         await db.query(
             `INSERT INTO tokosuplier (kode_suplier, nama_suplier, alamat, kota, no_telp, nama_bank, rekening)
-             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [data.kode_suplier, data.nama_suplier, data.alamat, data.kota, data.no_telp, data.nama_bank, data.rekening]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_suplier}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_suplier}" sudah dipakai` }
         throw e
     }
 }
@@ -67,15 +70,15 @@ async function update(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            `UPDATE tokosuplier SET kode_suplier=$1, nama_suplier=$2, alamat=$3, kota=$4, no_telp=$5, nama_bank=$6, rekening=$7
-             WHERE kode_suplier=$8`,
+        const { rows } = await db.query(
+            `UPDATE tokosuplier SET kode_suplier=?, nama_suplier=?, alamat=?, kota=?, no_telp=?, nama_bank=?, rekening=?
+             WHERE kode_suplier=?`,
             [data.kode_suplier, data.nama_suplier, data.alamat, data.kota, data.no_telp, data.nama_bank, data.rekening, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_suplier}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_suplier}" sudah dipakai` }
         throw e
     }
 }
@@ -83,10 +86,12 @@ async function update(oldKode, data) {
 async function deleteOne(kode) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM tokosuplier WHERE kode_suplier=$1', [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query('DELETE FROM tokosuplier WHERE kode_suplier=?', [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di transaksi lain' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di transaksi lain' }
+        }
         throw e
     }
 }

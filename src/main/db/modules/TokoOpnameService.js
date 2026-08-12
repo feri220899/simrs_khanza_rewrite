@@ -1,16 +1,34 @@
 // Stok Opname Toko — src/toko/TokoInputStok.java (input) & TokoStokOpname.java
-// (viewer/hapus) & riwayattoko.java (catat riwayat, posisi="Opname").
-// TIDAK menyentuh jurnal Keuangan (dikonfirmasi dari investigasi) — makanya
-// aman dibangun sekarang meski modul Penjualan/Pembelian/dst ditunda.
+// (viewer/hapus) & riwayattoko.java (catatRiwayat, posisi="Opname"). TIDAK
+// menyentuh jurnal Keuangan (dikonfirmasi dari investigasi).
 //
-// KOREKSI PENTING (hasil audit ulang — versi sebelumnya SALAH di 2 hal):
+// Tabel ASLI sik.sql (BUKAN hasil migration Postgres yang sudah dibuang):
+// - `tokobarang.status` enum('0','1') — '1'=aktif, BUKAN kolom `aktif` BOOLEAN.
+// - `tokoopname(kode_brng, dasar, tanggal, stok, real, selisih, nomihilang,
+//   keterangan)`, PK KOMPOSIT (kode_brng, tanggal) — urutan kolom INSERT
+//   dikonfirmasi dari TokoInputStok.java baris 475 (positional
+//   `Sequel.menyimpantf2`, urutan HARUS persis: kode_brng, dasar, tanggal,
+//   stok, real, selisih, nomihilang, keterangan).
+// - `toko_riwayat_barang(kode_brng, stok_awal, masuk, keluar, stok_akhir,
+//   posisi, tanggal, jam, petugas, status)` — dikonfirmasi dari
+//   riwayattoko.catatRiwayat(): KHUSUS posisi='Opname', `masuk`=nilai Real
+//   (BUKAN kuantitas barang masuk beneran), `keluar`=0 hardcode, DAN
+//   `stok_akhir`=nilai Real juga (BUKAN stok_awal+masuk-keluar seperti
+//   posisi transaksi lain) — field `masuk`/`stok_akhir` di-"pinjam" maknanya
+//   khusus utk opname karena tabel riwayat ini dipakai bareng banyak jenis
+//   transaksi (Pengadaan/Penjualan/Retur/dst, lihat enum `posisi`).
+// - `real` itu KATA KUNCI RESERVED MySQL (sinonim tipe DOUBLE/FLOAT) — WAJIB
+//   di-backtick tiap dipakai sebagai nama kolom, beda dari Postgres yang
+//   tidak mempermasalahkan ini.
+//
+// KOREKSI PENTING dari audit sebelumnya (logic bisnis di bawah SUDAH BENAR,
+// cuma dialect+skema yang perlu disesuaikan ke MySQL — lihat Khanza.md >
+// "Prinsip Migrasi Data"):
 // 1. Alur asli itu BATCH — satu layar nampilin SEMUA barang aktif sekaligus,
 //    user isi kolom "Real" utk banyak baris, SATU tombol Simpan proses semua
 //    baris terisi dalam SATU transaksi (kalau satu baris gagal, semua di-
 //    rollback — lihat `TokoInputStok.BtnSimpanActionPerformed`, variabel
-//    `sukses`). Versi sebelumnya cuma bisa 1 barang per submit — bukan cuma
-//    beda UI, itu beda ALUR KERJA (opname toko biasanya puluhan-ratusan item
-//    sekaligus).
+//    `sukses`).
 // 2. `selisih` & `nomihilang` DIHITUNG OTOMATIS, bukan diisi manual, dan
 //    `selisih` cuma mencatat KEKURANGAN (tidak pernah negatif) — replika
 //    persis `TokoInputStok.getData()`:
@@ -26,8 +44,9 @@
 import DatabaseService from '../DatabaseService.js'
 
 // Daftar SEMUA barang aktif buat layar batch-entry — replika query utama
-// TokoInputStok.java (`select ... where tokobarang.status='1' and (...)`),
-// TIDAK dipaginasi (aslinya nampilin semua sekaligus, difilter search saja).
+// TokoInputStok.java (`select ... where tokobarang.status='1' and (...) order
+// by tokobarang.nama_brng`), TIDAK dipaginasi (aslinya nampilin semua
+// sekaligus, difilter search saja).
 async function listBarangUntukOpname({ search = '' } = {}) {
     const db = await DatabaseService.get()
     const like = `%${search}%`
@@ -35,10 +54,10 @@ async function listBarangUntukOpname({ search = '' } = {}) {
         `SELECT b.kode_brng, b.nama_brng, j.nm_jenis, b.kode_sat, b.dasar, b.stok
          FROM tokobarang b
          JOIN tokojenisbarang j ON j.kd_jenis = b.jenis
-         WHERE b.aktif = TRUE
-           AND ($1 = '' OR b.kode_brng ILIKE $2 OR b.nama_brng ILIKE $2 OR b.kode_sat ILIKE $2 OR j.nm_jenis ILIKE $2)
+         WHERE b.status = '1'
+           AND (? = '' OR b.kode_brng LIKE ? OR b.nama_brng LIKE ? OR b.kode_sat LIKE ? OR j.nm_jenis LIKE ?)
          ORDER BY b.nama_brng`,
-        [search, like]
+        [search, like, like, like, like]
     )
     return rows
 }
@@ -49,19 +68,19 @@ async function listOpname({ page = 1, pageSize = 10, sortOrder = 'desc', search 
     const like = `%${search}%`
 
     const { rows } = await db.query(
-        `SELECT o.kode_brng, b.nama_brng, o.tanggal, o.dasar, o.stok, o.real, o.selisih,
-                (o.real * o.dasar) AS totalreal, o.nomihilang, o.keterangan
+        `SELECT o.kode_brng, b.nama_brng, o.tanggal, o.dasar, o.stok, o.\`real\`, o.selisih,
+                (o.\`real\` * o.dasar) AS totalreal, o.nomihilang, o.keterangan
          FROM tokoopname o
          JOIN tokobarang b ON b.kode_brng = o.kode_brng
-         WHERE b.nama_brng ILIKE $1 OR o.keterangan ILIKE $1
+         WHERE b.nama_brng LIKE ? OR o.keterangan LIKE ?
          ORDER BY o.tanggal ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM tokoopname o JOIN tokobarang b ON b.kode_brng = o.kode_brng
-         WHERE b.nama_brng ILIKE $1 OR o.keterangan ILIKE $1`,
-        [like]
+        `SELECT COUNT(*) AS count FROM tokoopname o JOIN tokobarang b ON b.kode_brng = o.kode_brng
+         WHERE b.nama_brng LIKE ? OR o.keterangan LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -79,13 +98,13 @@ async function createOpnameBatch({ tanggal, keterangan, items, petugas }) {
     const db = await DatabaseService.get()
     const client = await db.connect()
     try {
-        await client.query('BEGIN')
+        await client.query('START TRANSACTION')
         let diproses = 0
         for (const item of terisi) {
             const real = Number(item.real)
             if (Number.isNaN(real) || real < 0) continue // replika: Valid.SetAngka(...)>=0
 
-            const { rows: [barang] } = await client.query('SELECT stok, dasar FROM tokobarang WHERE kode_brng=$1 FOR UPDATE', [item.kode_brng])
+            const { rows: [barang] } = await client.query('SELECT stok, dasar FROM tokobarang WHERE kode_brng=? FOR UPDATE', [item.kode_brng])
             if (!barang) throw new Error(`Barang ${item.kode_brng} tidak ditemukan`)
 
             const stokAwal = Number(barang.stok)
@@ -94,23 +113,26 @@ async function createOpnameBatch({ tanggal, keterangan, items, petugas }) {
             const nomihilang = kurang > 0 ? kurang * Number(barang.dasar) : 0
 
             await client.query(
-                `INSERT INTO tokoopname (kode_brng, tanggal, dasar, stok, real, selisih, nomihilang, keterangan)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-                [item.kode_brng, tanggal, barang.dasar, stokAwal, real, selisih, nomihilang, keterangan]
+                `INSERT INTO tokoopname (kode_brng, dasar, tanggal, stok, \`real\`, selisih, nomihilang, keterangan)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [item.kode_brng, barang.dasar, tanggal, stokAwal, real, selisih, nomihilang, keterangan]
             )
+            // riwayattoko.catatRiwayat(kodebarang, real, 0, "Opname", petugas, "Simpan")
+            // — utk posisi Opname, masuk=real DAN stok_akhir=real (bukan
+            // stok_awal+masuk-keluar), lihat catatan panjang di atas.
             await client.query(
                 `INSERT INTO toko_riwayat_barang (kode_brng, stok_awal, masuk, keluar, stok_akhir, posisi, tanggal, jam, petugas, status)
-                 VALUES ($1,$2,$3,0,$4,'Opname',CURRENT_DATE,CURRENT_TIME,$5,'Simpan')`,
+                 VALUES (?, ?, ?, 0, ?, 'Opname', CURRENT_DATE, CURRENT_TIME, ?, 'Simpan')`,
                 [item.kode_brng, stokAwal, real, real, petugas || null]
             )
-            await client.query('UPDATE tokobarang SET stok=$1 WHERE kode_brng=$2', [real, item.kode_brng])
+            await client.query('UPDATE tokobarang SET stok=? WHERE kode_brng=?', [real, item.kode_brng])
             diproses++
         }
         await client.query('COMMIT')
         return { success: true, diproses }
     } catch (e) {
         await client.query('ROLLBACK')
-        if (e.code === '23505') {
+        if (e.code === 'ER_DUP_ENTRY') {
             return { success: false, message: 'Terjadi kesalahan saat pemrosesan data, transaksi dibatalkan — ada barang yang sudah di-opname pada tanggal ini' }
         }
         return { success: false, message: 'Terjadi kesalahan saat pemrosesan data, transaksi dibatalkan. Periksa kembali data sebelum melanjutkan menyimpan.' }
@@ -123,8 +145,8 @@ async function createOpnameBatch({ tanggal, keterangan, items, petugas }) {
 // overwrite, bukan pergerakan yang bisa "dibalik" secara aritmatik).
 async function deleteOpname({ tanggal, kode_brng }) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query('DELETE FROM tokoopname WHERE tanggal=$1 AND kode_brng=$2', [tanggal, kode_brng])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    const { rows } = await db.query('DELETE FROM tokoopname WHERE tanggal=? AND kode_brng=?', [tanggal, kode_brng])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 // src/toko/TokoRiwayatBarang.java — viewer read-only.
@@ -132,9 +154,9 @@ async function listRiwayat({ page = 1, pageSize = 10, sortOrder = 'desc', search
     const db = await DatabaseService.get()
     const dir = sortOrder === 'asc' ? 'ASC' : 'DESC'
     const like = `%${search}%`
-    const where = ['b.nama_brng ILIKE $1']
+    const where = ['b.nama_brng LIKE ?']
     const params = [like]
-    if (tgl1 && tgl2) { params.push(tgl1, tgl2); where.push(`r.tanggal BETWEEN $${params.length - 1} AND $${params.length}`) }
+    if (tgl1 && tgl2) { where.push('r.tanggal BETWEEN ? AND ?'); params.push(tgl1, tgl2) }
 
     const { rows } = await db.query(
         `SELECT r.*, b.nama_brng
@@ -142,11 +164,11 @@ async function listRiwayat({ page = 1, pageSize = 10, sortOrder = 'desc', search
          JOIN tokobarang b ON b.kode_brng = r.kode_brng
          WHERE ${where.join(' AND ')}
          ORDER BY r.tanggal ${dir}, r.jam ${dir}
-         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+         LIMIT ? OFFSET ?`,
         [...params, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM toko_riwayat_barang r JOIN tokobarang b ON b.kode_brng = r.kode_brng WHERE ${where.join(' AND ')}`,
+        `SELECT COUNT(*) AS count FROM toko_riwayat_barang r JOIN tokobarang b ON b.kode_brng = r.kode_brng WHERE ${where.join(' AND ')}`,
         params
     )
     return { data: rows, total: count }

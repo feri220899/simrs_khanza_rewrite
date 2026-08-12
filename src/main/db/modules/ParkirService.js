@@ -4,6 +4,13 @@
 //   - src/parkir/DlgParkirMasuk.java   -> TERBUKTI tidak simpan apa pun ke DB
 //     (cuma lookup tarif + cetak karcis), jadi TIDAK ADA fungsi createMasuk()
 //     di sini — itu bukan kelalaian, itu memang bukan CRUD di aslinya.
+// Tabel ASLI sik.sql: `parkir_jenis(kd_parkir char(5), jns_parkir, biaya,
+// jenis enum('Harian','Jam'))` — kolom `jenis` SUDAH ENUM di DB asli, jadi
+// validasi 'Harian'/'Jam' di JS di bawah ini cuma lapis kedua (DB juga
+// menegakkan), tidak perlu CHECK constraint tambahan seperti di migration
+// Postgres lama yang sudah dibuang. `parkir_barcode(kode_barcode varchar(15),
+// nomer_kartu varchar(5) UNIQUE)` — field-nya cocok 1:1, cuma dialect yang
+// disesuaikan ke MySQL (lihat Khanza.md > "Prinsip Migrasi Data").
 import DatabaseService from '../DatabaseService.js'
 
 // ── Jenis & Tarif (DlgParkirJenis.java) ─────────────────────────────────────
@@ -23,14 +30,14 @@ async function listJenis({ page = 1, pageSize = 10, sortBy = 'kd_parkir', sortOr
 
     const { rows } = await db.query(
         `SELECT kd_parkir, jns_parkir, biaya, jenis FROM parkir_jenis
-         WHERE kd_parkir ILIKE $1 OR jns_parkir ILIKE $1
+         WHERE kd_parkir LIKE ? OR jns_parkir LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM parkir_jenis WHERE kd_parkir ILIKE $1 OR jns_parkir ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM parkir_jenis WHERE kd_parkir LIKE ? OR jns_parkir LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -40,7 +47,7 @@ async function listJenis({ page = 1, pageSize = 10, sortBy = 'kd_parkir', sortOr
 // aslinya (bukan cari celah nomor yang kehapus) — replikasi apa adanya.
 async function nextJenisKode() {
     const db = await DatabaseService.get()
-    const { rows } = await db.query('SELECT count(*)::int AS n FROM parkir_jenis')
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM parkir_jenis')
     return 'P' + String(rows[0].n + 1).padStart(4, '0')
 }
 
@@ -60,12 +67,12 @@ async function createJenis(data) {
     const db = await DatabaseService.get()
     try {
         await db.query(
-            'INSERT INTO parkir_jenis (kd_parkir, jns_parkir, biaya, jenis) VALUES ($1, $2, $3, $4)',
+            'INSERT INTO parkir_jenis (kd_parkir, jns_parkir, biaya, jenis) VALUES (?, ?, ?, ?)',
             [data.kd_parkir, data.jns_parkir, data.biaya, data.jenis]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kd_parkir}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kd_parkir}" sudah dipakai` }
         throw e
     }
 }
@@ -79,22 +86,22 @@ async function updateJenis(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            'UPDATE parkir_jenis SET kd_parkir=$1, jns_parkir=$2, biaya=$3, jenis=$4 WHERE kd_parkir=$5',
+        const { rows } = await db.query(
+            'UPDATE parkir_jenis SET kd_parkir=?, jns_parkir=?, biaya=?, jenis=? WHERE kd_parkir=?',
             [data.kd_parkir, data.jns_parkir, data.biaya, data.jenis, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kd_parkir}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kd_parkir}" sudah dipakai` }
         throw e
     }
 }
 
 async function deleteJenis(kode) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query('DELETE FROM parkir_jenis WHERE kd_parkir=$1', [kode])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    const { rows } = await db.query('DELETE FROM parkir_jenis WHERE kd_parkir=?', [kode])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 // ── Kartu / Barcode (DlgParkirBarcode.java) ─────────────────────────────────
@@ -109,14 +116,14 @@ async function listBarcode({ page = 1, pageSize = 10, sortBy = 'kode_barcode', s
 
     const { rows } = await db.query(
         `SELECT kode_barcode, nomer_kartu FROM parkir_barcode
-         WHERE kode_barcode ILIKE $1 OR nomer_kartu ILIKE $1
+         WHERE kode_barcode LIKE ? OR nomer_kartu LIKE ?
          ORDER BY ${col} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM parkir_barcode WHERE kode_barcode ILIKE $1 OR nomer_kartu ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM parkir_barcode WHERE kode_barcode LIKE ? OR nomer_kartu LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -124,7 +131,7 @@ async function listBarcode({ page = 1, pageSize = 10, sortBy = 'kode_barcode', s
 async function cekBarcode(kodeBarcode) {
     const db = await DatabaseService.get()
     const { rows: [row] } = await db.query(
-        'SELECT nomer_kartu FROM parkir_barcode WHERE kode_barcode = $1',
+        'SELECT nomer_kartu FROM parkir_barcode WHERE kode_barcode = ?',
         [kodeBarcode]
     )
     return row || null
@@ -135,7 +142,7 @@ async function cekBarcode(kodeBarcode) {
 // dikosongkan, dimaksudkan diisi manual/hasil scan alat).
 async function nextKartuNomor() {
     const db = await DatabaseService.get()
-    const { rows } = await db.query('SELECT count(*)::int AS n FROM parkir_barcode')
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM parkir_barcode')
     return 'K' + String(rows[0].n + 1).padStart(4, '0')
 }
 
@@ -152,12 +159,12 @@ async function createBarcode(data) {
     const db = await DatabaseService.get()
     try {
         await db.query(
-            'INSERT INTO parkir_barcode (kode_barcode, nomer_kartu) VALUES ($1, $2)',
+            'INSERT INTO parkir_barcode (kode_barcode, nomer_kartu) VALUES (?, ?)',
             [data.kode_barcode, data.nomer_kartu]
         )
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode barcode "${data.kode_barcode}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode barcode "${data.kode_barcode}" sudah dipakai` }
         throw e
     }
 }
@@ -168,22 +175,22 @@ async function updateBarcode(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            'UPDATE parkir_barcode SET kode_barcode=$1, nomer_kartu=$2 WHERE kode_barcode=$3',
+        const { rows } = await db.query(
+            'UPDATE parkir_barcode SET kode_barcode=?, nomer_kartu=? WHERE kode_barcode=?',
             [data.kode_barcode, data.nomer_kartu, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode barcode "${data.kode_barcode}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode barcode "${data.kode_barcode}" sudah dipakai` }
         throw e
     }
 }
 
 async function deleteBarcode(kode) {
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query('DELETE FROM parkir_barcode WHERE kode_barcode=$1', [kode])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    const { rows } = await db.query('DELETE FROM parkir_barcode WHERE kode_barcode=?', [kode])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
 }
 
 export default {

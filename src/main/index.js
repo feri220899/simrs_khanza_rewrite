@@ -454,24 +454,27 @@ app.whenReady().then(async () => {
         return auth.ok ? PerpustakaanInventarisService.deleteOne(kode) : { success: false, message: auth.message }
     })
 
-    // Perpustakaan — Sirkulasi (pinjam/kembali/perpanjang) — nip diambil dari
-    // sesi yang login (server-side), bukan dipercaya mentah dari form, biar
-    // tidak bisa dipalsukan jadi nama petugas lain.
+    // Perpustakaan — Sirkulasi (pinjam/kembali/perpanjang). `nip` (petugas)
+    // WAJIB dipilih eksplisit dari dropdown (lihat listPetugas + catatan di
+    // PerpustakaanSirkulasiService.js) — TIDAK auto-diambil dari sesi login
+    // (koreksi: itu salah, ketahuan lewat FK error nyata saat Admin Utama
+    // pakai fitur ini — username login-nya bukan nip asli di tabel `petugas`).
     ipcMain.handle('perpustakaan:sirkulasi:getSetting', () => PerpustakaanSirkulasiService.getSetting())
+    ipcMain.handle('perpustakaan:sirkulasi:listPetugas', () => PerpustakaanSirkulasiService.listPetugas())
     ipcMain.handle('perpustakaan:sirkulasi:list', (_, params) => PerpustakaanSirkulasiService.list(params))
     ipcMain.handle('perpustakaan:sirkulasi:previewPinjam', (_, data) => PerpustakaanSirkulasiService.previewPinjam(data))
     ipcMain.handle('perpustakaan:sirkulasi:pinjam', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
-        return auth.ok ? PerpustakaanSirkulasiService.pinjam({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+        return auth.ok ? PerpustakaanSirkulasiService.pinjam(data) : { success: false, message: auth.message }
     })
     ipcMain.handle('perpustakaan:sirkulasi:previewKembali', (_, data) => PerpustakaanSirkulasiService.previewKembali(data))
     ipcMain.handle('perpustakaan:sirkulasi:kembali', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
-        return auth.ok ? PerpustakaanSirkulasiService.kembali({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+        return auth.ok ? PerpustakaanSirkulasiService.kembali(data) : { success: false, message: auth.message }
     })
     ipcMain.handle('perpustakaan:sirkulasi:perpanjang', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')
-        return auth.ok ? PerpustakaanSirkulasiService.perpanjang({ ...data, nip: auth.user.username }) : { success: false, message: auth.message }
+        return auth.ok ? PerpustakaanSirkulasiService.perpanjang(data) : { success: false, message: auth.message }
     })
     ipcMain.handle('perpustakaan:sirkulasi:delete', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'peminjaman_perpustakaan')

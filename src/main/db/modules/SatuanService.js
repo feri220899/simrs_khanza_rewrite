@@ -1,7 +1,8 @@
-// Satuan barang — src/inventory/DlgSatuan.java, tabel `kodesatuan(kode_sat,
-// satuan)`. SHARED lintas modul Java asli (Toko, Dapur, IPSRS, Farmasi, dll)
-// — SENGAJA tidak diberi prefix "Toko" meski konsumen pertamanya Toko,
-// supaya modul lain nanti bisa pakai ulang tanpa migrasi/service baru.
+// Satuan barang — src/inventory/DlgSatuan.java, tabel ASLI sik.sql
+// `kodesatuan(kode_sat char(4), satuan)`. SHARED lintas modul Java asli
+// (Toko, Dapur, IPSRS, Farmasi, dll) — SENGAJA tidak diberi prefix "Toko"
+// meski konsumen pertamanya Toko, supaya modul lain nanti bisa pakai ulang
+// tanpa migrasi/service baru.
 import DatabaseService from '../DatabaseService.js'
 
 async function list({ page = 1, pageSize = 10, sortOrder = 'asc', search = '' } = {}) {
@@ -11,14 +12,14 @@ async function list({ page = 1, pageSize = 10, sortOrder = 'asc', search = '' } 
 
     const { rows } = await db.query(
         `SELECT kode_sat, satuan FROM kodesatuan
-         WHERE kode_sat ILIKE $1 OR satuan ILIKE $1
+         WHERE kode_sat LIKE ? OR satuan LIKE ?
          ORDER BY kode_sat ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT count(*)::int AS count FROM kodesatuan WHERE kode_sat ILIKE $1 OR satuan ILIKE $1',
-        [like]
+        'SELECT COUNT(*) AS count FROM kodesatuan WHERE kode_sat LIKE ? OR satuan LIKE ?',
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -26,7 +27,7 @@ async function list({ page = 1, pageSize = 10, sortOrder = 'asc', search = '' } 
 // Replika Valid.autoNomer("kodesatuan","S",2,Kd) — row-count based.
 async function nextKode() {
     const db = await DatabaseService.get()
-    const { rows } = await db.query('SELECT count(*)::int AS n FROM kodesatuan')
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM kodesatuan')
     return 'S' + String(rows[0].n + 1).padStart(2, '0')
 }
 
@@ -42,10 +43,10 @@ async function create(data) {
 
     const db = await DatabaseService.get()
     try {
-        await db.query('INSERT INTO kodesatuan (kode_sat, satuan) VALUES ($1,$2)', [data.kode_sat, data.satuan])
+        await db.query('INSERT INTO kodesatuan (kode_sat, satuan) VALUES (?, ?)', [data.kode_sat, data.satuan])
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_sat}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_sat}" sudah dipakai` }
         throw e
     }
 }
@@ -56,14 +57,14 @@ async function update(oldKode, data) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            'UPDATE kodesatuan SET kode_sat=$1, satuan=$2 WHERE kode_sat=$3',
+        const { rows } = await db.query(
+            'UPDATE kodesatuan SET kode_sat=?, satuan=? WHERE kode_sat=?',
             [data.kode_sat, data.satuan, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${data.kode_sat}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${data.kode_sat}" sudah dipakai` }
         throw e
     }
 }
@@ -71,10 +72,12 @@ async function update(oldKode, data) {
 async function deleteOne(kode) {
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query('DELETE FROM kodesatuan WHERE kode_sat=$1', [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query('DELETE FROM kodesatuan WHERE kode_sat=?', [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di Master Barang' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di Master Barang' }
+        }
         throw e
     }
 }

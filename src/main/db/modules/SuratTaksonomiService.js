@@ -10,7 +10,8 @@
 // TEMUAN PENTING (jangan sampai salah): permission `surat_almari` beda dari
 // nama TABEL `surat_lemari` — class Java-nya "SuratAlmari" tapi query-nya ke
 // tabel "surat_lemari" dan akses.getsurat_almari(). Field `table` di bawah
-// SENGAJA beda dari `permission`, jangan disamakan/disederhanakan.
+// SENGAJA beda dari `permission`, jangan disamakan/disederhanakan. Semua
+// tabel ASLI sik.sql pola-nya SAMA PERSIS: `(kd varchar(5), <kolom> varchar(50))`.
 import DatabaseService from '../DatabaseService.js'
 
 const TAKSONOMI = {
@@ -43,14 +44,14 @@ async function list(jenis, { page = 1, pageSize = 10, sortOrder = 'asc', search 
 
     const { rows } = await db.query(
         `SELECT kd, ${kolom} AS nama FROM ${table}
-         WHERE kd ILIKE $1 OR ${kolom} ILIKE $1
+         WHERE kd LIKE ? OR ${kolom} LIKE ?
          ORDER BY kd ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM ${table} WHERE kd ILIKE $1 OR ${kolom} ILIKE $1`,
-        [like]
+        `SELECT COUNT(*) AS count FROM ${table} WHERE kd LIKE ? OR ${kolom} LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -60,7 +61,7 @@ async function list(jenis, { page = 1, pageSize = 10, sortOrder = 'asc', search 
 async function nextKode(jenis) {
     const { table, prefix } = getConfig(jenis)
     const db = await DatabaseService.get()
-    const { rows } = await db.query(`SELECT count(*)::int AS n FROM ${table}`)
+    const { rows } = await db.query(`SELECT COUNT(*) AS n FROM ${table}`)
     return prefix + String(rows[0].n + 1).padStart(3, '0')
 }
 
@@ -77,10 +78,10 @@ async function create(jenis, { kd, nama }) {
 
     const db = await DatabaseService.get()
     try {
-        await db.query(`INSERT INTO ${table} (kd, ${kolom}) VALUES ($1, $2)`, [kd, nama])
+        await db.query(`INSERT INTO ${table} (kd, ${kolom}) VALUES (?, ?)`, [kd, nama])
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${kd}" sudah dipakai` }
         throw e
     }
 }
@@ -95,14 +96,14 @@ async function update(jenis, oldKode, { kd, nama }) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            `UPDATE ${table} SET kd=$1, ${kolom}=$2 WHERE kd=$3`,
+        const { rows } = await db.query(
+            `UPDATE ${table} SET kd=?, ${kolom}=? WHERE kd=?`,
             [kd, nama, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${kd}" sudah dipakai` }
         throw e
     }
 }
@@ -114,8 +115,15 @@ async function update(jenis, oldKode, { kd, nama }) {
 async function deleteOne(jenis, kode) {
     const { table } = getConfig(jenis)
     const db = await DatabaseService.get()
-    const { rowCount } = await db.query(`DELETE FROM ${table} WHERE kd=$1`, [kode])
-    return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+    try {
+        const { rows } = await db.query(`DELETE FROM ${table} WHERE kd=?`, [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
+    } catch (e) {
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di Surat Masuk/Keluar' }
+        }
+        throw e
+    }
 }
 
 export default { daftarJenis, getConfig, list, nextKode, create, update, deleteOne }

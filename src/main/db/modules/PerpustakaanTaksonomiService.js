@@ -7,9 +7,10 @@
 // PENTING: nama kolom PK & kolom nilai BEDA-BEDA per tabel (bukan seragam
 // "kd"/"nama" kayak Surat) — id_jenis/nama_jenis, kd_ruang/nm_ruang,
 // kode_pengarang/nama_pengarang, id_kategori/nama_kategori. Field `pk`/`kolom`
-// di bawah HASIL BACA LANGSUNG dari SELECT/UPDATE di Java asli, lihat
-// migration 021_fix_perpustakaan_schema.js untuk histori koreksinya (migration
-// 009 sempat salah nama kolom sebelum investigasi ulang).
+// di bawah dikonfirmasi ulang persis sama dgn CREATE TABLE asli sik.sql (jadi
+// koreksi lama di migration Postgres 021 — id_kategori bukan kode_kategori,
+// nama_jenis bukan nm_jenis — TERBUKTI BENAR, tidak perlu diubah lagi, cuma
+// dialect SQL yang disesuaikan ke MySQL).
 import DatabaseService from '../DatabaseService.js'
 
 const TAKSONOMI = {
@@ -37,14 +38,14 @@ async function list(jenis, { page = 1, pageSize = 10, sortOrder = 'asc', search 
 
     const { rows } = await db.query(
         `SELECT ${pk} AS kd, ${kolom} AS nama FROM ${table}
-         WHERE ${pk} ILIKE $1 OR ${kolom} ILIKE $1
+         WHERE ${pk} LIKE ? OR ${kolom} LIKE ?
          ORDER BY ${pk} ${dir}
-         LIMIT $2 OFFSET $3`,
-        [like, pageSize, (page - 1) * pageSize]
+         LIMIT ? OFFSET ?`,
+        [like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT count(*)::int AS count FROM ${table} WHERE ${pk} ILIKE $1 OR ${kolom} ILIKE $1`,
-        [like]
+        `SELECT COUNT(*) AS count FROM ${table} WHERE ${pk} LIKE ? OR ${kolom} LIKE ?`,
+        [like, like]
     )
     return { data: rows, total: count }
 }
@@ -54,7 +55,7 @@ async function list(jenis, { page = 1, pageSize = 10, sortOrder = 'asc', search 
 async function nextKode(jenis) {
     const { table, prefix } = getConfig(jenis)
     const db = await DatabaseService.get()
-    const { rows } = await db.query(`SELECT count(*)::int AS n FROM ${table}`)
+    const { rows } = await db.query(`SELECT COUNT(*) AS n FROM ${table}`)
     return prefix + String(rows[0].n + 1).padStart(3, '0')
 }
 
@@ -71,10 +72,10 @@ async function create(jenis, { kd, nama }) {
 
     const db = await DatabaseService.get()
     try {
-        await db.query(`INSERT INTO ${table} (${pk}, ${kolom}) VALUES ($1, $2)`, [kd, nama])
+        await db.query(`INSERT INTO ${table} (${pk}, ${kolom}) VALUES (?, ?)`, [kd, nama])
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${kd}" sudah dipakai` }
         throw e
     }
 }
@@ -87,14 +88,14 @@ async function update(jenis, oldKode, { kd, nama }) {
 
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(
-            `UPDATE ${table} SET ${pk}=$1, ${kolom}=$2 WHERE ${pk}=$3`,
+        const { rows } = await db.query(
+            `UPDATE ${table} SET ${pk}=?, ${kolom}=? WHERE ${pk}=?`,
             [kd, nama, oldKode]
         )
-        if (rowCount === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
+        if (rows.affectedRows === 0) return { success: false, message: 'Data tidak ditemukan (mungkin sudah dihapus)' }
         return { success: true }
     } catch (e) {
-        if (e.code === '23505') return { success: false, message: `Kode "${kd}" sudah dipakai` }
+        if (e.code === 'ER_DUP_ENTRY') return { success: false, message: `Kode "${kd}" sudah dipakai` }
         throw e
     }
 }
@@ -103,11 +104,13 @@ async function deleteOne(jenis, kode) {
     const { table, pk } = getConfig(jenis)
     const db = await DatabaseService.get()
     try {
-        const { rowCount } = await db.query(`DELETE FROM ${table} WHERE ${pk}=$1`, [kode])
-        return { success: rowCount > 0, message: rowCount === 0 ? 'Data tidak ditemukan' : undefined }
+        const { rows } = await db.query(`DELETE FROM ${table} WHERE ${pk}=?`, [kode])
+        return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
     } catch (e) {
         // FK dari perpustakaan_buku (kalau taksonomi ini masih dipakai koleksi)
-        if (e.code === '23503') return { success: false, message: 'Tidak bisa dihapus — masih dipakai di data Koleksi' }
+        if (e.code === 'ER_ROW_IS_REFERENCED_2' || e.code === 'ER_ROW_IS_REFERENCED') {
+            return { success: false, message: 'Tidak bisa dihapus — masih dipakai di data Koleksi' }
+        }
         throw e
     }
 }
