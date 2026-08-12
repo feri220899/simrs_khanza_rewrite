@@ -1,7 +1,7 @@
 {
   "name": "khanza-desktop",
   "version": "0.1.0",
-  "description": "Rewrite SIMRS Khanza (Java Swing) ke Electron - koneksi langsung ke Postgres, tanpa backend Express terpisah",
+  "description": "Rewrite SIMRS Khanza (Java Swing) ke Electron - koneksi langsung ke mysql (sik.sql), tanpa backend Express terpisah",
   "private": true,
   "main": "out/main/index.js",
   "scripts": {
