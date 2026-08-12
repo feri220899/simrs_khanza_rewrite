@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "description": "Rewrite SIMRS Khanza (Java Swing) ke Electron - koneksi langsung ke mysql (sik.sql), tanpa backend Express terpisah",
   "private": true,
+  "author": {
+    "name": "feri220899",
+    "email": "fengfeng220899@gmail.com"
+  },
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev --watch",
