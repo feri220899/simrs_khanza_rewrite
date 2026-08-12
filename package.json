@@ -1,6 +1,6 @@
 {
   "name": "khanza-desktop",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Rewrite SIMRS Khanza (Java Swing) ke Electron - koneksi langsung ke mysql (sik.sql), tanpa backend Express terpisah",
   "private": true,
   "main": "out/main/index.js",
@@ -52,6 +52,13 @@
       "target": [
         "nsis"
       ]
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "feri220899",
+        "repo": "simrs_khanza_rewrite"
+      }
+    ]
   }
 }

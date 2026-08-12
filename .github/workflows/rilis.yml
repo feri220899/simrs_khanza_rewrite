@@ -1,0 +1,102 @@
+name: Rilis
+
+# HANYA lewat tombol "Run workflow" di tab Actions (workflow_dispatch) —
+# TIDAK ada trigger otomatis dari push tag. Jadi bikin tag `git tag v1.1.0
+# && git push origin v1.1.0` TIDAK memicu apa pun; rilis baru jalan kalau
+# tombolnya sengaja dipencet & tag-nya diisi manual.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag yang mau dirilis (mis. v1.1.0), harus sudah di-push'
+        required: true
+
+# electron-builder bikin Release + upload asset ke repo ini sendiri —
+# GITHUB_TOKEN bawaan defaultnya read-only, jadi wajib izin tulis eksplisit.
+permissions:
+  contents: write
+
+# Satu rilis berjalan sekali saja — dua workflow paralel bisa saling
+# menimpa saat membuat rilis yang sama.
+concurrency:
+  group: rilis-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  # Versi di package.json harus sama dengan tag. Kalau tidak, nama berkas
+  # artefak tidak cocok dengan rilis dan auto-update akan menunjuk berkas
+  # yang tidak ada — gagalnya baru terasa di sisi pengguna.
+  periksa-versi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Cocokkan versi package.json dengan tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          VERSI=$(node -p "require('./package.json').version")
+          echo "tag=$TAG  package.json=$VERSI"
+          if [ "$TAG" != "v$VERSI" ]; then
+            echo "::error::Tag $TAG tidak cocok dengan versi package.json ($VERSI). Naikkan versinya dulu, lalu buat tag v$VERSI."
+            exit 1
+          fi
+
+  bangun:
+    needs: periksa-versi
+    # max-parallel 1: kedua job menerbitkan ke rilis yang SAMA. Kalau jalan
+    # berbarengan, keduanya bisa mencoba membuat rilis itu sekaligus.
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            nama: Linux
+            target: --linux
+          - os: windows-latest
+            nama: Windows
+            target: --win
+
+    name: Build ${{ matrix.nama }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # npm ci, bukan npm install — memakai package-lock.json apa adanya.
+      - name: Pasang dependency
+        run: npm ci
+
+      - name: Build bundle
+        run: npm run build
+
+      - name: Bungkus & terbitkan
+        env:
+          # Rilis diterbitkan ke REPO INI SENDIRI, jadi token bawaan Actions
+          # (GITHUB_TOKEN) sudah cukup berwenang — tidak perlu PAT terpisah.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder ${{ matrix.target }} --publish always
+
+      # Artefak menempel di run ini juga, jadi bisa diunduh & diuji
+      # sebelum draft rilisnya diterbitkan.
+      - name: Simpan artefak
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.nama }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.exe
+            dist/latest*.yml
