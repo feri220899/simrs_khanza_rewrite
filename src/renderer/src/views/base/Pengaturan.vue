@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Users, DatabaseZap } from 'lucide-vue-next'
+import { Users, DatabaseZap, Server } from 'lucide-vue-next'
 import ManajemenUser from './ManajemenUser.vue'
 import MigrationPanel from '../../components/MigrationPanel.vue'
 import SchemaComparePanel from '../../components/SchemaComparePanel.vue'
+import EnvironmentPanel from '../../components/EnvironmentPanel.vue'
 
 // Hub Pengaturan — tab BERJENJANG (top-level -> children), disengaja
 // terstruktur sebagai array supaya penambahan section baru ke depan (bakal
@@ -22,6 +23,17 @@ const PENGATURAN_TABS = [
         children: [
             { key: 'migrasi', label: 'Migrasi', component: MigrationPanel },
             { key: 'pembanding-skema', label: 'Pembanding Skema', component: SchemaComparePanel },
+        ],
+    },
+    {
+        // Config service pihak ke-3/infra OPSIONAL (MinIO sekarang, nanti bisa
+        // nambah Redis dst) — dipisah dari tab "Database" karena beda sifat:
+        // ini bukan urusan skema/migrasi `sik`, dan sengaja TIDAK wajib diisi
+        // di "Pengaturan Awal" (beda dari MySQL) supaya RS yang belum siapkan
+        // MinIO tetap bisa lanjut pakai app, diisi belakangan di sini.
+        key: 'environment', label: 'Environment', icon: Server,
+        children: [
+            { key: 'environment', label: 'Environment', component: EnvironmentPanel },
         ],
     },
 ]
