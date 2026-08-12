@@ -14,6 +14,15 @@ contextBridge.exposeInMainWorld('api', {
     config: {
         get: (key)        => ipcRenderer.invoke('config:get', key),
         set: (key, value) => ipcRenderer.invoke('config:set', key, value),
+        isConfigured:      () => ipcRenderer.invoke('config:isConfigured'),
+        getDbConfig:       () => ipcRenderer.invoke('config:getDbConfig'),
+        saveDbConfig:      (cfg) => ipcRenderer.invoke('config:saveDbConfig', cfg),
+        testDbConnection:  (cfg) => ipcRenderer.invoke('config:testDbConnection', cfg),
+        getMinioConfig:    () => ipcRenderer.invoke('config:getMinioConfig'),
+        saveMinioConfig:   (cfg) => ipcRenderer.invoke('config:saveMinioConfig', cfg),
+        testMinioConnection: (cfg) => ipcRenderer.invoke('config:testMinioConnection', cfg),
+        exportConfig: (passphrase) => ipcRenderer.invoke('config:exportConfig', passphrase),
+        importConfig: (passphrase) => ipcRenderer.invoke('config:importConfig', passphrase),
     },
     device: {
         getId:   () => ipcRenderer.invoke('device:getId'),

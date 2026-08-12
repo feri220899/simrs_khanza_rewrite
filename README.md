@@ -107,10 +107,58 @@ permission" → tombol Tambahkan mengembalikannya.
 
 ```bash
 npm install
-cp .env.example .env   # isi kredensial MySQL (host/port/user/pass/database=sik) & JWT_SECRET
+cp .env.example .env   # dev lokal & `npm run migrate` (CLI, di luar Electron) — lihat catatan di bawah
 npm run migrate         # jalankan migration electron_* (roles/permissions/role_permissions/user_roles)
 npm run dev              # jalankan app
 ```
+
+**Kredensial produksi (MySQL & MinIO) TIDAK lagi lewat `.env`** — app open
+source ini dipakai banyak RS lain yang MySQL `sik`/MinIO-nya beda-beda per
+lokasi, jadi tidak boleh ada 1 `.env` hardcoded yang ikut ke installer publik
+(dan memang `.env` di-`.gitignore`, tidak pernah ter-bundle). Dipecah jadi 2
+tempat, beda tingkat kewajiban:
+
+- **Layar "Pengaturan Awal"** (route `/`, sebelum Aktivasi/Login, muncul
+  otomatis di buka pertama kali) — **CUMA MySQL**, satu-satunya yang app
+  benar-benar tidak bisa jalan sama sekali tanpanya. Isi host/port/database/
+  user/password, tombol **"Cek Koneksi"** wajib sukses dulu sebelum "Simpan &
+  Lanjutkan" aktif. Kalau sudah pernah diisi & valid, layar ini dilewati
+  otomatis ke Aktivasi.
+- **Pengaturan > Environment** (tab baru, sejajar User/Database, akses
+  setelah login) — **MySQL tetap ada & bisa diedit lagi di sini** (mis.
+  server pindah IP, tidak hilang/terkunci setelah pertama kali diisi lewat
+  Pengaturan Awal), PLUS config service pihak ke-3 **opsional** (MinIO
+  sekarang, nanti bisa nambah section baru mis. Redis TANPA RS yang sudah
+  setup MySQL disuruh isi ulang apa pun). Section opsional boleh
+  dikosongkan/diisi belakangan — fitur yang butuh (mis. lampiran Surat) baru
+  error saat benar-benar dipakai kalau belum diisi/salah, tidak mem-block
+  pemakaian awal app. Ubah MySQL dari sini WAJIB konfirmasi eksplisit
+  (langsung berlaku ke koneksi yang sedang jalan).
+
+Keduanya tersimpan **terenkripsi** (`safeStorage` bawaan Electron, terikat
+akun OS user yang login — DPAPI/Keychain/libsecret) di
+`app.getPath('userData')/config.dat`, dibaca lewat `ConfigService` +
+`DatabaseService.configure()`/`MinioService.configure()` (lihat `main/index.js`
+> `app.whenReady()`).
+
+**Export/Import konfigurasi** (rollout banyak PC di RS yang sama, tidak
+perlu ketik ulang manual tiap komputer) — tombol ada di Environment
+(post-login) & di layar Pengaturan Awal sendiri (Import saja, buat PC ke-2
+dst yang belum bisa login karena belum ada MySQL). **PENTING**: ini BUKAN
+sekadar salin file `config.dat` — isinya dienkripsi `safeStorage` yang
+terikat ke akun OS + KOMPUTER itu (DPAPI Windows dst), file itu di-copy ke
+PC lain TIDAK akan bisa didekripsi sama sekali di sana. Export/Import pakai
+enkripsi terpisah berbasis **passphrase** (AES-256-GCM + `scrypt`, lihat
+`ConfigService.exportToFile`/`importFromFile`) yang portable antar komputer
+— passphrase cuma diketik saat export & import, tidak disimpan di mana pun.
+Hapus file hasil export setelah selesai dipakai (isinya kredensial MySQL/
+MinIO, walau terenkripsi).
+
+`.env` TETAP dipakai untuk 2 hal saja: `npm run dev` (kalau layar Pengaturan
+Awal belum diisi di komputer dev, fallback ke `.env`) dan `npm run migrate`
+(`scripts/migrate.mjs` jalan lewat `node` langsung, TANPA Electron, jadi
+tidak bisa akses `app.getPath`/`safeStorage` — CLI ini SELALU baca `.env`,
+tidak pernah baca `config.dat`).
 
 Tidak perlu wizard bootstrap tanpa-login — akun `admin` (Admin Utama) sudah
 ADA di data `sik.sql` sejak awal, akses penuh hardcode tanpa bergantung

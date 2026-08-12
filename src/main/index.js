@@ -63,18 +63,65 @@ function createWindow() {
 // ─── IPC ─────────────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
+    // Muat config MySQL/MinIO tersimpan (kalau sudah pernah diisi lewat
+    // layar "Pengaturan Awal") SEBELUM coba connect apa pun — instalasi baru
+    // (belum pernah diisi) akan punya keduanya `null`, dan itu wajar, biarkan
+    // saja (lihat blok config:* & catatan DB di bawah).
+    const savedDbConfig = ConfigService.get('db')
+    if (savedDbConfig) DatabaseService.configure(savedDbConfig)
+    const savedMinioConfig = ConfigService.get('minio')
+    if (savedMinioConfig) MinioService.configure(savedMinioConfig)
+
+    // Config MySQL/MinIO — WAJIB didaftarkan duluan & TANPA syarat DB nyambung.
+    // Ini justru IPC yang dipakai layar "Pengaturan Awal" utk mengisi
+    // kredensial itu SAAT DB/MinIO belum bisa dikonek sama sekali (instalasi
+    // baru di RS lain, belum ada apa-apa diisi).
+    ipcMain.handle('config:isConfigured',   () => !!ConfigService.get('db'))
+    ipcMain.handle('config:getDbConfig',    () => ConfigService.get('db'))
+    ipcMain.handle('config:saveDbConfig', (_, cfg) => {
+        ConfigService.set('db', cfg)
+        DatabaseService.configure(cfg)
+        return { success: true }
+    })
+    ipcMain.handle('config:testDbConnection', (_, cfg) => DatabaseService.testConnection(cfg))
+    ipcMain.handle('config:getMinioConfig', () => ConfigService.get('minio'))
+    ipcMain.handle('config:saveMinioConfig', (_, cfg) => {
+        ConfigService.set('minio', cfg)
+        MinioService.configure(cfg)
+        return { success: true }
+    })
+    ipcMain.handle('config:testMinioConnection', (_, cfg) => MinioService.testConnection(cfg))
+
+    // Export/Import konfigurasi (lihat catatan panjang di ConfigService.js)
+    // — dipakai instalasi banyak PC di RS yang sama biar tidak ngetik ulang
+    // manual. Didaftar di sini juga (bukan cuma dalam blok DB nyambung),
+    // karena Import dipakai justru SEBELUM DB nyambung (dari layar
+    // Pengaturan Awal, PC ke-2 dst yang belum diisi apa-apa).
+    ipcMain.handle('config:exportConfig', (_, passphrase) => ConfigService.exportToFile(passphrase))
+    ipcMain.handle('config:importConfig', async (_, passphrase) => {
+        const result = await ConfigService.importFromFile(passphrase)
+        if (result.success) {
+            if (result.data.db) DatabaseService.configure(result.data.db)
+            if (result.data.minio) MinioService.configure(result.data.minio)
+        }
+        return result
+    })
+
     // Cuma connect + pastikan tabel `migrations` ada — TIDAK menjalankan
     // migration apa pun di sini (lihat catatan panjang di DatabaseService.js
     // > runMigrations()). App ini di-install di banyak PC RS sekaligus;
     // migration schema WAJIB dipicu manual sekali oleh Administrator (lewat
     // IPC db:runMigrations di bawah, atau `npm run migrate` dari CLI),
     // bukan otomatis tiap PC nyala.
+    //
+    // TIDAK app.quit() lagi kalau gagal (beda dari sebelumnya) — instalasi
+    // baru yang belum diisi lewat "Pengaturan Awal" MEMANG akan gagal di
+    // sini, tapi app harus tetap kebuka supaya layar itu bisa ditampilkan,
+    // bukan mati total tanpa UI apa pun.
     try {
         await DatabaseService.get()
     } catch (err) {
         console.error('Gagal konek ke database:', err.message)
-        app.quit()
-        return
     }
 
     // Lisensi
@@ -83,7 +130,7 @@ app.whenReady().then(async () => {
     ipcMain.handle('lisensi:deaktivasi', (_, key) => LisensiService.deaktivasi(key, DeviceService.getId()))
     ipcMain.handle('lisensi:verifyToken', (_, token) => LisensiService.verifyToken(token))
 
-    // Config lokal
+    // Config lokal generik (dipakai Aktivasi.vue: lisensi_token/license_key)
     ipcMain.handle('config:get', (_, key)        => ConfigService.get(key))
     ipcMain.handle('config:set', (_, key, value) => ConfigService.set(key, value))
 

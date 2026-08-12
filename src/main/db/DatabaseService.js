@@ -16,6 +16,43 @@ import migrations from './migrations/index.js'
 
 let pool = null
 
+// Diisi lewat configure() dari ConfigService (layar "Pengaturan Awal", lihat
+// main/index.js) — dipakai app Electron beneran. `scripts/migrate.mjs` (jalan
+// via `node`, TANPA Electron, jadi TIDAK bisa panggil configure()/ConfigService
+// yang butuh `app.getPath`) tetap pakai `.env`/process.env apa adanya, itu
+// sebabnya connect() di bawah fallback ke process.env kalau override kosong.
+let overrideConfig = null
+
+function configure(cfg) {
+    overrideConfig = cfg
+    // Config baru harus kepakai — pool lama (kalau ada) sudah connect pakai
+    // kredensial lama, tidak bisa "ganti alamat" pool yang sudah jalan.
+    if (pool) {
+        const old = pool
+        pool = null
+        old.end().catch(() => {})
+    }
+}
+
+// Test 1 koneksi lepas (bukan pool bersama) — dipakai tombol "Cek Koneksi" di
+// layar Pengaturan Awal, TIDAK boleh ganggu/gantikan pool yang sedang dipakai
+// app (kalau ada), jadi selalu bikin & tutup sendiri.
+async function testConnection(cfg) {
+    let conn
+    try {
+        conn = await mysql.createConnection({
+            host: cfg.host, port: Number(cfg.port) || 3306, database: cfg.database,
+            user: cfg.user, password: cfg.password || '', connectTimeout: 5000,
+        })
+        await conn.query('SELECT 1')
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    } finally {
+        if (conn) await conn.end().catch(() => {})
+    }
+}
+
 // Bungkus PoolConnection (dari `rawPool.getConnection()`) supaya bentuknya
 // sama seperti `pg` Client: `.query(sql, params)` balikin `{rows}` (bukan
 // tuple `[rows, fields]`), dan `.release()` tetap ada.
@@ -32,12 +69,13 @@ function wrapConnection(conn) {
 function connect() {
     if (pool) return pool
 
+    const cfg = overrideConfig || {}
     const rawPool = mysql.createPool({
-        host:     process.env.DB_HOST     || 'localhost',
-        port:     Number(process.env.DB_PORT) || 3306,
-        database: process.env.DB_DATABASE || 'sik',
-        user:     process.env.DB_USER     || 'root',
-        password: process.env.DB_PASSWORD || '',
+        host:     cfg.host     || process.env.DB_HOST     || 'localhost',
+        port:     Number(cfg.port || process.env.DB_PORT) || 3306,
+        database: cfg.database || process.env.DB_DATABASE || 'sik',
+        user:     cfg.user     || process.env.DB_USER     || 'root',
+        password: cfg.password ?? process.env.DB_PASSWORD ?? '',
         waitForConnections: true,
         connectionLimit: 10,
         // Cuma kolom DATE murni yang dipaksa balik sebagai string 'YYYY-MM-DD'
@@ -142,4 +180,4 @@ async function close() {
     }
 }
 
-export default { connect, get, runMigrations, getMigrationStatus, close }
+export default { connect, get, configure, testConnection, runMigrations, getMigrationStatus, close }

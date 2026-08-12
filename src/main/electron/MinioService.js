@@ -11,21 +11,50 @@ import { Client } from 'minio'
 let client = null
 let bucketReady = false
 
+// Diisi lewat configure() dari ConfigService (layar "Pengaturan Awal") —
+// sama pola dengan DatabaseService.configure(). Fallback ke process.env
+// tetap ada buat kompatibilitas dev lokal (.env).
+let overrideConfig = null
+
+function configure(cfg) {
+    overrideConfig = cfg
+    // Kredensial/endpoint baru — client lama (kalau ada) masih pegang yang
+    // lama, tidak bisa "ganti alamat" di tempat.
+    client = null
+    bucketReady = false
+}
+
+// Test 1 client lepas (bukan `client` module-level) — dipakai tombol
+// "Cek Koneksi" MinIO di layar Pengaturan Awal.
+async function testConnection(cfg) {
+    try {
+        const testClient = new Client({
+            endPoint:  cfg.endpoint, port: Number(cfg.port) || 9000,
+            useSSL:    !!cfg.useSSL, accessKey: cfg.accessKey, secretKey: cfg.secretKey,
+        })
+        await testClient.listBuckets()
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
 function getClient() {
     if (!client) {
+        const cfg = overrideConfig || {}
         client = new Client({
-            endPoint:  process.env.MINIO_ENDPOINT || 'localhost',
-            port:      Number(process.env.MINIO_PORT) || 9000,
-            useSSL:    process.env.MINIO_USE_SSL === '1',
-            accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-            secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+            endPoint:  cfg.endpoint  || process.env.MINIO_ENDPOINT || 'localhost',
+            port:      Number(cfg.port || process.env.MINIO_PORT) || 9000,
+            useSSL:    cfg.useSSL ?? (process.env.MINIO_USE_SSL === '1'),
+            accessKey: cfg.accessKey || process.env.MINIO_ACCESS_KEY || 'minioadmin',
+            secretKey: cfg.secretKey || process.env.MINIO_SECRET_KEY || 'minioadmin',
         })
     }
     return client
 }
 
 function bucketName() {
-    return process.env.MINIO_BUCKET || 'khanza'
+    return (overrideConfig && overrideConfig.bucket) || process.env.MINIO_BUCKET || 'khanza'
 }
 
 // Idempotent & aman dipanggil bareng dari banyak PC (cuma cek+buat kalau
@@ -62,4 +91,4 @@ async function remove(objectKey) {
     await c.removeObject(bucketName(), objectKey)
 }
 
-export default { upload, getPresignedUrl, remove }
+export default { upload, getPresignedUrl, remove, configure, testConnection }

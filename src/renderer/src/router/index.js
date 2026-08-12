@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+import PengaturanAwal from '../views/base/PengaturanAwal.vue'
 import Aktivasi  from '../views/base/Aktivasi.vue'
 import Login     from '../views/base/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
@@ -74,7 +75,8 @@ const PLACEHOLDER_PATHS = [
 ]
 
 const routes = [
-    { path: '/', redirect: '/aktivasi' },
+    { path: '/', redirect: '/pengaturan-awal' },
+    { path: '/pengaturan-awal', component: PengaturanAwal, meta: { layout: false } },
     { path: '/aktivasi', component: Aktivasi, meta: { layout: false } },
     { path: '/login', component: Login, meta: { layout: false } },
     { path: '/dashboard', component: Dashboard, meta: { layout: true, auth: true, permission: 'dashboard' } },
