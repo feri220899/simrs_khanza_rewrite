@@ -11,24 +11,17 @@ const error = ref('')
 onMounted(async () => {
     deviceId.value = await window.api.device.getId()
 
-    // BYPASS SEMENTARA — cuma aktif di `npm run dev` (import.meta.env.DEV),
-    // TIDAK PERNAH aktif di build production. Server lisensi Khanza asli
-    // belum ada (LisensiService.js masih placeholder), jadi tanpa ini
-    // aktivasi asli akan selalu gagal dan tidak bisa lanjut testing modul
-    // lain sama sekali. HAPUS blok ini begitu server lisensi sungguhan siap
-    // — lihat Khanza.md > "Aktivasi Lisensi".
-    if (import.meta.env.DEV) {
-        await window.api.config.set('lisensi_token', 'DEV_BYPASS')
-        return router.push('/login')
-    }
+    // bypas lisensi
+    return router.push('/login')
 
     // Kalau sudah ada token lisensi tersimpan & masih valid, langsung lewati
     // layar ini (lihat Khanza.md > "Aktivasi Lisensi").
-    const savedToken = await window.api.config.get('lisensi_token')
-    if (savedToken) {
-        const check = await window.api.lisensi.verifyToken(savedToken)
-        if (check.valid) return router.push('/login')
-    }
+    // const savedToken = await window.api.config.get('lisensi_token')
+    // if (savedToken) {
+    //     const check = await window.api.lisensi.verifyToken(savedToken)
+    //     if (check.valid) return router.push('/login')
+    // }
+
 })
 
 async function aktivasi() {

@@ -20,7 +20,7 @@ v/Ow5T0q5gIJAiEAyS4RaI9YG8EWx/2w0T67ZUVAw8eOMB6BIUg0Xcu+3okCIBOs
 -----END PUBLIC KEY-----`
 
 const client = axios.create({
-    baseURL: process.env.LISENSI_BASE_URL || 'https://yolosimrs.lisensi/api',
+    baseURL: 'https://yolosimrs.lisensi/api',
     timeout: 10000,
 })
 
