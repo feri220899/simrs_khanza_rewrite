@@ -23,8 +23,12 @@
             </select>
         </div>
 
-        <!-- Slot tabel (scrollable) -->
-        <div class="flex-1 min-h-0 min-w-0 overflow-auto">
+        <!-- Slot tabel (scrollable) — `overscroll-contain` matikan efek
+             "rubber band"/bounce Chromium pas discroll mentok ke batas
+             (paling kentara di tabel dgn baris sedikit spt Satuan, krn jarak
+             scroll-nya pendek). Tanpa ini, browser tetap coba scroll-chain
+             ke parent lalu mantul balik. -->
+        <div class="flex-1 min-h-0 min-w-0 overflow-auto overscroll-contain">
             <slot />
         </div>
 

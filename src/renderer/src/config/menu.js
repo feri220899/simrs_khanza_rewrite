@@ -224,9 +224,22 @@ export const allMenu = [
           { to: '/inventaris/kadaluarsa',  label: 'Kadaluarsa Batch',  icon: AlertTriangle, permission: 'kadaluarsa_batch' },
         ],
       },
-      // 18. IPSRS — representatif 'ipsrs_barang', varian: ipsrs_pengadaan_barang,
-      // ipsrs_stok_keluar, ipsrs_jenis_barang, ipsrs_rekap_*, ipsrs_returbeli, dst.
-      { to: '/ipsrs', label: 'IPSRS (Sarana Prasarana)', icon: Wrench, permission: 'ipsrs_barang' },
+      // 18. IPSRS — investigasi penuh selesai (lihat Khanza.md section 18).
+      // Master Data + Permintaan + Pengajuan + Surat Pemesanan (PO) + Stok
+      // Opname + Riwayat DIGARAP (tidak sentuh jurnal Keuangan). Pembelian/
+      // Penerimaan/Hibah/Pengeluaran/ReturBeli/Pengambilan UTD DITUNDA ke
+      // Fase 3 — semua itu otomatis posting jurnal, sama prinsipnya dgn Toko.
+      {
+        label: 'IPSRS (Sarana Prasarana)', icon: Wrench,
+        children: [
+          { to: '/ipsrs/master',          label: 'Master Data',      icon: Package,        permission: ['ipsrs_barang', 'ipsrs_jenis_barang', 'suplier_penunjang'] },
+          { to: '/ipsrs/permintaan',      label: 'Permintaan Barang Non Medis',       icon: ClipboardList,  permission: ['permintaan_non_medis', 'ipsrs_stok_keluar'] },
+          { to: '/ipsrs/pengajuan',       label: 'Pengajuan Barang', icon: FileCheck2,     permission: 'pengajuan_barang_nonmedis' },
+          { to: '/ipsrs/surat-pemesanan', label: 'Surat Pemesanan',  icon: FileText,       permission: 'surat_pemesanan_non_medis' },
+          { to: '/ipsrs/stok-opname',     label: 'Stok Opname',      icon: ClipboardCheck, permission: 'stok_opname_logistik' },
+          { to: '/ipsrs/riwayat',         label: 'Riwayat Barang',   icon: History,        permission: 'ipsrs_riwayat_barang' },
+        ],
+      },
       // 19. Perpustakaan — DIGARAP PENUH, dipecah jadi grup (13 flag terpisah
       // di sik.sql: ruang/kategori/jenis/pengarang/penerbit/koleksi/inventaris/
       // set_peminjaman/denda/anggota/peminjaman/bayar_denda/ebook_perpustakaan).

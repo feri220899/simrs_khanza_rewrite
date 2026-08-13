@@ -19,7 +19,12 @@ import PerpusSirkulasi  from '../views/perpustakaan/Sirkulasi.vue'
 import PerpusDenda      from '../views/perpustakaan/Denda.vue'
 import PerpusPengaturan from '../views/perpustakaan/Pengaturan.vue'
 import Surat         from '../views/surat/Surat.vue'
-import Ipsrs          from '../views/ipsrs/Ipsrs.vue'
+import IpsrsMaster         from '../views/ipsrs/Master.vue'
+import IpsrsPermintaan     from '../views/ipsrs/Permintaan.vue'
+import IpsrsPengajuan      from '../views/ipsrs/Pengajuan.vue'
+import IpsrsSuratPemesanan from '../views/ipsrs/SuratPemesanan.vue'
+import IpsrsStokOpname     from '../views/ipsrs/StokOpname.vue'
+import IpsrsRiwayat        from '../views/ipsrs/Riwayat.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -45,12 +50,25 @@ const FASE_1_ROUTES = [
     { path: '/perpustakaan/denda', component: PerpusDenda },
     { path: '/perpustakaan/pengaturan', component: PerpusPengaturan },
     { path: '/surat', component: Surat },
-    { path: '/ipsrs', component: Ipsrs },
+    // IPSRS: Master Data + Permintaan + Pengajuan + Surat Pemesanan (PO) +
+    // Stok Opname + Riwayat sudah digarap (tidak sentuh jurnal Keuangan).
+    // Pembelian/Penerimaan/Hibah/Pengeluaran/ReturBeli/Pengambilan UTD
+    // DITUNDA ke Fase 3 (otomatis posting jurnal) — lihat PLACEHOLDER_PATHS
+    // di bawah & Khanza.md section 14/18.
+    { path: '/ipsrs/master', component: IpsrsMaster },
+    { path: '/ipsrs/permintaan', component: IpsrsPermintaan },
+    { path: '/ipsrs/pengajuan', component: IpsrsPengajuan },
+    { path: '/ipsrs/surat-pemesanan', component: IpsrsSuratPemesanan },
+    { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
+    { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
 ]
 
 const PLACEHOLDER_PATHS = [
     // Toko — ditunda ke Fase 3 (butuh integrasi jurnal Keuangan), lihat Khanza.md section 14.
     '/toko/penjualan', '/toko/pembelian', '/toko/pemesanan', '/toko/piutang', '/toko/retur',
+    // IPSRS — modul berjurnal ditunda ke Fase 3, lihat Khanza.md section 18.
+    '/ipsrs/pembelian', '/ipsrs/penerimaan', '/ipsrs/hibah', '/ipsrs/pengeluaran',
+    '/ipsrs/retur-beli', '/ipsrs/pengambilan-utd', '/ipsrs/laporan',
     '/registrasi', '/igd', '/rawat-jalan',
     '/rawat-inap/kamar', '/rawat-inap/pemeriksaan', '/rawat-inap/daftar-pasien',
     '/operasi/booking', '/operasi/ruang', '/operasi/obat',

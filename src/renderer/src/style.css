@@ -13,6 +13,19 @@
 ::-webkit-scrollbar-thumb        { background: rgba(128,128,128,0.3); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover  { background: rgba(128,128,128,0.5); }
 
+/* Fix bug rendering Chromium: header tabel `sticky` (thead.sticky di semua
+   tabel AppPagination) bergetar TERUS-MENERUS (bukan cuma sekali mantul)
+   pas kontainer scroll mentok persis di batas bawah — paling kentara di
+   tabel dgn baris sedikit (jarak scroll pendek, gampang berhenti pas di
+   batas pixel). Ini bug sub-pixel Chromium yang dikenal luas pas
+   `position: sticky` digabung `overflow: auto`, BUKAN sesuatu yang bisa
+   diperbaiki dari sisi data/komponen kita. `will-change: transform`
+   promosikan elemen ke compositing layer sendiri, menstabilkan
+   perhitungan posisi sub-pixel-nya. */
+.sticky {
+    will-change: transform;
+}
+
 /* @vueform/multiselect (dipakai lewat components/AppSelect.vue) — dipetakan
    ke token warna daisyUI (--color-*) yang sudah ada, biar otomatis ikut tema
    aktif (corporate/night) tanpa perlu override tiap class manual. Ukuran

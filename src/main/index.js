@@ -30,6 +30,14 @@ import TokoMemberService from './db/modules/TokoMemberService.js'
 import TokoBarangService from './db/modules/TokoBarangService.js'
 import TokoOpnameService from './db/modules/TokoOpnameService.js'
 import SatuanService from './db/modules/SatuanService.js'
+import IpsrsJenisService from './db/modules/IpsrsJenisService.js'
+import IpsrsSuplierService from './db/modules/IpsrsSuplierService.js'
+import IpsrsBarangService from './db/modules/IpsrsBarangService.js'
+import IpsrsRiwayatService from './db/modules/IpsrsRiwayatService.js'
+import IpsrsStokService from './db/modules/IpsrsStokService.js'
+import IpsrsPermintaanService from './db/modules/IpsrsPermintaanService.js'
+import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
+import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -506,6 +514,153 @@ app.whenReady().then(async () => {
         return auth.ok ? TokoOpnameService.deleteOpname(data) : { success: false, message: auth.message }
     })
     handle('toko:riwayat:list', (_, params) => TokoOpnameService.listRiwayat(params))
+
+    // IPSRS — MASTER DATA + Permintaan + Pengajuan + Surat Pemesanan (PO) +
+    // Stok Opname + Riwayat saja (Pembelian/Penerimaan/Hibah/Pengeluaran/
+    // ReturBeli/Pengambilan UTD DITUNDA ke Fase 3, semua itu posting jurnal
+    // ke Keuangan yang belum dibangun — sama prinsipnya dgn Toko di atas).
+    handle('ipsrs:jenis:list',    (_, params) => IpsrsJenisService.list(params))
+    handle('ipsrs:jenis:listAll', () => IpsrsJenisService.listAll())
+    handle('ipsrs:jenis:nextKode', () => IpsrsJenisService.nextKode())
+    handle('ipsrs:jenis:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_jenis_barang')
+        return auth.ok ? IpsrsJenisService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:jenis:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_jenis_barang')
+        return auth.ok ? IpsrsJenisService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:jenis:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_jenis_barang')
+        return auth.ok ? IpsrsJenisService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    handle('ipsrs:suplier:list',    (_, params) => IpsrsSuplierService.list(params))
+    handle('ipsrs:suplier:listAll', () => IpsrsSuplierService.listAll())
+    handle('ipsrs:suplier:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'suplier_penunjang')
+        return auth.ok ? IpsrsSuplierService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:suplier:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'suplier_penunjang')
+        return auth.ok ? IpsrsSuplierService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:suplier:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'suplier_penunjang')
+        return auth.ok ? IpsrsSuplierService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    handle('ipsrs:barang:list',       (_, params) => IpsrsBarangService.list(params))
+    handle('ipsrs:barang:nextKode',   () => IpsrsBarangService.nextKode())
+    handle('ipsrs:barang:listAktif',  () => IpsrsBarangService.listAktif())
+    handle('ipsrs:barang:listSampah', (_, token, params) => {
+        // "Data Sampah" cuma boleh dilihat Admin Utama/Administrator — sama
+        // pola dgn toko:barang:listSampah.
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { data: [], total: 0 }
+        if (!AuthService.isFullAdmin(session.user.role)) return { data: [], total: 0 }
+        return IpsrsBarangService.listSampah(params)
+    })
+    handle('ipsrs:barang:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_barang')
+        return auth.ok ? IpsrsBarangService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:barang:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_barang')
+        return auth.ok ? IpsrsBarangService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:barang:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_barang')
+        return auth.ok ? IpsrsBarangService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:barang:restore', (_, token, kode) => {
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (!AuthService.isFullAdmin(session.user.role)) return { success: false, message: 'Cuma Admin Utama/Administrator yang boleh memulihkan data' }
+        return IpsrsBarangService.restore(kode)
+    })
+    handle('ipsrs:barang:hardDelete', (_, token, kode) => {
+        // Replika BtnHapus di DlgRestoreIPSRSBarang.java — hapus PERMANEN.
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (!AuthService.isFullAdmin(session.user.role)) return { success: false, message: 'Cuma Admin Utama/Administrator yang boleh menghapus permanen' }
+        return IpsrsBarangService.hardDelete(kode)
+    })
+
+    handle('ipsrs:stok:listBarang', (_, params) => IpsrsStokService.listBarangUntukOpname(params))
+    handle('ipsrs:stok:list', (_, params) => IpsrsStokService.listOpname(params))
+    handle('ipsrs:stok:createBatch', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'stok_opname_logistik')
+        return auth.ok ? IpsrsStokService.createOpnameBatch({ ...data, petugas: auth.user.username }) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:stok:delete', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'stok_opname_logistik')
+        return auth.ok ? IpsrsStokService.deleteOpname(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:riwayat:list', (_, params) => IpsrsRiwayatService.list(params))
+
+    handle('ipsrs:permintaan:list',       (_, params) => IpsrsPermintaanService.list(params))
+    handle('ipsrs:permintaan:detail',     (_, noPermintaan) => IpsrsPermintaanService.detail(noPermintaan))
+    handle('ipsrs:permintaan:nextNomor',  (_, tanggal) => IpsrsPermintaanService.nextNomor(tanggal))
+    handle('ipsrs:permintaan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'permintaan_non_medis')
+        return auth.ok ? IpsrsPermintaanService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:permintaan:setStatus', (_, token, noPermintaan, status) => {
+        // Replika ppDisetujui/ppTidakDisetujui — gate slug `ipsrs_stok_keluar`
+        // (modul Pengeluaran yg dibuka Java asli sesudahnya), BUKAN slug
+        // permintaan_non_medis milik modul ini sendiri.
+        const auth = AuthService.requirePermission(token, 'ipsrs_stok_keluar')
+        return auth.ok ? IpsrsPermintaanService.setStatus(noPermintaan, status) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:permintaan:delete', (_, token, noPermintaan) => {
+        // Replika DlgCariPermintaan.isCek(): ppHapus gate ROLE "Admin Utama"
+        // PERSIS (bukan Administrator, bukan permission slug biasa).
+        const session = AuthService.verifySession(token)
+        if (!session.success) return { success: false, message: 'Sesi tidak valid, silakan login ulang' }
+        if (session.user.role !== 'Admin Utama') return { success: false, message: 'Cuma Admin Utama yang boleh menghapus data ini' }
+        return IpsrsPermintaanService.deleteOne(noPermintaan)
+    })
+
+    handle('ipsrs:pengajuan:list',      (_, params) => IpsrsPengajuanService.list(params))
+    handle('ipsrs:pengajuan:detail',    (_, noPengajuan) => IpsrsPengajuanService.detail(noPengajuan))
+    handle('ipsrs:pengajuan:nextNomor', (_, tanggal) => IpsrsPengajuanService.nextNomor(tanggal))
+    handle('ipsrs:pengajuan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'pengajuan_barang_nonmedis')
+        return auth.ok ? IpsrsPengajuanService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:pengajuan:setStatus', (_, token, noPengajuan, status) => {
+        const auth = AuthService.requirePermission(token, 'pengajuan_barang_nonmedis')
+        return auth.ok ? IpsrsPengajuanService.setStatus(noPengajuan, status) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:pengajuan:approve', (_, token, noPengajuan) => {
+        // Replika DlgCariPengajuanBarangNonMedis.isCek(): ppDisetujui gate
+        // slug SURAT PEMESANAN (`surat_pemesanan_non_medis`) — BEDA dari
+        // slug modul ini sendiri, karena approve = langkah awal alur PO.
+        const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
+        return auth.ok ? IpsrsPengajuanService.approve(noPengajuan) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:pengajuan:prefillForSuratPemesanan', (_, noPengajuan) => IpsrsPengajuanService.prefillForSuratPemesanan(noPengajuan))
+    handle('ipsrs:pengajuan:delete', (_, token, noPengajuan) => {
+        const auth = AuthService.requirePermission(token, 'pengajuan_barang_nonmedis')
+        return auth.ok ? IpsrsPengajuanService.deleteOne(noPengajuan) : { success: false, message: auth.message }
+    })
+
+    handle('ipsrs:suratPemesanan:list',      (_, params) => IpsrsSuratPemesananService.list(params))
+    handle('ipsrs:suratPemesanan:detail',    (_, noPemesanan) => IpsrsSuratPemesananService.detail(noPemesanan))
+    handle('ipsrs:suratPemesanan:nextNomor', (_, tanggal) => IpsrsSuratPemesananService.nextNomor(tanggal))
+    handle('ipsrs:suratPemesanan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
+        return auth.ok ? IpsrsSuratPemesananService.create(data) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:suratPemesanan:tandaiProsesPesan', (_, token, noPemesanan) => {
+        const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
+        return auth.ok ? IpsrsSuratPemesananService.tandaiProsesPesan(noPemesanan) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:suratPemesanan:tandaiSudahDatang', (_, token, noPemesanan) => {
+        const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
+        return auth.ok ? IpsrsSuratPemesananService.tandaiSudahDatang(noPemesanan) : { success: false, message: auth.message }
+    })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
