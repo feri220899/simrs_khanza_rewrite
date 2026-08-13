@@ -4,6 +4,7 @@
 // server lisensi terpisah kayak pos-desktop.
 import electronUpdater from 'electron-updater'
 import { app } from 'electron'
+import LogService from './LogService.js'
 
 const { autoUpdater } = electronUpdater
 
@@ -27,7 +28,14 @@ function init(mainWindow) {
     autoUpdater.on('update-not-available',()      => send('not-available'))
     autoUpdater.on('download-progress',   (p)     => send('progress',      { percent: Math.round(p?.percent ?? 0) }))
     autoUpdater.on('update-downloaded',   (info)  => send('downloaded',     { version: info?.version }))
-    autoUpdater.on('error',               (err)   => send('error',         { message: String(err?.message ?? err) }))
+    // Event ini terjadi di LATAR BELAKANG (bukan hasil panggilan check()/
+    // download() langsung), jadi TIDAK lewat wrapper handle() di main/index.js
+    // — kalau tidak dicatat manual di sini, error auto-update (mis. GitHub
+    // tidak terjangkau) tidak akan pernah masuk log sama sekali.
+    autoUpdater.on('error', (err) => {
+        LogService.error('Auto-update gagal', { message: String(err?.message ?? err) })
+        send('error', { message: String(err?.message ?? err) })
+    })
 
     // Cek saat start (hanya MEMBERI TAHU, tidak mengunduh). Beri jeda agar renderer siap.
     setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}) }, 3000)

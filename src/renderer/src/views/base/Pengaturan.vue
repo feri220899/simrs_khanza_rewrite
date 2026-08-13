@@ -1,12 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Users, DatabaseZap, Server, Info, ShieldOff } from 'lucide-vue-next'
+import { Users, DatabaseZap, Server, Info, ShieldOff, FileText } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth.js'
 import ManajemenUser from './ManajemenUser.vue'
 import MigrationPanel from '../../components/MigrationPanel.vue'
 import SchemaComparePanel from '../../components/SchemaComparePanel.vue'
 import EnvironmentPanel from '../../components/EnvironmentPanel.vue'
 import UpdatePanel from '../../components/UpdatePanel.vue'
+import LogPanel from '../../components/LogPanel.vue'
 
 const authStore = useAuthStore()
 
@@ -54,6 +55,15 @@ const PENGATURAN_TABS = [
         key: 'tentang', label: 'Informasi', icon: Info, permission: 'pengaturan-informasi',
         children: [
             { key: 'tentang', label: 'Informasi', component: UpdatePanel },
+        ],
+    },
+    {
+        // Log error/crash lokal komputer ini (lihat LogService.js) — permission
+        // sendiri dari migration 008 (TERPISAH dari 007 yang sudah applied,
+        // lihat catatan di migration 008).
+        key: 'log', label: 'Log', icon: FileText, permission: 'pengaturan-log',
+        children: [
+            { key: 'log', label: 'Log', component: LogPanel },
         ],
     },
 ]

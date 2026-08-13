@@ -19,8 +19,9 @@ import { readFileSync } from 'fs'
 import DatabaseService from '../DatabaseService.js'
 import { EXTRA_SLUGS } from '../migrations/006_seed_electron_permissions_extra.js'
 import { EXTRA_SLUGS_PENGATURAN_TABS } from '../migrations/007_seed_electron_permissions_pengaturan_tabs.js'
+import { EXTRA_SLUGS_LOG } from '../migrations/008_seed_electron_permission_log.js'
 
-const ALL_EXTRA_SLUGS = [...EXTRA_SLUGS, ...EXTRA_SLUGS_PENGATURAN_TABS]
+const ALL_EXTRA_SLUGS = [...EXTRA_SLUGS, ...EXTRA_SLUGS_PENGATURAN_TABS, ...EXTRA_SLUGS_LOG]
 
 // Tabel `electron_*` itu punya kita, bukan bagian sik.sql asli — vendor
 // TIDAK PERNAH tahu soal ini, jadi harus dikecualikan dari sisi "skema

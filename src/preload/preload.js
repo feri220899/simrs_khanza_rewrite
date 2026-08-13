@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld('api', {
         onEvent:  (cb) => ipcRenderer.on('updater:event', (_, payload) => cb(payload)),
         offEvent: ()   => ipcRenderer.removeAllListeners('updater:event'),
     },
+    log: {
+        getToday:    ()             => ipcRenderer.invoke('log:getToday'),
+        clearToday:  ()             => ipcRenderer.invoke('log:clearToday'),
+        reportError: (message, meta) => ipcRenderer.invoke('log:reportError', message, meta),
+    },
     auth: {
         login: (username, password) => ipcRenderer.invoke('auth:login', username, password),
         me:    (token)               => ipcRenderer.invoke('auth:me', token),
