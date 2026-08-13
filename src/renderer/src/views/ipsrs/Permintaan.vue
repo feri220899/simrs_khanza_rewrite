@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, h, onMounted, watch } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
-import { Plus, List, ClipboardList, Trash2 } from 'lucide-vue-next'
+import { Plus, List, ClipboardList, Trash2, Printer } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -161,6 +161,19 @@ async function hapus(row) {
     fetchData()
 }
 
+function cetakDaftar() {
+    const data = table.getRowModel().rows.map(r => r.original)
+    if (data.length === 0) { showToast('Tidak ada data untuk dicetak', 'error'); return }
+    const w = window.open('', '_blank', 'width=1000,height=700')
+    if (!w) return
+    const rows = data.map(r => `<tr><td>${r.no_permintaan}</td><td>${r.ruang}</td><td>${r.nama_petugas||'-'}</td><td>${r.tanggal}</td><td>${r.status}</td></tr>`).join('')
+    w.document.write(`<html><head><title>Daftar Permintaan IPSRS</title><style>body{font:12px Arial;margin:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f0f0f0}</style></head><body><h2>Daftar Permintaan Barang Non Medis</h2><table><thead><tr><th>No. Permintaan</th><th>Ruangan</th><th>Petugas</th><th>Tanggal</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
 onMounted(async () => {
     await muatOpsiBarang()
     await siapkanNomor()
@@ -170,25 +183,30 @@ onMounted(async () => {
 <template>
     <div class="flex-1 flex flex-col min-h-0">
         <div class="mb-2 shrink-0">
-            <h1 class="text-2xl font-bold tracking-tight">IPSRS — Permintaan Barang Non Medis</h1>
-            <p class="text-sm text-base-content/60 mt-0.5">Permintaan ruangan, tanpa efek stok/jurnal
-                (src/ipsrs/IPSRSPermintaan.java, IPSRSCariPermintaan.java)</p>
+            <h1 class="text-xl font-semibold tracking-tight">IPSRS — Permintaan Barang Non Medis</h1>
+            <p class="text-xs text-base-content/60 mt-0.5">Permintaan ruangan, tanpa efek stok/jurnal</p>
         </div>
 
-        <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
-            <button
-                :class="[ 'px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'buat' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
-                @click="activeTab = 'buat'">
-                <Plus class="size-4" />
-                Buat Permintaan
-            </button>
-            <button
-                :class="[ 'px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
-                @click="activeTab = 'list'">
-                <List class="size-4" />
-                Daftar Permintaan
+        <div class="flex justify-between items-center mb-2 shrink-0">
+            <div class="flex bg-base-200 rounded-xl p-1 w-fit gap-0.5">
+                <button
+                    :class="[ 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 cursor-pointer',
+                        activeTab === 'buat' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'buat'">
+                    <Plus class="size-3.5" />
+                    Buat Permintaan
+                </button>
+                <button
+                    :class="[ 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 cursor-pointer',
+                        activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'list'">
+                    <List class="size-3.5" />
+                    Daftar Permintaan
+                </button>
+            </div>
+            <button v-show="activeTab === 'list'" class="btn btn-ghost btn-xs text-primary gap-1 cursor-pointer" @click="cetakDaftar">
+                <Printer class="size-3.5" />
+                Cetak Daftar
             </button>
         </div>
 

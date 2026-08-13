@@ -284,7 +284,7 @@ onMounted(async () => {
 <template>
     <div class="flex-1 flex flex-col min-h-0">
         <div class="mb-2 shrink-0">
-            <h1 class="text-2xl font-bold tracking-tight">IPSRS — Surat Pemesanan Barang Non Medis</h1>
+            <h1 class="text-xl font-semibold tracking-tight">IPSRS — Surat Pemesanan Barang Non Medis</h1>
             <p class="text-sm text-base-content/60 mt-0.5">PO ke Supplier (src/ipsrs/IPSRSSuratPemesanan.java, IPSRSCariSuratPemesanan.java)</p>
         </div>
 
