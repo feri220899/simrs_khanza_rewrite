@@ -387,14 +387,14 @@ onMounted(async () => {
                     </table>
                 </div>
 
-                <div class="px-5 py-3 border-t border-base-200 shrink-0 flex items-start justify-between gap-4">
+                <div class="px-5 py-2 border-t border-base-200 shrink-0 flex items-center justify-between gap-4">
                     <div v-if="!bolehBuat()" class="text-warning text-sm">Anda tidak punya akses membuat surat pemesanan.</div>
-                    <div v-else class="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-1 text-sm">
-                        <span class="text-base-content/60">Subtotal</span><span class="text-right font-medium">{{ rupiah(ringkasan.subtotal) }}</span>
-                        <span class="text-base-content/60">Potongan</span><span class="text-right font-medium">{{ rupiah(ringkasan.potongan) }}</span>
-                        <span class="text-base-content/60">Total</span><span class="text-right font-medium">{{ rupiah(ringkasan.total) }}</span>
-                        <span class="text-base-content/60">PPN</span><span class="text-right font-medium">{{ rupiah(ringkasan.ppn) }}</span>
-                        <span class="text-base-content/60 font-semibold">Tagihan</span><span class="text-right font-semibold">{{ rupiah(ringkasan.tagihan) }}</span>
+                    <div v-else class="flex flex-wrap gap-x-8 gap-y-3 text-sm bg-base-200/30 rounded-xl px-5 py-2 border border-base-200">
+                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Subtotal</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.subtotal) }}</p></div>
+                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Potongan</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.potongan) }}</p></div>
+                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Total</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.total) }}</p></div>
+                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">PPN</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.ppn) }}</p></div>
+                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Tagihan</p><p class="font-bold text-primary tabular-nums">{{ rupiah(ringkasan.tagihan) }}</p></div>
                     </div>
                     <button class="btn btn-primary gap-2 shrink-0" :disabled="saving || !bolehBuat()" @click="simpan">
                         <span v-if="saving" class="loading loading-spinner loading-xs"></span>
@@ -466,14 +466,19 @@ onMounted(async () => {
                                                              <td class="pr-4 text-right font-semibold tabular-nums text-primary">Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
                                                          </tr>
                                                       </tbody>
-                                                      <tfoot>
-                                                          <tr class="bg-base-200/20 font-bold border-t border-base-200">
-                                                              <th colspan="4" class="text-right">Grand Total</th>
-                                                              <th class="text-right tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.subtotal), 0).toLocaleString('id-ID') }}</th>
-                                                              <th class="text-right tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.besardis), 0).toLocaleString('id-ID') }}</th>
-                                                              <th class="pr-4 text-right text-primary tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.total), 0).toLocaleString('id-ID') }}</th>
-                                                          </tr>
-                                                      </tfoot>
+                                                       <tfoot>
+                                                           <tr class="bg-base-200/30 border-t border-base-300 text-xs uppercase tracking-wide text-base-content/60">
+                                                               <th colspan="4" rowspan="2" class="text-right align-middle pr-4 text-sm normal-case text-base-content">Grand Total</th>
+                                                               <th class="text-right whitespace-nowrap">Subtotal</th>
+                                                               <th class="text-right whitespace-nowrap">Besaran Diskon</th>
+                                                               <th class="pr-4 text-right whitespace-nowrap">Total</th>
+                                                           </tr>
+                                                           <tr class="bg-base-200/20 font-bold">
+                                                               <td class="text-right whitespace-nowrap tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.subtotal), 0).toLocaleString('id-ID') }}</td>
+                                                               <td class="text-right whitespace-nowrap tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.besardis), 0).toLocaleString('id-ID') }}</td>
+                                                               <td class="pr-4 text-right whitespace-nowrap text-primary tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.total), 0).toLocaleString('id-ID') }}</td>
+                                                           </tr>
+                                                       </tfoot>
                                                   </table>
                                              </div>
                                          </div>

@@ -2,7 +2,7 @@
 import { ref, reactive, h, onMounted, watch } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { useRouter } from 'vue-router'
-import { Plus, List, ClipboardList, Trash2 } from 'lucide-vue-next'
+import { Plus, List, ClipboardList, Trash2, Printer } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -195,6 +195,19 @@ async function hapus(row) {
     fetchData()
 }
 
+function cetakPengajuan(row) {
+    if (!detailItems.value.length) { showToast('Detail belum dimuat', 'warning'); return }
+    const w = window.open('', '_blank', 'width=800,height=600')
+    if (!w) return
+    const rows = detailItems.value.map(it => `<tr><td>${it.nama_brng}</td><td class="text-center">${it.nama_satuan}</td><td class="text-center">${it.jumlah}</td><td class="text-right">Rp ${Number(it.h_pengajuan).toLocaleString('id-ID')}</td><td class="text-right">Rp ${Number(it.total).toLocaleString('id-ID')}</td></tr>`).join('')
+    const total = detailItems.value.reduce((sum, it) => sum + Number(it.total), 0)
+    w.document.write(`<html><head><title>Cetak Pengajuan</title><style>body{font:12px Arial;margin:20px}h2{text-align:center;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #000;padding:6px}th{background:#eee}.text-center{text-align:center}.text-right{text-align:right}.info{margin-bottom:15px;line-height:1.6}.info span{display:inline-block;width:120px;font-weight:bold}tfoot th{background:#eee}</style></head><body><h2>PENGAJUAN BARANG NON MEDIS</h2><div class="info"><div><span>No. Pengajuan</span>: ${row.no_pengajuan}</div><div><span>Tanggal</span>: ${row.tanggal}</div><div><span>Petugas</span>: ${row.nama_petugas}</div><div><span>Keterangan</span>: ${row.keterangan || '-'}</div><div><span>Status</span>: ${row.status}</div></div><table><thead><tr><th>Barang</th><th class="text-center">Satuan</th><th class="text-center">Jumlah</th><th class="text-right">Harga Pengajuan</th><th class="text-right">Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th colspan="4" class="text-right">Grand Total</th><th class="text-right">Rp ${total.toLocaleString('id-ID')}</th></tr></tfoot></table></body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
 onMounted(async () => {
     await muatOpsiBarang()
     await siapkanNomor()
@@ -347,8 +360,17 @@ onMounted(async () => {
                                  </tr>
                                  <tr v-if="selectedNoPengajuan === row.original.no_pengajuan" class="bg-base-200/50">
                                      <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
-                                         <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                             <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
+                                          <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                              <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-base-200 bg-base-200/40">
+                                                  <div>
+                                                      <p class="text-xs font-semibold text-base-content/60 uppercase">Detail Pengajuan</p>
+                                                      <p class="text-sm font-medium">{{ row.original.no_pengajuan }}</p>
+                                                  </div>
+                                                  <button class="btn btn-ghost btn-xs text-primary" @click.stop="cetakPengajuan(row.original)" :disabled="loadingDetail || detailItems.length === 0">
+                                                      <Printer class="size-3.5 mr-1" /> Cetak Detail
+                                                  </button>
+                                              </div>
+                                              <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
                                              <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
                                              <div v-else class="overflow-x-auto">
                                                  <table class="table table-sm">

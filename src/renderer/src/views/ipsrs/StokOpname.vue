@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, h, onMounted } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
-import { Plus, List, ClipboardCheck, Eraser } from 'lucide-vue-next'
+import { Plus, List, ClipboardCheck, Eraser, Printer } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -138,6 +138,39 @@ async function simpan() {
     }
 }
 
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char])
+}
+
+function bukaCetak(title, header, rows, summaryHtml = '') {
+    if (!rows.length) { showToast('Tidak ada data untuk dicetak', 'warning'); return }
+    const w = window.open('', '_blank', 'width=1100,height=700')
+    if (!w) { showToast('Popup cetak diblokir browser', 'error'); return }
+    w.document.write(`<html><head><title>${esc(title)}</title><style>body{font:11px Arial;color:#111;margin:20px}h1{text-align:center;font-size:17px;margin:0 0 4px}h2{text-align:center;font-size:13px;font-weight:normal;margin:0 0 16px}.info{margin-bottom:12px;line-height:1.6}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:5px}th{background:#eee}.num{text-align:right}.summary{margin:14px 0 0 auto;width:300px}.summary div{display:flex;justify-content:space-between;padding:3px;border-bottom:1px solid #ddd}.summary div:last-child{font-weight:bold;border-top:2px solid #111;border-bottom:0;margin-top:3px;padding-top:6px}@media print{body{margin:10mm}}</style></head><body><h1>${esc(title)}</h1><h2>IPSRS — Sarana Prasarana</h2><div class="info">${header}</div><table>${rows}</table>${summaryHtml}</body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
+function cetakRiwayat() {
+    const data = table.getRowModel().rows.map(row => row.original)
+    const body = data.map((row, index) => `<tr><td>${index + 1}</td><td>${esc(row.tanggal)}</td><td>${esc(row.kode_brng)}</td><td>${esc(row.nama_brng)}</td><td class="num">${Number(row.stok).toLocaleString('id-ID')}</td><td class="num">${Number(row.real).toLocaleString('id-ID')}</td><td class="num">${Number(row.selisih).toLocaleString('id-ID')}</td><td class="num">${Number(row.lebih).toLocaleString('id-ID')}</td><td class="num">Rp ${Number(row.nomihilang).toLocaleString('id-ID')}</td><td class="num">Rp ${Number(row.nomilebih).toLocaleString('id-ID')}</td><td>${esc(row.keterangan)}</td></tr>`).join('')
+    const header = `<b>Periode:</b> ${esc(tgl1.value || 'Semua tanggal')} s.d. ${esc(tgl2.value || 'Semua tanggal')}<br><b>Jenis:</b> ${esc(jenis.value || 'Semua jenis')}`
+    const summaryHtml = `<div class="summary"><div><span>Total Stok Real</span><span>Rp ${Number(summary.value.totalReal).toLocaleString('id-ID')}</span></div><div><span>Nominal Hilang</span><span>Rp ${Number(summary.value.nominalHilang).toLocaleString('id-ID')}</span></div><div><span>Nominal Lebih</span><span>Rp ${Number(summary.value.nominalLebih).toLocaleString('id-ID')}</span></div></div>`
+    bukaCetak('RIWAYAT STOK OPNAME', header, `<thead><tr><th>No</th><th>Tanggal</th><th>Kode</th><th>Barang</th><th>Stok Sistem</th><th>Stok Real</th><th>Kurang</th><th>Lebih</th><th>Nomi Hilang</th><th>Nomi Lebih</th><th>Keterangan</th></tr></thead><tbody>${body}</tbody>`, summaryHtml)
+}
+
+function cetakInput() {
+    const data = barangTampil.value.filter(row => row.real !== '' && row.real !== null && row.real !== undefined)
+    const body = data.map((row, index) => {
+        const hasil = hitung(row)
+        return `<tr><td>${index + 1}</td><td>${esc(row.kode_brng)}</td><td>${esc(row.nama_brng)}</td><td>${esc(row.nm_jenis)}</td><td>${esc(row.kode_sat)}</td><td class="num">${Number(row.stok).toLocaleString('id-ID')}</td><td class="num">${Number(row.real).toLocaleString('id-ID')}</td><td class="num">${hasil.selisih.toLocaleString('id-ID')}</td><td class="num">${hasil.lebih.toLocaleString('id-ID')}</td><td class="num">Rp ${hasil.nomihilang.toLocaleString('id-ID')}</td><td class="num">Rp ${hasil.nomilebih.toLocaleString('id-ID')}</td></tr>`
+    }).join('')
+    const header = `<b>Tanggal Opname:</b> ${esc(tanggal.value)}<br><b>Keterangan:</b> ${esc(keterangan.value || '-')}<br><b>Jumlah Barang Dicetak:</b> ${data.length}`
+    bukaCetak('INPUT STOK OPNAME', header, `<thead><tr><th>No</th><th>Kode</th><th>Barang</th><th>Jenis</th><th>Satuan</th><th>Stok Sistem</th><th>Stok Real</th><th>Kurang</th><th>Lebih</th><th>Nomi Hilang</th><th>Nomi Lebih</th></tr></thead><tbody>${body}</tbody>`)
+}
+
 onMounted(muatBarang)
 </script>
 
@@ -150,23 +183,29 @@ onMounted(muatBarang)
             </div>
         </div>
 
-        <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
-            <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
-                @click="activeTab = 'tambah'">
-                <Plus class="size-4" />
-                Input Opname
-            </button>
-            <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
-                @click="activeTab = 'list'">
-                <List class="size-4" />
-                Riwayat Opname
-                <span :class="['badge badge-xs p-2 pb-1.5 mb-0.5', activeTab === 'list' ? 'badge-primary' : 'badge-neutral']">
-                    {{ table.getRowCount() }}
-                </span>
+        <div class="flex items-center justify-between gap-3 mb-2 shrink-0">
+            <div class="flex bg-base-200 rounded-xl p-1 w-fit gap-0.5">
+                <button
+                    :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
+                        activeTab === 'tambah' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
+                    @click="activeTab = 'tambah'">
+                    <Plus class="size-4" />
+                    Input Opname
+                </button>
+                <button
+                    :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
+                        activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
+                    @click="activeTab = 'list'">
+                    <List class="size-4" />
+                    Riwayat Opname
+                    <span :class="['badge badge-xs p-2 pb-1.5 mb-0.5', activeTab === 'list' ? 'badge-primary' : 'badge-neutral']">
+                        {{ table.getRowCount() }}
+                    </span>
+                </button>
+            </div>
+            <button class="btn btn-ghost btn-xs text-primary gap-1" @click="activeTab === 'list' ? cetakRiwayat() : cetakInput()">
+                <Printer class="size-3.5" />
+                Cetak
             </button>
         </div>
 

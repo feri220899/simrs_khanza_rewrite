@@ -13,8 +13,14 @@ const openItems = ref(new Set())
 // yang ada anak cocok otomatis "expand" (tanpa perlu diklik) selama query
 // masih diisi. Shortcut Ctrl+K / Cmd+K fokus ke input, sekaligus perluas
 // sidebar dulu kalau lagi ciut (tidak ada ruang buat ngetik saat collapsed).
-const searchQuery = ref('')
+const searchQuery = ref(localStorage.getItem('sidebar_search_query') || '')
 const searchInputRef = ref(null)
+watch(searchQuery, value => localStorage.setItem('sidebar_search_query', value))
+
+function clearSearch() {
+    searchQuery.value = ''
+    localStorage.removeItem('sidebar_search_query')
+}
 
 async function focusSearch() {
     if (collapsed.value) collapsed.value = false
@@ -187,8 +193,8 @@ onMounted(syncOpenFromRoute)
                 <Search class="size-3.5 text-base-content/40 shrink-0" />
                 <input ref="searchInputRef" v-model="searchQuery" type="text" class="grow"
                     placeholder="Cari menu... (Ctrl+K)" />
-                <button v-if="searchQuery" type="button" class="text-base-content/40 hover:text-base-content"
-                    @click="searchQuery = ''">
+                <button v-if="searchQuery" type="button" class="text-base-content/40 hover:text-base-content cursor-pointer"
+                    @click="clearSearch">
                     <X class="size-3.5" />
                 </button>
             </label>
@@ -236,7 +242,7 @@ onMounted(syncOpenFromRoute)
                             <ul v-if="!collapsed && (openItems.has(item.label) || isSearching)"
                                 class="mt-0.5 ml-2 pl-3 border-l border-base-300 space-y-0.5">
                                 <li v-for="child in item.children" :key="child.to">
-                                    <RouterLink :to="child.to" :class="childNavClass(child.to)" @click="searchQuery = ''">
+                                    <RouterLink :to="child.to" :class="childNavClass(child.to)">
                                         <component v-if="child.icon" :is="child.icon" class="size-3.5 shrink-0" />
                                         <span class="truncate">{{ child.label }}</span>
                                     </RouterLink>
@@ -244,8 +250,7 @@ onMounted(syncOpenFromRoute)
                             </ul>
                         </template>
 
-                        <RouterLink v-else :to="item.to" :class="[navClass(item.to), collapsed ? 'justify-center' : '']"
-                            @click="searchQuery = ''">
+                        <RouterLink v-else :to="item.to" :class="[navClass(item.to), collapsed ? 'justify-center' : '']">
                             <component :is="item.icon" class="size-4 shrink-0" />
                             <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
                         </RouterLink>
