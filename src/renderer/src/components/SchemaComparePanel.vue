@@ -138,7 +138,7 @@ async function eksekusiTerapkanKolom(item) {
 </script>
 
 <template>
-    <div class="max-w-3xl">
+    <div>
         <p class="text-sm text-base-content/60 mb-3">
             Upload <code>sik.sql</code> versi terbaru dari vendor Khanza untuk dibandingkan dengan
             skema database yang sedang berjalan. Tidak ada yang diterapkan otomatis — tiap perubahan
@@ -169,32 +169,34 @@ async function eksekusiTerapkanKolom(item) {
                     Sinkron — semua kolom `user` punya permission, tidak ada slug yatim.
                 </div>
 
-                <div v-if="missingPermissions.length" class="mb-4">
-                    <p class="text-xs text-base-content/50 mb-2">
-                        <span class="font-medium">{{ missingPermissions.length }} kolom `user` belum punya permission</span> —
-                        entah kolom baru yang belum di-apply, atau slug-nya kehapus manual dari `electron_permissions`.
-                    </p>
-                    <div v-for="slug in missingPermissions" :key="slug" class="flex items-center justify-between py-1 border-b border-base-200 last:border-0">
-                        <span class="text-sm font-mono">{{ slug }}</span>
-                        <button v-if="!addedPermissions.has(slug)" class="btn btn-primary btn-xs" :disabled="applyingKey === `perm.${slug}`" @click="tambahkanPermission(slug)">
-                            {{ applyingKey === `perm.${slug}` ? 'Menambahkan...' : 'Tambahkan' }}
-                        </button>
-                        <span v-else class="badge badge-success badge-sm gap-1"><Check class="size-3" /> Ditambahkan</span>
+                <div v-else class="grid grid-cols-2 gap-4">
+                    <div v-if="missingPermissions.length">
+                        <p class="text-xs text-base-content/50 mb-2">
+                            <span class="font-medium">{{ missingPermissions.length }} kolom `user` belum punya permission</span> —
+                            entah kolom baru yang belum di-apply, atau slug-nya kehapus manual dari `electron_permissions`.
+                        </p>
+                        <div v-for="slug in missingPermissions" :key="slug" class="flex items-center justify-between py-1 border-b border-base-200 last:border-0">
+                            <span class="text-sm font-mono">{{ slug }}</span>
+                            <button v-if="!addedPermissions.has(slug)" class="btn btn-primary btn-xs" :disabled="applyingKey === `perm.${slug}`" @click="tambahkanPermission(slug)">
+                                {{ applyingKey === `perm.${slug}` ? 'Menambahkan...' : 'Tambahkan' }}
+                            </button>
+                            <span v-else class="badge badge-success badge-sm gap-1"><Check class="size-3" /> Ditambahkan</span>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Arah sebaliknya: slug ADA tapi kolom `user`-nya sudah tidak ada -->
-                <div v-if="orphanPermissions.length">
-                    <p class="text-xs text-base-content/50 mb-2">
-                        <span class="font-medium">{{ orphanPermissions.length }} permission "yatim"</span> — slug ini ada di
-                        `electron_permissions` tapi kolom `user`-nya sudah tidak ada (kolom dihapus/ganti nama, atau slug typo).
-                    </p>
-                    <div v-for="slug in orphanPermissions" :key="slug" class="flex items-center justify-between py-1 border-b border-base-200 last:border-0">
-                        <span class="text-sm font-mono">{{ slug }}</span>
-                        <button v-if="!removedOrphans.has(slug)" class="btn btn-error btn-outline btn-xs" :disabled="applyingKey === `orphan.${slug}`" @click="hapusOrphanPermission(slug)">
-                            {{ applyingKey === `orphan.${slug}` ? 'Menghapus...' : 'Hapus' }}
-                        </button>
-                        <span v-else class="badge badge-ghost badge-sm gap-1"><Check class="size-3" /> Dihapus</span>
+                    <!-- Arah sebaliknya: slug ADA tapi kolom `user`-nya sudah tidak ada -->
+                    <div v-if="orphanPermissions.length">
+                        <p class="text-xs text-base-content/50 mb-2">
+                            <span class="font-medium">{{ orphanPermissions.length }} permission "yatim"</span> — slug ini ada di
+                            `electron_permissions` tapi kolom `user`-nya sudah tidak ada (kolom dihapus/ganti nama, atau slug typo).
+                        </p>
+                        <div v-for="slug in orphanPermissions" :key="slug" class="flex items-center justify-between py-1 border-b border-base-200 last:border-0">
+                            <span class="text-sm font-mono">{{ slug }}</span>
+                            <button v-if="!removedOrphans.has(slug)" class="btn btn-error btn-outline btn-xs" :disabled="applyingKey === `orphan.${slug}`" @click="hapusOrphanPermission(slug)">
+                                {{ applyingKey === `orphan.${slug}` ? 'Menghapus...' : 'Hapus' }}
+                            </button>
+                            <span v-else class="badge badge-ghost badge-sm gap-1"><Check class="size-3" /> Dihapus</span>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -209,6 +211,10 @@ async function eksekusiTerapkanKolom(item) {
                 Tidak ada perbedaan — skema database sudah sama persis dengan file ini.
             </div>
 
+            <!-- Grid 2 kolom — tiap kartu tampil kalau ada isinya (v-if), CSS
+                 grid otomatis susun 2 per baris, sisa ganjil jadi 1 di baris
+                 terakhir, tidak perlu logic tambahan. -->
+            <div class="grid grid-cols-2 gap-4">
             <!-- Tabel Baru -->
             <div v-if="diff.newTables.length" class="bg-base-100 rounded-2xl border border-base-200 p-4">
                 <h3 class="font-semibold text-sm mb-2">Tabel Baru ({{ diff.newTables.length }})</h3>
@@ -249,6 +255,7 @@ async function eksekusiTerapkanKolom(item) {
                 <p class="text-xs text-base-content/50 mb-2">Tidak pernah dihapus otomatis — cuma info.</p>
                 <p v-for="t in diff.removedTables" :key="t" class="text-sm font-mono py-0.5">Tabel: {{ t }}</p>
                 <p v-for="c in diff.removedColumns" :key="`${c.table}.${c.column}`" class="text-sm font-mono py-0.5">Kolom: {{ c.table }}.{{ c.column }}</p>
+            </div>
             </div>
         </div>
     </div>

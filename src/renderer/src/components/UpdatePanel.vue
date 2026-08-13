@@ -33,7 +33,7 @@ async function cekUpdate() {
 </script>
 
 <template>
-    <div class="max-w-2xl">
+    <div>
         <!-- Versi & cek update manual -->
         <div class="bg-base-100 rounded-2xl border border-base-200 p-4">
             <div class="flex items-start justify-between gap-4">

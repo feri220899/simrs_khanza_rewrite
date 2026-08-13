@@ -80,7 +80,7 @@ onMounted(muat)
 </script>
 
 <template>
-    <div class="max-w-3xl flex-1 flex flex-col min-h-0">
+    <div class="flex-1 flex flex-col min-h-0">
         <div class="flex items-start justify-between gap-4 mb-3 shrink-0">
             <div>
                 <h3 class="font-semibold text-sm flex items-center gap-2">

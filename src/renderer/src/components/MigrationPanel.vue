@@ -42,7 +42,7 @@ onMounted(loadStatus)
 </script>
 
 <template>
-    <div class="card bg-base-100 border border-base-300 max-w-2xl">
+    <div class="card bg-base-100 border border-base-300">
         <div class="card-body">
             <h2 class="card-title text-base">Migrasi Database</h2>
             <p class="text-xs text-base-content/50 mb-2">
