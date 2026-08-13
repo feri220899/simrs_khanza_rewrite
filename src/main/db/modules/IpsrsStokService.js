@@ -25,13 +25,15 @@ import IpsrsRiwayatService from './IpsrsRiwayatService.js'
 // Replika 2 query kombo Java (ppBelumOpname vs default) — `belumOpname=true`
 // sembunyikan barang yang sudah di-opname pada tanggal yang sama (replika
 // `where kode_brng not in (select kode_brng from ipsrsopname where tanggal=?)`).
-async function listBarangUntukOpname({ tanggal, search = '', belumOpname = false } = {}) {
+async function listBarangUntukOpname({ tanggal, search = '', mode = 'semua' } = {}) {
     const db = await DatabaseService.get()
     const like = `%${search}%`
-    const filterOpname = belumOpname && tanggal
+    const filterOpname = tanggal && mode === 'belum'
         ? 'AND b.kode_brng NOT IN (SELECT kode_brng FROM ipsrsopname WHERE tanggal = ?)'
-        : ''
-    const params = belumOpname && tanggal
+        : tanggal && mode === 'sudah'
+            ? 'AND b.kode_brng IN (SELECT kode_brng FROM ipsrsopname WHERE tanggal = ?)'
+            : ''
+    const params = tanggal && mode !== 'semua'
         ? [tanggal, like, like, like, like]
         : [like, like, like, like]
 
@@ -47,27 +49,24 @@ async function listBarangUntukOpname({ tanggal, search = '', belumOpname = false
     return rows
 }
 
-async function listOpname({ page = 1, pageSize = 10, sortOrder = 'desc', search = '' } = {}) {
+async function listOpname({ page = 1, pageSize = 10, sortOrder = 'desc', search = '', tgl1 = '', tgl2 = '', jenis = '' } = {}) {
     const db = await DatabaseService.get()
     const dir = sortOrder === 'asc' ? 'ASC' : 'DESC'
     const like = `%${search}%`
-
+    const where = ['(b.nama_brng LIKE ? OR o.keterangan LIKE ? OR o.kode_brng LIKE ?)']
+    const params = [like, like, like]
+    if (tgl1 && tgl2) { where.push('o.tanggal BETWEEN ? AND ?'); params.push(tgl1, tgl2) }
+    if (jenis) { where.push('j.nm_jenis LIKE ?'); params.push(`%${jenis}%`) }
+    const clause = where.join(' AND ')
     const { rows } = await db.query(
-        `SELECT o.kode_brng, b.nama_brng, o.tanggal, o.h_beli, o.stok, o.\`real\`, o.selisih,
+        `SELECT o.kode_brng, b.nama_brng, j.nm_jenis, o.tanggal, o.h_beli, o.stok, o.\`real\`, o.selisih,
                 o.nomihilang, o.lebih, o.nomilebih, o.keterangan
-         FROM ipsrsopname o
-         JOIN ipsrsbarang b ON b.kode_brng = o.kode_brng
-         WHERE b.nama_brng LIKE ? OR o.keterangan LIKE ?
-         ORDER BY o.tanggal ${dir}
-         LIMIT ? OFFSET ?`,
-        [like, like, pageSize, (page - 1) * pageSize]
-    )
-    const { rows: [{ count }] } = await db.query(
-        `SELECT COUNT(*) AS count FROM ipsrsopname o JOIN ipsrsbarang b ON b.kode_brng = o.kode_brng
-         WHERE b.nama_brng LIKE ? OR o.keterangan LIKE ?`,
-        [like, like]
-    )
-    return { data: rows, total: count }
+         FROM ipsrsopname o JOIN ipsrsbarang b ON b.kode_brng = o.kode_brng
+         JOIN ipsrsjenisbarang j ON j.kd_jenis = b.jenis WHERE ${clause}
+         ORDER BY o.tanggal ${dir} LIMIT ? OFFSET ?`, [...params, pageSize, (page - 1) * pageSize])
+    const { rows: [{ count }] } = await db.query(`SELECT COUNT(*) AS count FROM ipsrsopname o JOIN ipsrsbarang b ON b.kode_brng=o.kode_brng JOIN ipsrsjenisbarang j ON j.kd_jenis=b.jenis WHERE ${clause}`, params)
+    const { rows: [summary] } = await db.query(`SELECT COALESCE(SUM(o.\`real\` * o.h_beli),0) AS totalReal, COALESCE(SUM(o.nomihilang),0) AS nominalHilang, COALESCE(SUM(o.nomilebih),0) AS nominalLebih FROM ipsrsopname o JOIN ipsrsbarang b ON b.kode_brng=o.kode_brng JOIN ipsrsjenisbarang j ON j.kd_jenis=b.jenis WHERE ${clause}`, params)
+    return { data: rows, total: count, summary }
 }
 
 // Replika BtnSimpanActionPerformed: Keterangan kosong -> "data kosong" kalau

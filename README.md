@@ -1,5 +1,6 @@
 # Khanza Desktop
 ### claude --resume 60a8ad40-704f-4f54-880a-cfdc0533118e
+### java -jar -Xss2m -Xms32m -Xmx1024m -XX:PermSize=32m -XX:MaxPermSize=512m khanza.jar
 Rewrite SIMRS Khanza (Java Swing, lihat `../SIMRS-Khanza`) ke Electron. **Baca
 `../SIMRS-Khanza/Khanza.md` dulu sebelum mengerjakan modul apa pun** — dokumen
 itu adalah rencana lengkap (mapping modul, urutan migrasi, SOP wajib, arsitektur

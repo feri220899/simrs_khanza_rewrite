@@ -8,9 +8,8 @@ import { useAuthStore } from '../../stores/auth.js'
 import AppPagination from '../../components/AppPagination.vue'
 
 // src/ipsrs/IPSRSSuplier.java — 7 field, pola SEDERHANA sama seperti
-// src/renderer/src/views/toko/SuplierTab.vue. BEDA PENTING: Kode Suplier
-// DIKETIK MANUAL (tidak ada Valid.autoNomer di Java asli, beda dari
-// TokoSuplier.java yang auto-generate) — TIDAK ADA nextKode() di sini.
+// src/renderer/src/views/toko/SuplierTab.vue. Kode suplier otomatis mengikuti
+// Valid.autoNomer("ipsrssuplier", "S", 4, Kd) di Java asli.
 // Permission slug `suplier_penunjang` DIPAKAI BERSAMA modul "penunjang"
 // lain (bukan slug baru khusus IPSRS).
 const { showToast } = useToast()
@@ -53,8 +52,9 @@ const emptyForm = () => ({ kode_suplier: '', nama_suplier: '', alamat: '', kota:
 const saving = ref(false)
 const form = reactive(emptyForm())
 
-function siapkanFormBaru() {
+async function siapkanFormBaru() {
     Object.assign(form, emptyForm())
+    form.kode_suplier = await window.api.ipsrs.suplier.nextKode()
 }
 
 async function simpan() {

@@ -537,6 +537,7 @@ app.whenReady().then(async () => {
 
     handle('ipsrs:suplier:list',    (_, params) => IpsrsSuplierService.list(params))
     handle('ipsrs:suplier:listAll', () => IpsrsSuplierService.listAll())
+    handle('ipsrs:suplier:nextKode', () => IpsrsSuplierService.nextKode())
     handle('ipsrs:suplier:create', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'suplier_penunjang')
         return auth.ok ? IpsrsSuplierService.create(data) : { success: false, message: auth.message }
@@ -660,6 +661,10 @@ app.whenReady().then(async () => {
     handle('ipsrs:suratPemesanan:tandaiSudahDatang', (_, token, noPemesanan) => {
         const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
         return auth.ok ? IpsrsSuratPemesananService.tandaiSudahDatang(noPemesanan) : { success: false, message: auth.message }
+    })
+    handle('ipsrs:suratPemesanan:delete', (_, token, noPemesanan) => {
+        const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
+        return auth.ok ? IpsrsSuratPemesananService.deleteOne(noPemesanan) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java

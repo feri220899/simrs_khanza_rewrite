@@ -166,6 +166,7 @@ contextBridge.exposeInMainWorld('api', {
         suplier: {
             list:     (params)             => ipcRenderer.invoke('ipsrs:suplier:list', params),
             listAll:  ()                   => ipcRenderer.invoke('ipsrs:suplier:listAll'),
+            nextKode: ()                   => ipcRenderer.invoke('ipsrs:suplier:nextKode'),
             create:   (token, data)        => ipcRenderer.invoke('ipsrs:suplier:create', token, data),
             update:   (token, oldKode, data) => ipcRenderer.invoke('ipsrs:suplier:update', token, oldKode, data),
             delete:   (token, kode)        => ipcRenderer.invoke('ipsrs:suplier:delete', token, kode),
@@ -215,6 +216,7 @@ contextBridge.exposeInMainWorld('api', {
             create:    (token, data)          => ipcRenderer.invoke('ipsrs:suratPemesanan:create', token, data),
             tandaiProsesPesan:  (token, noPemesanan) => ipcRenderer.invoke('ipsrs:suratPemesanan:tandaiProsesPesan', token, noPemesanan),
             tandaiSudahDatang:  (token, noPemesanan) => ipcRenderer.invoke('ipsrs:suratPemesanan:tandaiSudahDatang', token, noPemesanan),
+            delete:             (token, noPemesanan) => ipcRenderer.invoke('ipsrs:suratPemesanan:delete', token, noPemesanan),
         },
     },
     // Satuan — SHARED lintas modul (bukan eksklusif Toko), lihat SatuanService.js.

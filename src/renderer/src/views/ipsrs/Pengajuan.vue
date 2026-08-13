@@ -99,8 +99,29 @@ async function simpan() {
     }
 }
 
-// ── Tab: Daftar Pengajuan ─────────────────────────────────────────────────
+// Tab: Daftar Pengajuan
 const statusFilter = ref('')
+const selectedNoPengajuan = ref(null)
+const detailItems = ref([])
+const loadingDetail = ref(false)
+
+async function toggleDetail(noPengajuan) {
+    if (selectedNoPengajuan.value === noPengajuan) {
+        selectedNoPengajuan.value = null
+        detailItems.value = []
+        return
+    }
+    selectedNoPengajuan.value = noPengajuan
+    loadingDetail.value = true
+    try {
+        detailItems.value = await window.api.ipsrs.pengajuan.detail(noPengajuan)
+    } catch (e) {
+        showToast('Gagal memuat detail', 'error')
+    } finally {
+        loadingDetail.value = false
+    }
+}
+
 const columns = [
     { accessorKey: 'no_pengajuan', header: 'No. Pengajuan', meta: { headerClass: 'w-40', cellClass: 'font-medium' } },
     { accessorKey: 'nama_petugas', header: 'Petugas', enableSorting: false },
@@ -121,13 +142,13 @@ const columns = [
             const row = info.row.original
             const btns = []
             if (row.status === 'Proses Pengajuan') {
-                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-success', disabled: !bolehSetujui(), onClick: () => setujui(row) }, 'Setujui'))
-                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-error', disabled: !bolehBuat(), onClick: () => ubahStatus(row, 'Ditolak') }, 'Tolak'))
+                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-success', disabled: !bolehSetujui(), onClick: event => { event.stopPropagation(); setujui(row) } }, 'Setujui'))
+                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-error', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); ubahStatus(row, 'Ditolak') } }, 'Tolak'))
             }
             if (row.status === 'Ditolak') {
-                btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: () => ubahStatus(row, 'Proses Pengajuan') }, 'Proses Ulang'))
+                btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); ubahStatus(row, 'Proses Pengajuan') } }, 'Proses Ulang'))
             }
-            btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: () => hapus(row) }, 'Hapus'))
+            btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); hapus(row) } }, 'Hapus'))
             return h('div', { class: 'flex gap-1 justify-center' }, btns)
         },
     },
@@ -316,11 +337,55 @@ onMounted(async () => {
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-else v-for="row in table.getRowModel().rows" :key="row.id" class="border-b border-base-200 hover:bg-primary/5">
-                                <td v-for="cell in row.getVisibleCells()" :key="cell.id" :class="['py-2', cell.column.columnDef.meta?.cellClass]">
-                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                                </td>
-                            </tr>
+<template v-else v-for="row in table.getRowModel().rows" :key="row.id">
+                                 <tr
+                                     :class="['border-b border-base-200 cursor-pointer transition-colors', selectedNoPengajuan === row.original.no_pengajuan ? 'bg-primary/10' : 'hover:bg-primary/5']"
+                                     @click="toggleDetail(row.original.no_pengajuan)">
+                                     <td v-for="cell in row.getVisibleCells()" :key="cell.id" :class="['py-2', cell.column.columnDef.meta?.cellClass]">
+                                         <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                     </td>
+                                 </tr>
+                                 <tr v-if="selectedNoPengajuan === row.original.no_pengajuan" class="bg-base-200/50">
+                                     <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
+                                         <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-base-200 bg-base-200/40">
+                                                 <div>
+                                                     <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Detail Pengajuan</p>
+                                                     <p class="font-semibold">{{ row.original.no_pengajuan }}</p>
+                                                 </div>
+                                                 <span :class="['badge badge-sm whitespace-nowrap', row.original.status === 'Disetujui' ? 'badge-success' : row.original.status === 'Ditolak' ? 'badge-error' : 'badge-warning']">{{ row.original.status }}</span>
+                                             </div>
+                                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 py-3 text-sm border-b border-base-200">
+                                                 <div><p class="text-xs text-base-content/50">Keterangan</p><p class="font-medium">{{ row.original.keterangan || '—' }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Petugas</p><p class="font-medium">{{ row.original.nama_petugas }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Tanggal</p><p class="font-medium">{{ row.original.tanggal }}</p></div>
+                                             </div>
+                                             <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
+                                             <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
+                                             <div v-else class="overflow-x-auto">
+                                                 <table class="table table-sm">
+                                                     <thead><tr class="bg-base-200/40"><th class="pl-4">Barang</th><th>Satuan</th><th class="text-right">Jumlah</th><th class="text-right">Harga Pengajuan</th><th class="pr-4 text-right">Total</th></tr></thead>
+                                                     <tbody>
+                                                         <tr v-for="item in detailItems" :key="item.kode_brng" class="hover:bg-base-200/30">
+                                                             <td class="pl-4"><p class="font-medium">{{ item.nama_brng }}</p><p class="text-xs text-base-content/50">{{ item.kode_brng }}</p></td>
+                                                             <td><span class="badge badge-ghost badge-sm">{{ item.nama_satuan }}</span></td>
+                                                             <td class="text-right font-semibold tabular-nums">{{ Number(item.jumlah).toLocaleString('id-ID') }}</td>
+                                                             <td class="text-right tabular-nums">Rp {{ Number(item.h_pengajuan).toLocaleString('id-ID') }}</td>
+                                                             <td class="pr-4 text-right font-semibold tabular-nums text-primary">Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
+                                                         </tr>
+                                                     </tbody>
+                                                     <tfoot>
+                                                         <tr class="bg-base-200/20 font-bold border-t border-base-200">
+                                                             <td colspan="4" class="text-right py-2">Grand Total:</td>
+                                                             <td class="pr-4 text-right text-primary py-2">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.total), 0).toLocaleString('id-ID') }}</td>
+                                                         </tr>
+                                                     </tfoot>
+                                                 </table>
+                                             </div>
+                                         </div>
+                                     </td>
+                                 </tr>
+                             </template>
                         </tbody>
                     </table>
                 </AppPagination>

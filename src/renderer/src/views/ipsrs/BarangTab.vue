@@ -116,6 +116,14 @@ async function hapus(row) {
     fetchData()
 }
 
+function cetakDaftar() {
+    const rows = table.getRowModel().rows.map((row, i) => `<tr><td>${i + 1}</td><td>${row.original.kode_brng}</td><td>${row.original.nama_brng}</td><td>${row.original.nm_jenis}</td><td>${row.original.nama_satuan}</td><td class="num">${row.original.stok}</td><td class="num">Rp ${Number(row.original.harga).toLocaleString('id-ID')}</td></tr>`).join('')
+    const w = window.open('', '_blank', 'width=900,height=700')
+    if (!w) { showToast('Popup cetak diblokir browser', 'error'); return }
+    w.document.write(`<html><head><title>Master Barang IPSRS</title><style>body{font:12px Arial;margin:24px}h1{text-align:center;font-size:18px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #555;padding:6px}th{background:#eee}.num{text-align:right}</style></head><body><h1>MASTER BARANG IPSRS</h1><p>Filter: ${search || '-'}</p><table><thead><tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Jenis</th><th>Satuan</th><th>Stok</th><th>Harga</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+    w.document.close(); w.focus(); w.print(); w.close()
+}
+
 // ── Data Sampah (Administrator only) ────────────────────────────────────
 const sampahLoading = ref(false)
 const sampahData = ref([])
@@ -191,6 +199,7 @@ onMounted(async () => {
         <!-- Tab: Daftar -->
         <div v-show="activeTab === 'list'" class="flex-1 min-h-0 overflow-hidden">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm h-full flex flex-col overflow-hidden px-4 py-3">
+                <div class="flex justify-end mb-2"><button class="btn btn-ghost btn-sm text-primary" @click="cetakDaftar">Cetak Daftar</button></div>
                 <AppPagination :table="table" v-model:search="search" class="flex-1 min-h-0">
                     <table class="table">
                         <thead class="sticky top-0 z-10">

@@ -36,7 +36,7 @@ const header = reactive({
     no_pemesanan: '',
     tanggal: new Date().toISOString().slice(0, 10),
     kode_suplier: '',
-    ppnPercent: 0,
+    ppnPercent: 11,
     meterai: 0,
 })
 const items = ref([]) // [{kode_brng, nama_satuan, kode_sat, jumlah, h_pesan, dis}]
@@ -97,6 +97,24 @@ function rupiah(v) {
     return 'Rp ' + (Number(v) || 0).toLocaleString('id-ID')
 }
 
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char])
+}
+
+async function cetakPO(row) {
+    const detail = await window.api.ipsrs.suratPemesanan.detail(row.no_pemesanan)
+    const supplier = opsiSuplier.value.find(item => item.kode_suplier === row.kode_suplier)
+    const rows = detail.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.kode_brng)}</td><td>${esc(item.nama_brng)}</td><td>${esc(item.nama_satuan)}</td><td class="num">${item.jumlah}</td><td class="num">${rupiah(item.h_pesan)}</td><td class="num">${rupiah(item.subtotal)}</td><td class="num">${rupiah(item.besardis)}</td><td class="num">${rupiah(item.total)}</td></tr>`).join('')
+    const html = `<html><head><title>Surat Pemesanan ${esc(row.no_pemesanan)}</title><style>body{font:12px Arial;color:#111;margin:24px}h1{text-align:center;font-size:18px;margin:0 0 4px}h2{text-align:center;font-size:14px;margin:0 0 20px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #555;padding:5px}th{background:#eee}.num{text-align:right}.summary{margin:16px 0 0 auto;width:280px}.summary div{display:flex;justify-content:space-between;padding:3px}.total{font-weight:bold;border-top:2px solid #111;margin-top:4px;padding-top:6px!important}@media print{body{margin:10mm}}</style></head><body><h1>SURAT PEMESANAN BARANG NON MEDIS</h1><h2>${esc(row.no_pemesanan)}</h2><div><b>Supplier:</b> ${esc(row.nama_suplier || supplier?.nama_suplier)}<br><b>Tanggal:</b> ${esc(row.tanggal)}<br><b>Petugas:</b> ${esc(row.nama_petugas || row.nip)}</div><table><thead><tr><th>No</th><th>Kode</th><th>Barang</th><th>Satuan</th><th>Jumlah</th><th>Harga</th><th>Subtotal</th><th>Potongan</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="summary"><div><span>Subtotal</span><span>${rupiah(row.subtotal)}</span></div><div><span>Potongan</span><span>${rupiah(row.potongan)}</span></div><div><span>PPN</span><span>${rupiah(row.ppn)}</span></div><div><span>Meterai</span><span>${rupiah(row.meterai)}</span></div><div class="total"><span>Tagihan</span><span>${rupiah(row.tagihan)}</span></div></div></body></html>`
+    const printWindow = window.open('', '_blank', 'width=1000,height=700')
+    if (!printWindow) { showToast('Popup cetak diblokir browser', 'error'); return }
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
+}
+
 async function simpan() {
     if (!header.no_pemesanan.trim()) { showToast('No. Pemesanan tidak boleh kosong', 'error'); return }
     if (!header.kode_suplier) { showToast('Supplier tidak boleh kosong', 'error'); return }
@@ -126,7 +144,7 @@ async function simpan() {
         if (!res.success) { showToast(res.message, 'error'); return }
         showToast('Surat Pemesanan berhasil disimpan.')
         header.kode_suplier = ''
-        header.ppnPercent = 0
+        header.ppnPercent = 11,
         header.meterai = 0
         items.value = []
         await siapkanNomor()
@@ -158,8 +176,37 @@ async function muatPrefillDariPengajuan(noPengajuan) {
     showToast(`Item dari Pengajuan ${noPengajuan} berhasil dimuat, silakan lengkapi Supplier/PPN/Meterai lalu simpan.`, 'warning')
 }
 
-// ── Tab: Daftar Surat Pemesanan ───────────────────────────────────────────
+// Tab: Daftar Surat Pemesanan
 const statusFilter = ref('')
+const selectedNoPemesanan = ref(null)
+const detailItems = ref([])
+const loadingDetail = ref(false)
+
+async function toggleDetail(noPemesanan) {
+    if (selectedNoPemesanan.value === noPemesanan) {
+        selectedNoPemesanan.value = null
+        detailItems.value = []
+        return
+    }
+    selectedNoPemesanan.value = noPemesanan
+    loadingDetail.value = true
+    try {
+        detailItems.value = await window.api.ipsrs.suratPemesanan.detail(noPemesanan)
+    } catch (e) {
+        showToast('Gagal memuat detail', 'error')
+    } finally {
+        loadingDetail.value = false
+    }
+}
+
+async function hapus(row) {
+    if (!confirm(`Hapus Surat Pemesanan "${row.no_pemesanan}"? Ini TIDAK BISA dibatalkan.`)) return
+    const res = await window.api.ipsrs.suratPemesanan.delete(authStore.token, row.no_pemesanan)
+    if (!res.success) { showToast(res.message, 'error'); return }
+    showToast('Surat Pemesanan berhasil dihapus.')
+    fetchData()
+}
+
 const columns = [
     { accessorKey: 'no_pemesanan', header: 'No. Pemesanan', meta: { headerClass: 'w-40', cellClass: 'font-medium' } },
     { accessorKey: 'nama_suplier', header: 'Supplier', enableSorting: false },
@@ -179,16 +226,18 @@ const columns = [
     },
     {
         id: 'aksi', header: 'Aksi', enableSorting: false,
-        meta: { headerClass: 'text-center w-48', cellClass: 'text-center' },
+        meta: { headerClass: 'text-center w-64', cellClass: 'text-center' },
         cell: info => {
             const row = info.row.original
             const btns = []
+            btns.push(h('button', { class: 'btn btn-ghost btn-sm text-primary', onClick: event => { event.stopPropagation(); cetakPO(row) } }, 'Cetak'))
             if (row.status === 'Proses Pesan') {
-                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-success', disabled: !bolehBuat(), onClick: () => tandaiDatang(row) }, 'Tandai Sudah Datang'))
+                btns.push(h('button', { class: 'btn btn-ghost btn-sm text-success', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); tandaiDatang(row) } }, 'Tandai Sudah Datang'))
             }
             if (row.status === 'Sudah Datang') {
-                btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: () => kembalikanProses(row) }, 'Kembalikan ke Proses Pesan'))
+                btns.push(h('button', { class: 'btn btn-ghost btn-sm', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); kembalikanProses(row) } }, 'Kembalikan ke Proses Pesan'))
             }
+            btns.push(h('button', { class: 'btn btn-ghost btn-sm text-error', disabled: !bolehBuat(), onClick: event => { event.stopPropagation(); hapus(row) } }, 'Hapus'))
             return h('div', { class: 'flex gap-1 justify-center' }, btns)
         },
     },
@@ -390,11 +439,58 @@ onMounted(async () => {
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-else v-for="row in table.getRowModel().rows" :key="row.id" class="border-b border-base-200 hover:bg-primary/5">
-                                <td v-for="cell in row.getVisibleCells()" :key="cell.id" :class="['py-2', cell.column.columnDef.meta?.cellClass]">
-                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                                </td>
-                            </tr>
+<template v-else v-for="row in table.getRowModel().rows" :key="row.id">
+                                 <tr
+                                     :class="['border-b border-base-200 cursor-pointer transition-colors', selectedNoPemesanan === row.original.no_pemesanan ? 'bg-primary/10' : 'hover:bg-primary/5']"
+                                     @click="toggleDetail(row.original.no_pemesanan)">
+                                     <td v-for="cell in row.getVisibleCells()" :key="cell.id" :class="['py-2', cell.column.columnDef.meta?.cellClass]">
+                                         <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                     </td>
+                                 </tr>
+                                 <tr v-if="selectedNoPemesanan === row.original.no_pemesanan" class="bg-base-200/50">
+                                     <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
+                                         <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-base-200 bg-base-200/40">
+                                                 <div>
+                                                     <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Detail Surat Pemesanan</p>
+                                                     <p class="font-semibold">{{ row.original.no_pemesanan }}</p>
+                                                 </div>
+                                                 <span :class="['badge badge-sm whitespace-nowrap', row.original.status === 'Sudah Datang' ? 'badge-success' : 'badge-warning']">{{ row.original.status }}</span>
+                                             </div>
+                                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 py-3 text-sm border-b border-base-200">
+                                                 <div><p class="text-xs text-base-content/50">Supplier</p><p class="font-medium">{{ row.original.nama_suplier || '—' }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Petugas</p><p class="font-medium">{{ row.original.nama_petugas || '—' }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Tanggal</p><p class="font-medium">{{ row.original.tanggal }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Kode Supplier</p><p class="font-medium">{{ row.original.kode_suplier }}</p></div>
+                                             </div>
+                                             <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
+                                             <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
+                                             <div v-else class="overflow-x-auto">
+                                                 <table class="table table-sm">
+                                                     <thead><tr class="bg-base-200/40"><th class="pl-4">Barang</th><th>Satuan</th><th class="text-right">Jumlah</th><th class="text-right">Harga</th><th class="text-right">Subtotal</th><th class="text-right">Diskon</th><th class="pr-4 text-right">Total</th></tr></thead>
+                                                     <tbody>
+                                                         <tr v-for="item in detailItems" :key="item.kode_brng" class="hover:bg-base-200/30">
+                                                             <td class="pl-4"><p class="font-medium">{{ item.nama_brng }}</p><p class="text-xs text-base-content/50">{{ item.kode_brng }}</p></td>
+                                                             <td><span class="badge badge-ghost badge-sm">{{ item.nama_satuan }}</span></td>
+                                                             <td class="text-right font-semibold tabular-nums">{{ Number(item.jumlah).toLocaleString('id-ID') }}</td>
+                                                             <td class="text-right tabular-nums">Rp {{ Number(item.h_pesan).toLocaleString('id-ID') }}</td>
+                                                             <td class="text-right tabular-nums">Rp {{ Number(item.subtotal).toLocaleString('id-ID') }}</td>
+                                                             <td class="text-right tabular-nums">{{ Number(item.dis).toLocaleString('id-ID') }}%<span class="block text-xs text-base-content/50">Rp {{ Number(item.besardis).toLocaleString('id-ID') }}</span></td>
+                                                             <td class="pr-4 text-right font-semibold tabular-nums text-primary">Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
+                                                         </tr>
+                                                     </tbody>
+                                                 </table>
+                                             </div>
+                                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 px-4 py-3 border-t border-base-200 bg-base-200/20 text-sm">
+                                                 <div><p class="text-xs text-base-content/50">Subtotal</p><p class="font-semibold">{{ rupiah(row.original.subtotal) }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Potongan</p><p class="font-semibold">{{ rupiah(row.original.potongan) }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">PPN</p><p class="font-semibold">{{ rupiah(row.original.ppn) }}</p></div>
+                                                 <div><p class="text-xs text-base-content/50">Total Tagihan</p><p class="font-bold text-primary">{{ rupiah(row.original.tagihan) }}</p></div>
+                                             </div>
+                                         </div>
+                                     </td>
+                                 </tr>
+                             </template>
                         </tbody>
                     </table>
                 </AppPagination>
