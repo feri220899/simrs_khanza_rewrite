@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { Database, HardDrive, Wifi, Save, Check, X, FileDown, FileUp, KeyRound } from 'lucide-vue-next'
+import { Database, HardDrive, Wifi, Save, Check, X, FileDown, FileUp, KeyRound, Zap } from 'lucide-vue-next'
 
 // Hub konfigurasi infra (MySQL + service pihak ke-3 tambahan) SETELAH login
 // — beda dari "Pengaturan Awal" (PengaturanAwal.vue, sebelum login) yang
@@ -12,6 +12,7 @@ import { Database, HardDrive, Wifi, Save, Check, X, FileDown, FileUp, KeyRound }
 // ulang manual di tiap komputer — lihat catatan lengkap di ConfigService.js.
 const db = reactive({ host: '', port: 3306, database: 'sik', user: 'root', password: '' })
 const minio = reactive({ endpoint: '', port: 9000, useSSL: false, accessKey: '', secretKey: '', bucket: 'khanza' })
+const cache = reactive({ host: '', port: 6379, password: '', db: 0 })
 
 const loading = ref(true)
 const dbTesting = ref(false)
@@ -22,6 +23,10 @@ const minioTesting = ref(false)
 const minioTest = ref(null)
 const minioSaving = ref(false)
 const minioSaved = ref(false)
+const cacheTesting = ref(false)
+const cacheTest = ref(null)
+const cacheSaving = ref(false)
+const cacheSaved = ref(false)
 
 const exportPass = ref('')
 const importPass = ref('')
@@ -35,6 +40,8 @@ onMounted(async () => {
     if (savedDb) Object.assign(db, savedDb)
     const savedMinio = await window.api.config.getMinioConfig()
     if (savedMinio) Object.assign(minio, savedMinio)
+    const savedCache = await window.api.config.getCacheConfig()
+    if (savedCache) Object.assign(cache, savedCache)
     loading.value = false
 })
 
@@ -79,6 +86,26 @@ async function simpanMinio() {
     }
 }
 
+async function cekCache() {
+    cacheTesting.value = true
+    cacheSaved.value = false
+    try {
+        cacheTest.value = await window.api.config.testCacheConnection({ ...cache, port: Number(cache.port) })
+    } finally {
+        cacheTesting.value = false
+    }
+}
+
+async function simpanCache() {
+    cacheSaving.value = true
+    try {
+        await window.api.config.saveCacheConfig({ ...cache, port: Number(cache.port) })
+        cacheSaved.value = true
+    } finally {
+        cacheSaving.value = false
+    }
+}
+
 async function exportKonfigurasi() {
     exportBusy.value = true
     exportResult.value = null
@@ -91,7 +118,7 @@ async function exportKonfigurasi() {
 }
 
 async function importKonfigurasi() {
-    if (!confirm('Import akan MENIMPA konfigurasi MySQL/MinIO yang tersimpan di komputer ini SEKARANG. Lanjutkan?')) return
+    if (!confirm('Import akan MENIMPA konfigurasi MySQL/MinIO/Redis yang tersimpan di komputer ini SEKARANG. Lanjutkan?')) return
     importBusy.value = true
     importResult.value = null
     try {
@@ -100,8 +127,10 @@ async function importKonfigurasi() {
         if (res.success) {
             if (res.data.db) Object.assign(db, res.data.db)
             if (res.data.minio) Object.assign(minio, res.data.minio)
+            if (res.data.redis) Object.assign(cache, res.data.redis)
             dbTest.value = null
             minioTest.value = null
+            cacheTest.value = null
         }
     } finally {
         importBusy.value = false
@@ -125,7 +154,7 @@ async function importKonfigurasi() {
             <div class="bg-base-200/60 rounded-2xl border border-base-200 p-4 mb-4">
                 <h3 class="font-semibold text-sm mb-1">Export / Import Konfigurasi</h3>
                 <p class="text-xs text-base-content/50 mb-3">
-                    Buat instalasi banyak PC di RS yang sama (host MySQL/MinIO sama persis) —
+                    Buat instalasi banyak PC di RS yang sama (host MySQL/MinIO/Redis sama persis) —
                     export sekali dari komputer ini, import di komputer lain, tidak perlu ketik
                     ulang manual. File hasil export dilindungi passphrase (BUKAN file
                     <code>config.dat</code> mentah — itu terkunci ke komputer ini saja, tidak bisa
@@ -277,6 +306,58 @@ async function importKonfigurasi() {
                     <span v-if="minioSaved" class="badge badge-success badge-sm gap-1"><Check class="size-3" /> Tersimpan</span>
                 </div>
                 <div v-if="minioTest && !minioTest.success" class="alert alert-error text-xs py-2 mt-3">{{ minioTest.message }}</div>
+            </div>
+
+            <!-- Redis — OPSIONAL. Pengganti mekanisme cache file manual Khanza asli
+                 (file `.iyem` + Valid.daysOld() TTL) — lihat CacheService.js. Cuma
+                 infrastruktur dasar (get/set TTL generik) sejauh ini, fungsi lookup
+                 spesifik (pengganti sekuel.java) menyusul bareng modul yang butuh. -->
+            <div class="bg-base-100 rounded-2xl border border-base-200 p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-semibold text-sm flex items-center gap-2">
+                        <Zap class="size-4 text-base-content/60" /> Redis
+                        <span class="badge badge-ghost badge-sm">Opsional</span>
+                    </h3>
+                    <span v-if="cacheTest?.success" class="badge badge-success badge-sm gap-1"><Check class="size-3" /> Terhubung</span>
+                    <span v-else-if="cacheTest && !cacheTest.success" class="badge badge-error badge-sm gap-1"><X class="size-3" /> Gagal</span>
+                </div>
+                <p class="text-xs text-base-content/50 mb-3">
+                    Cache terpusat (pengganti file cache manual Khanza asli). Boleh
+                    dikosongkan dulu — tanpa ini app tetap jalan normal, cuma tanpa
+                    percepatan cache (selalu query database langsung).
+                </p>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2">
+                        <label class="label text-xs">Host</label>
+                        <input v-model="cache.host" type="text" class="input input-bordered input-sm w-full" placeholder="localhost" />
+                    </div>
+                    <div>
+                        <label class="label text-xs">Port</label>
+                        <input v-model="cache.port" type="number" class="input input-bordered input-sm w-full" />
+                    </div>
+                    <div>
+                        <label class="label text-xs">Database Index</label>
+                        <input v-model="cache.db" type="number" min="0" max="15" class="input input-bordered input-sm w-full" />
+                    </div>
+                    <div class="col-span-2">
+                        <label class="label text-xs">Password</label>
+                        <input v-model="cache.password" type="password" class="input input-bordered input-sm w-full" placeholder="(kosongkan kalau tidak pakai password)" />
+                    </div>
+                </div>
+
+                <div class="flex items-center flex-wrap gap-2 mt-auto pt-3">
+                    <button class="btn btn-sm gap-2" :disabled="cacheTesting" @click="cekCache">
+                        <span v-if="cacheTesting" class="loading loading-spinner loading-xs"></span>
+                        <Wifi v-else class="size-3.5" /> Cek Koneksi
+                    </button>
+                    <button class="btn btn-primary btn-sm gap-2" :disabled="cacheSaving" @click="simpanCache">
+                        <span v-if="cacheSaving" class="loading loading-spinner loading-xs"></span>
+                        <Save v-else class="size-3.5" /> Simpan
+                    </button>
+                    <span v-if="cacheSaved" class="badge badge-success badge-sm gap-1"><Check class="size-3" /> Tersimpan</span>
+                </div>
+                <div v-if="cacheTest && !cacheTest.success" class="alert alert-error text-xs py-2 mt-3">{{ cacheTest.message }}</div>
             </div>
             <!-- ↑ nambah config service baru nanti: taruh 1 card baru persis di sini
                  (jangan lupa `flex flex-col` + tombol `mt-auto` biar tetap sejajar),

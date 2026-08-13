@@ -23,6 +23,7 @@ import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaSe
 import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
 import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
 import MinioService from './electron/MinioService.js'
+import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
 import TokoSuplierService from './db/modules/TokoSuplierService.js'
 import TokoMemberService from './db/modules/TokoMemberService.js'
@@ -147,6 +148,8 @@ app.whenReady().then(async () => {
     if (savedDbConfig) DatabaseService.configure(savedDbConfig)
     const savedMinioConfig = ConfigService.get('minio')
     if (savedMinioConfig) MinioService.configure(savedMinioConfig)
+    const savedCacheConfig = ConfigService.get('redis')
+    if (savedCacheConfig) CacheService.configure(savedCacheConfig)
 
     // Config MySQL/MinIO — WAJIB didaftarkan duluan & TANPA syarat DB nyambung.
     // Ini justru IPC yang dipakai layar "Pengaturan Awal" utk mengisi
@@ -167,6 +170,13 @@ app.whenReady().then(async () => {
         return { success: true }
     })
     handle('config:testMinioConnection', (_, cfg) => MinioService.testConnection(cfg))
+    handle('config:getCacheConfig', () => ConfigService.get('redis'))
+    handle('config:saveCacheConfig', (_, cfg) => {
+        ConfigService.set('redis', cfg)
+        CacheService.configure(cfg)
+        return { success: true }
+    })
+    handle('config:testCacheConnection', (_, cfg) => CacheService.testConnection(cfg))
 
     // Export/Import konfigurasi (lihat catatan panjang di ConfigService.js)
     // — dipakai instalasi banyak PC di RS yang sama biar tidak ngetik ulang
@@ -179,6 +189,7 @@ app.whenReady().then(async () => {
         if (result.success) {
             if (result.data.db) DatabaseService.configure(result.data.db)
             if (result.data.minio) MinioService.configure(result.data.minio)
+            if (result.data.redis) CacheService.configure(result.data.redis)
         }
         return result
     })

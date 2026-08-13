@@ -48,7 +48,7 @@ function save(data) {
 // "sama". Jadi export/import di sini pakai enkripsi TERPISAH berbasis
 // passphrase (AES-256-GCM, key dari `scrypt`) yang portable antar komputer
 // — passphrase-nya cuma diketik pas export & import, tidak disimpan.
-const EXPORT_KEYS = ['db', 'minio']
+const EXPORT_KEYS = ['db', 'minio', 'redis']
 
 function deriveKey(passphrase, salt) {
     return scryptSync(passphrase, salt, 32)
