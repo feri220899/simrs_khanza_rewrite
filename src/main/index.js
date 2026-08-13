@@ -56,7 +56,60 @@ function createWindow() {
         win.loadURL(process.env.ELECTRON_RENDERER_URL)
         win.webContents.openDevTools()
     } else {
-        Menu.setApplicationMenu(null)
+        // `Menu.setApplicationMenu(null)` (versi lama) menghapus SELURUH menu
+        // bawaan Electron — shortcut reload/zoom/fullscreen ikut nempel di
+        // menu itu, jadi ikut hilang semua, bukan cuma devtools-nya. Di sini
+        // dibikin menu selengkap default Electron (File/Edit/View/Window),
+        // bar-nya TETAP TERLIHAT (beda dari sebelumnya) — cuma item "Toggle
+        // Developer Tools" di View yang sengaja dihilangkan/tidak dimasukkan.
+        const isMac = process.platform === 'darwin'
+        const menu = Menu.buildFromTemplate([
+            {
+                label: 'File',
+                submenu: [
+                    isMac ? { role: 'close', label: 'Tutup' } : { role: 'quit', label: 'Keluar' },
+                ],
+            },
+            {
+                label: 'Edit',
+                submenu: [
+                    { role: 'undo', label: 'Urungkan' },
+                    { role: 'redo', label: 'Ulangi' },
+                    { type: 'separator' },
+                    { role: 'cut', label: 'Potong' },
+                    { role: 'copy', label: 'Salin' },
+                    { role: 'paste', label: 'Tempel' },
+                    { role: 'selectAll', label: 'Pilih Semua' },
+                ],
+            },
+            {
+                label: 'View',
+                submenu: [
+                    { role: 'reload', label: 'Muat Ulang' },
+                    { role: 'forceReload', label: 'Paksa Muat Ulang' },
+                    // TIDAK ADA { role: 'toggleDevTools' } di sini — sengaja
+                    // dihilangkan, satu-satunya yang tidak diaktifkan lagi.
+                    { type: 'separator' },
+                    { role: 'resetZoom', label: 'Ukuran Normal' },
+                    { role: 'zoomIn', label: 'Perbesar' },
+                    // Electron cuma daftarin "CmdOrCtrl+Plus" bawaan buat zoomIn,
+                    // padahal tanpa Shift tombolnya "=" di kebanyakan keyboard —
+                    // item kedua (disembunyikan dari tampilan) nutup celah itu.
+                    { role: 'zoomIn', accelerator: 'CmdOrCtrl+=', visible: false },
+                    { role: 'zoomOut', label: 'Perkecil' },
+                    { type: 'separator' },
+                    { role: 'togglefullscreen', label: 'Layar Penuh' },
+                ],
+            },
+            {
+                label: 'Window',
+                submenu: [
+                    { role: 'minimize', label: 'Minimalkan' },
+                    { role: 'close', label: 'Tutup' },
+                ],
+            },
+        ])
+        Menu.setApplicationMenu(menu)
         win.loadFile(join(__dirname, '../renderer/index.html'))
     }
 
