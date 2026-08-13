@@ -174,6 +174,18 @@ function cetakDaftar() {
     w.close()
 }
 
+function cetakPermintaan(row) {
+    if (!detailItems.value.length) { showToast('Detail belum dimuat', 'warning'); return }
+    const w = window.open('', '_blank', 'width=800,height=600')
+    if (!w) return
+    const rows = detailItems.value.map(it => `<tr><td>${it.nama_brng}</td><td class="text-center">${it.nama_satuan}</td><td class="text-center">${it.jumlah}</td><td>${it.keterangan || ''}</td></tr>`).join('')
+    w.document.write(`<html><head><title>Cetak Permintaan</title><style>body{font:12px Arial;margin:20px}h2{text-align:center;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #000;padding:6px}th{background:#eee}.text-center{text-align:center}.info{margin-bottom:15px;line-height:1.6}.info span{display:inline-block;width:120px;font-weight:bold}</style></head><body><h2>PERMINTAAN BARANG NON MEDIS</h2><div class="info"><div><span>No. Permintaan</span>: ${row.no_permintaan}</div><div><span>Ruangan</span>: ${row.ruang}</div><div><span>Tanggal</span>: ${row.tanggal}</div><div><span>Petugas</span>: ${row.nama_petugas}</div><div><span>Status</span>: ${row.status}</div></div><table><thead><tr><th>Barang</th><th class="text-center">Satuan</th><th class="text-center">Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
 onMounted(async () => {
     await muatOpsiBarang()
     await siapkanNomor()
@@ -348,8 +360,16 @@ onMounted(async () => {
                                 </tr>
                                 <tr v-if="selectedNoPermintaan === row.original.no_permintaan" class="bg-base-200/50">
                                     <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
-                                        <div class="rounded-sm border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                            <div v-if="loadingDetail" class="py-10 text-center"><span
+                                         <div class="rounded-sm border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-b border-base-200 bg-base-200/40">
+                                                 <div class="flex items-center gap-3">
+                                                     <p class="text-xs font-semibold text-base-content/60 uppercase">Detail Item</p>
+                                                 </div>
+                                                 <button class="btn btn-ghost btn-xs text-primary" @click.stop="cetakPermintaan(row.original)" :disabled="loadingDetail || detailItems.length === 0">
+                                                     <Printer class="size-3.5 mr-1" /> Cetak Detail
+                                                 </button>
+                                             </div>
+                                             <div v-if="loadingDetail" class="py-10 text-center"><span
                                                     class="loading loading-spinner loading-md text-primary"></span>
                                             </div>
                                             <div v-else-if="detailItems.length === 0"
