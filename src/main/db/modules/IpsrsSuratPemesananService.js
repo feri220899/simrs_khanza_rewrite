@@ -159,4 +159,10 @@ async function tandaiSudahDatang(noPemesanan) {
     return { success: true }
 }
 
-export default { list, detail, nextNomor, create, tandaiProsesPesan, tandaiSudahDatang }
+async function deleteOne(noPemesanan) {
+    const db = await DatabaseService.get()
+    const { rows } = await db.query('DELETE FROM surat_pemesanan_non_medis WHERE no_pemesanan=?', [noPemesanan])
+    return { success: rows.affectedRows > 0, message: rows.affectedRows === 0 ? 'Data tidak ditemukan' : undefined }
+}
+
+export default { list, detail, nextNomor, create, tandaiProsesPesan, tandaiSudahDatang, deleteOne }

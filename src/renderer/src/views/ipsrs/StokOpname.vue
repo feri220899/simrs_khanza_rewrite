@@ -48,9 +48,18 @@ const columns = [
     },
 ]
 
+const tgl1 = ref('')
+const tgl2 = ref('')
+const jenis = ref('')
+const summary = ref({ totalReal: 0, nominalHilang: 0, nominalLebih: 0 })
+
 const { table, loading, search, fetchData } = useServerTable({
     columns,
-    fetchFn: params => window.api.ipsrs.stok.list(params),
+    fetchFn: async params => {
+        const res = await window.api.ipsrs.stok.list({ ...params, tgl1: tgl1.value, tgl2: tgl2.value, jenis: jenis.value })
+        summary.value = res.summary ?? { totalReal: 0, nominalHilang: 0, nominalLebih: 0 }
+        return res
+    },
     pageSize: 10,
     defaultSortBy: 'tanggal',
     defaultSortOrder: 'desc',
@@ -65,10 +74,10 @@ async function hapus(row) {
 }
 
 // ── Tab: Input Opname (BATCH) ─────────────────────────────────────────────
-const barangList = ref([]) // [{kode_brng, nama_brng, nm_jenis, kode_sat, harga, stok, real}]
+const barangList = ref([])
 const barangLoading = ref(false)
 const cariBarang = ref('')
-const belumOpname = ref(false)
+const opnameMode = ref('semua')
 const tanggal = ref(new Date().toISOString().slice(0, 10))
 const keterangan = ref('')
 const saving = ref(false)
@@ -82,9 +91,6 @@ const barangTampil = computed(() => {
     )
 })
 
-// Replika getData() Java (IPSRSInputStok.java baris 1132-1172): kurang = stok
-// - real; kurang>0 -> selisih=kurang & nomihilang=kurang*harga (lebih=0);
-// kurang<=0 -> lebih=-kurang & nomilebih=-kurang*harga (selisih=0).
 function hitung(b) {
     if (b.real === '' || b.real === null || b.real === undefined) return { selisih: 0, lebih: 0, nomihilang: 0, nomilebih: 0 }
     const kurang = Number(b.stok) - Number(b.real)
@@ -95,7 +101,7 @@ function hitung(b) {
 async function muatBarang() {
     barangLoading.value = true
     try {
-        const data = await window.api.ipsrs.stok.listBarang({ tanggal: tanggal.value, belumOpname: belumOpname.value })
+        const data = await window.api.ipsrs.stok.listBarang({ tanggal: tanggal.value, mode: opnameMode.value })
         const realLama = new Map(barangList.value.map(b => [b.kode_brng, b.real]))
         barangList.value = data.map(b => ({ ...b, real: realLama.get(b.kode_brng) ?? '' }))
     } finally {
@@ -166,6 +172,15 @@ onMounted(muatBarang)
 
         <div v-show="activeTab === 'list'" class="flex-1 min-h-0 overflow-hidden">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm h-full flex flex-col overflow-hidden px-4 py-3">
+                <div class="flex flex-wrap items-end gap-2 mb-3">
+                    <input v-model="tgl1" type="date" class="input input-bordered input-sm w-36" />
+                    <input v-model="tgl2" type="date" class="input input-bordered input-sm w-36" />
+                    <input v-model="jenis" class="input input-bordered input-sm w-44" placeholder="Filter jenis" />
+                    <button class="btn btn-primary btn-sm" @click="fetchData">Terapkan</button>
+                    <span class="badge badge-outline p-3">Real Rp {{ Number(summary.totalReal).toLocaleString('id-ID') }}</span>
+                    <span class="badge badge-error badge-outline p-3">Hilang Rp {{ Number(summary.nominalHilang).toLocaleString('id-ID') }}</span>
+                    <span class="badge badge-success badge-outline p-3">Lebih Rp {{ Number(summary.nominalLebih).toLocaleString('id-ID') }}</span>
+                </div>
                 <AppPagination :table="table" v-model:search="search" class="flex-1 min-h-0">
                     <table class="table">
                         <thead class="sticky top-0 z-10">
@@ -214,10 +229,14 @@ onMounted(muatBarang)
                         <label class="block text-xs font-medium text-base-content/60 mb-1">Cari Barang</label>
                         <input v-model="cariBarang" type="text" class="input input-bordered input-sm w-full" placeholder="Kode / nama / jenis / satuan" />
                     </div>
-                    <label class="flex items-center gap-1.5 text-sm text-base-content/70 mb-1.5 cursor-pointer">
-                        <input v-model="belumOpname" type="checkbox" class="checkbox checkbox-sm" @change="muatBarang" />
-                        Sembunyikan yang sudah di-opname tanggal ini
-                    </label>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-medium text-base-content/60">Mode Opname</label>
+                        <select v-model="opnameMode" class="select select-bordered select-sm w-36" @change="muatBarang">
+                            <option value="semua">Semua</option>
+                            <option value="belum">Belum Opname</option>
+                            <option value="sudah">Sudah Opname</option>
+                        </select>
+                    </div>
                     <button class="btn btn-ghost btn-sm gap-1" @click="bersihkan">
                         <Eraser class="size-4" />
                         Bersihkan

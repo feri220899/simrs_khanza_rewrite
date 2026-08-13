@@ -33,14 +33,18 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_brng', sortOrder =
          FROM ipsrsbarang b
          JOIN ipsrsjenisbarang j ON j.kd_jenis = b.jenis
          JOIN kodesatuan s ON s.kode_sat = b.kode_sat
-         WHERE b.status = '1' AND (b.kode_brng LIKE ? OR b.nama_brng LIKE ?)
+         WHERE b.status = '1' AND (b.kode_brng LIKE ? OR b.nama_brng LIKE ? OR s.satuan LIKE ? OR j.nm_jenis LIKE ?)
          ORDER BY ${col} ${dir}
          LIMIT ? OFFSET ?`,
-        [like, like, pageSize, (page - 1) * pageSize]
+        [like, like, like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        `SELECT COUNT(*) AS count FROM ipsrsbarang WHERE status = '1' AND (kode_brng LIKE ? OR nama_brng LIKE ?)`,
-        [like, like]
+        `SELECT COUNT(*) AS count 
+         FROM ipsrsbarang b
+         JOIN ipsrsjenisbarang j ON j.kd_jenis = b.jenis
+         JOIN kodesatuan s ON s.kode_sat = b.kode_sat
+         WHERE b.status = '1' AND (b.kode_brng LIKE ? OR b.nama_brng LIKE ? OR s.satuan LIKE ? OR j.nm_jenis LIKE ?)`,
+        [like, like, like, like]
     )
     return { data: rows, total: count }
 }

@@ -5,11 +5,6 @@
 // "penunjang" lain seperti Radiologi/Lab, dikonfirmasi dari
 // IPSRSSuplier.java baris 918-921 `akses.getsuplier_penunjang()` — BUKAN
 // slug baru khusus IPSRS).
-//
-// BEDA dari TokoSuplierService.js: Kode Suplier di sini DIKETIK MANUAL oleh
-// user (tidak ada `Valid.autoNomer(...)` di IPSRSSuplier.java, beda dari
-// TokoSuplier.java yang generate otomatis) — sengaja TIDAK ada fungsi
-// `nextKode()` di sini, replika persis kelakuan asli.
 import DatabaseService from '../DatabaseService.js'
 
 const SORTABLE = { kode_suplier: 'kode_suplier', nama_suplier: 'nama_suplier' }
@@ -23,14 +18,15 @@ async function list({ page = 1, pageSize = 10, sortBy = 'kode_suplier', sortOrde
     const { rows } = await db.query(
         `SELECT kode_suplier, nama_suplier, alamat, kota, no_telp, nama_bank, rekening
          FROM ipsrssuplier
-         WHERE kode_suplier LIKE ? OR nama_suplier LIKE ?
+         WHERE kode_suplier LIKE ? OR nama_suplier LIKE ? OR alamat LIKE ? OR kota LIKE ? OR nama_bank LIKE ? OR no_telp LIKE ?
          ORDER BY ${col} ${dir}
          LIMIT ? OFFSET ?`,
-        [like, like, pageSize, (page - 1) * pageSize]
+        [like, like, like, like, like, like, pageSize, (page - 1) * pageSize]
     )
     const { rows: [{ count }] } = await db.query(
-        'SELECT COUNT(*) AS count FROM ipsrssuplier WHERE kode_suplier LIKE ? OR nama_suplier LIKE ?',
-        [like, like]
+        `SELECT COUNT(*) AS count FROM ipsrssuplier 
+         WHERE kode_suplier LIKE ? OR nama_suplier LIKE ? OR alamat LIKE ? OR kota LIKE ? OR nama_bank LIKE ? OR no_telp LIKE ?`,
+        [like, like, like, like, like, like]
     )
     return { data: rows, total: count }
 }
@@ -39,6 +35,13 @@ async function listAll() {
     const db = await DatabaseService.get()
     const { rows } = await db.query('SELECT kode_suplier, nama_suplier FROM ipsrssuplier ORDER BY nama_suplier')
     return rows
+}
+
+// Replika Valid.autoNomer("ipsrssuplier","S",4,Kd) — row-count based.
+async function nextKode() {
+    const db = await DatabaseService.get()
+    const { rows } = await db.query('SELECT COUNT(*) AS n FROM ipsrssuplier')
+    return 'S' + String(rows[0].n + 1).padStart(4, '0')
 }
 
 // Urutan validasi SAMA Java asli: Kd -> Nm -> Alamat -> Telp -> Kota -> Bank -> NoRek.
@@ -103,4 +106,4 @@ async function deleteOne(kode) {
     }
 }
 
-export default { list, listAll, create, update, deleteOne }
+export default { list, listAll, nextKode, create, update, deleteOne }

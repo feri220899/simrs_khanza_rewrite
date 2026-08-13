@@ -28,13 +28,14 @@ async function catatRiwayat(client, { kode_brng, masuk = 0, keluar = 0, posisi, 
 }
 
 // src/ipsrs/IPSRSRiwayatBarang.java — viewer read-only.
-async function list({ page = 1, pageSize = 10, sortOrder = 'desc', search = '', tgl1 = '', tgl2 = '' } = {}) {
+async function list({ page = 1, pageSize = 10, sortOrder = 'desc', search = '', tgl1 = '', tgl2 = '', kode_brng = '' } = {}) {
     const db = await DatabaseService.get()
     const dir = sortOrder === 'asc' ? 'ASC' : 'DESC'
     const like = `%${search}%`
-    const where = ['b.nama_brng LIKE ?']
-    const params = [like]
+    const where = ['(b.nama_brng LIKE ? OR r.kode_brng LIKE ? OR r.petugas LIKE ? OR r.status LIKE ?)']
+    const params = [like, like, like, like]
     if (tgl1 && tgl2) { where.push('r.tanggal BETWEEN ? AND ?'); params.push(tgl1, tgl2) }
+    if (kode_brng) { where.push('r.kode_brng = ?'); params.push(kode_brng) }
 
     const { rows } = await db.query(
         `SELECT r.*, b.nama_brng

@@ -11,6 +11,7 @@ import AppPagination from '../../components/AppPagination.vue'
 // muncul kalau modul itu digarap di Fase 3.
 const tgl1 = ref('')
 const tgl2 = ref('')
+const kodeBarng = ref('')
 
 const columns = [
     { accessorKey: 'tanggal', header: 'Tanggal', meta: { headerClass: 'w-28' } },
@@ -22,11 +23,12 @@ const columns = [
     { accessorKey: 'stok_akhir', header: 'Stok Akhir', meta: { headerClass: 'w-28 text-right', cellClass: 'text-right tabular-nums font-medium' } },
     { accessorKey: 'posisi', header: 'Posisi', enableSorting: false, meta: { headerClass: 'w-32' } },
     { accessorKey: 'petugas', header: 'Petugas', enableSorting: false },
+    { accessorKey: 'status', header: 'Status', meta: { headerClass: 'w-24' } },
 ]
 
 const { table, loading, search, fetchData } = useServerTable({
     columns,
-    fetchFn: params => window.api.ipsrs.riwayat.list({ ...params, tgl1: tgl1.value, tgl2: tgl2.value }),
+    fetchFn: params => window.api.ipsrs.riwayat.list({ ...params, tgl1: tgl1.value, tgl2: tgl2.value, kode_brng: kodeBarng.value }),
     pageSize: 15,
     defaultSortBy: 'tanggal',
     defaultSortOrder: 'desc',
@@ -39,6 +41,7 @@ function terapkanFilterTanggal() {
 function resetFilterTanggal() {
     tgl1.value = ''
     tgl2.value = ''
+    kodeBarng.value = ''
     fetchData()
 }
 </script>
@@ -59,6 +62,7 @@ function resetFilterTanggal() {
                 <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai Tanggal</label>
                 <input v-model="tgl2" type="date" class="input input-bordered input-sm w-40" />
             </div>
+            <input v-model="kodeBarng" class="input input-bordered input-sm w-44" placeholder="Kode barang dedicated" />
             <button class="btn btn-primary btn-sm" @click="terapkanFilterTanggal">Terapkan</button>
             <button class="btn btn-ghost btn-sm" @click="resetFilterTanggal">Reset</button>
         </div>
@@ -76,9 +80,9 @@ function resetFilterTanggal() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="loading"><td colspan="9" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
+                            <tr v-if="loading"><td colspan="10" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
                             <tr v-else-if="table.getRowModel().rows.length === 0">
-                                <td colspan="9" class="py-16 text-center">
+                                <td colspan="10" class="py-16 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <div class="size-14 rounded-2xl bg-base-200 flex items-center justify-center">
                                             <History class="size-7 text-base-content/30" />
