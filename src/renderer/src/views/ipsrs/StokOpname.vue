@@ -145,7 +145,7 @@ onMounted(muatBarang)
     <div class="flex-1 flex flex-col min-h-0">
         <div class="flex items-center justify-between mb-4 shrink-0">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">IPSRS — Stok Opname</h1>
+                <h1 class="text-xl font-semibold tracking-tight">IPSRS — Stok Opname</h1>
                 <p class="text-sm text-base-content/60 mt-0.5">Input & riwayat hitung fisik stok (src/ipsrs/IPSRSInputStok.java, IPSRSStokOpname.java)</p>
             </div>
         </div>
