@@ -28,8 +28,23 @@
 
 .table th,
 .table td {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+/* Override tab-tab switcher agar lebih compact (text-xs, py-1.5, px-4) */
+.bg-base-200.rounded-xl.p-1.w-fit button,
+.bg-base-200.rounded-xl.p-1.w-fit a {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+    font-size: 0.75rem !important;
+}
+.bg-base-200.rounded-xl.p-1.w-fit button svg,
+.bg-base-200.rounded-xl.p-1.w-fit a svg {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
 }
 
 /* @vueform/multiselect (dipakai lewat components/AppSelect.vue) — dipetakan

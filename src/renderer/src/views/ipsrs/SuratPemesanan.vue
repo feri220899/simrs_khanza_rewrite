@@ -450,19 +450,6 @@ onMounted(async () => {
                                  <tr v-if="selectedNoPemesanan === row.original.no_pemesanan" class="bg-base-200/50">
                                      <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
                                          <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-base-200 bg-base-200/40">
-                                                 <div>
-                                                     <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Detail Surat Pemesanan</p>
-                                                     <p class="font-semibold">{{ row.original.no_pemesanan }}</p>
-                                                 </div>
-                                                 <span :class="['badge badge-sm whitespace-nowrap', row.original.status === 'Sudah Datang' ? 'badge-success' : 'badge-warning']">{{ row.original.status }}</span>
-                                             </div>
-                                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 py-3 text-sm border-b border-base-200">
-                                                 <div><p class="text-xs text-base-content/50">Supplier</p><p class="font-medium">{{ row.original.nama_suplier || '—' }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Petugas</p><p class="font-medium">{{ row.original.nama_petugas || '—' }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Tanggal</p><p class="font-medium">{{ row.original.tanggal }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Kode Supplier</p><p class="font-medium">{{ row.original.kode_suplier }}</p></div>
-                                             </div>
                                              <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
                                              <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
                                              <div v-else class="overflow-x-auto">
@@ -478,14 +465,16 @@ onMounted(async () => {
                                                              <td class="text-right tabular-nums">{{ Number(item.dis).toLocaleString('id-ID') }}%<span class="block text-xs text-base-content/50">Rp {{ Number(item.besardis).toLocaleString('id-ID') }}</span></td>
                                                              <td class="pr-4 text-right font-semibold tabular-nums text-primary">Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
                                                          </tr>
-                                                     </tbody>
-                                                 </table>
-                                             </div>
-                                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 px-4 py-3 border-t border-base-200 bg-base-200/20 text-sm">
-                                                 <div><p class="text-xs text-base-content/50">Subtotal</p><p class="font-semibold">{{ rupiah(row.original.subtotal) }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Potongan</p><p class="font-semibold">{{ rupiah(row.original.potongan) }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">PPN</p><p class="font-semibold">{{ rupiah(row.original.ppn) }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Total Tagihan</p><p class="font-bold text-primary">{{ rupiah(row.original.tagihan) }}</p></div>
+                                                      </tbody>
+                                                      <tfoot>
+                                                          <tr class="bg-base-200/20 font-bold border-t border-base-200">
+                                                              <th colspan="4" class="text-right">Grand Total</th>
+                                                              <th class="text-right tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.subtotal), 0).toLocaleString('id-ID') }}</th>
+                                                              <th class="text-right tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.besardis), 0).toLocaleString('id-ID') }}</th>
+                                                              <th class="pr-4 text-right text-primary tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.total), 0).toLocaleString('id-ID') }}</th>
+                                                          </tr>
+                                                      </tfoot>
+                                                  </table>
                                              </div>
                                          </div>
                                      </td>

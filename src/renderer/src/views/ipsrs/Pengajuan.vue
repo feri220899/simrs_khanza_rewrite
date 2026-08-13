@@ -128,11 +128,11 @@ const columns = [
     { accessorKey: 'tanggal', header: 'Tanggal', meta: { headerClass: 'w-28' } },
     { accessorKey: 'keterangan', header: 'Keterangan', enableSorting: false },
     {
-        accessorKey: 'status', header: 'Status', meta: { headerClass: 'w-36' },
+        accessorKey: 'status', header: 'Status', meta: { headerClass: 'w-40', cellClass: 'whitespace-nowrap' },
         cell: info => {
             const s = info.getValue()
             const cls = s === 'Disetujui' ? 'badge-success' : s === 'Ditolak' ? 'badge-error' : 'badge-warning'
-            return h('span', { class: `badge badge-sm ${cls}` }, s)
+            return h('span', { class: `badge badge-sm ${cls} whitespace-nowrap min-w-max` }, s)
         },
     },
     {
@@ -348,18 +348,6 @@ onMounted(async () => {
                                  <tr v-if="selectedNoPengajuan === row.original.no_pengajuan" class="bg-base-200/50">
                                      <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
                                          <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-base-200 bg-base-200/40">
-                                                 <div>
-                                                     <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Detail Pengajuan</p>
-                                                     <p class="font-semibold">{{ row.original.no_pengajuan }}</p>
-                                                 </div>
-                                                 <span :class="['badge badge-sm whitespace-nowrap', row.original.status === 'Disetujui' ? 'badge-success' : row.original.status === 'Ditolak' ? 'badge-error' : 'badge-warning']">{{ row.original.status }}</span>
-                                             </div>
-                                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 py-3 text-sm border-b border-base-200">
-                                                 <div><p class="text-xs text-base-content/50">Keterangan</p><p class="font-medium">{{ row.original.keterangan || '—' }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Petugas</p><p class="font-medium">{{ row.original.nama_petugas }}</p></div>
-                                                 <div><p class="text-xs text-base-content/50">Tanggal</p><p class="font-medium">{{ row.original.tanggal }}</p></div>
-                                             </div>
                                              <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
                                              <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
                                              <div v-else class="overflow-x-auto">
