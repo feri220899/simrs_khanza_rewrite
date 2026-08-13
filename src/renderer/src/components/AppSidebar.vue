@@ -258,7 +258,7 @@ onMounted(syncOpenFromRoute)
             <div v-if="bolehPengaturan" class="relative"
                 @mouseenter="openFlyout($event, 'Pengaturan', null, true)"
                 @mouseleave="scheduleCloseFlyout">
-                <RouterLink to="/pengaturan/user" :class="[navClass('/pengaturan/user'), collapsed ? 'justify-center' : '']">
+                <RouterLink to="/pengaturan/aplikasi" :class="[navClass('/pengaturan/aplikasi'), collapsed ? 'justify-center' : '']">
                     <Settings class="size-4 shrink-0" />
                     <span v-if="!collapsed" class="truncate">Pengaturan</span>
                 </RouterLink>

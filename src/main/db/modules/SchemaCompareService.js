@@ -18,6 +18,9 @@ import { dialog } from 'electron'
 import { readFileSync } from 'fs'
 import DatabaseService from '../DatabaseService.js'
 import { EXTRA_SLUGS } from '../migrations/006_seed_electron_permissions_extra.js'
+import { EXTRA_SLUGS_PENGATURAN_TABS } from '../migrations/007_seed_electron_permissions_pengaturan_tabs.js'
+
+const ALL_EXTRA_SLUGS = [...EXTRA_SLUGS, ...EXTRA_SLUGS_PENGATURAN_TABS]
 
 // Tabel `electron_*` itu punya kita, bukan bagian sik.sql asli — vendor
 // TIDAK PERNAH tahu soal ini, jadi harus dikecualikan dari sisi "skema
@@ -148,9 +151,10 @@ async function getMissingPermissions() {
 // Arah sebaliknya dari getMissingPermissions(): slug yang ADA di
 // electron_permissions tapi kolom `user`-nya SUDAH TIDAK ADA — misal vendor
 // mengganti nama/menghapus kolom di versi baru sik.sql, atau ada slug typo
-// yang ke-insert manual. EXTRA_SLUGS ('dashboard'/'pengaturan-user') SENGAJA
-// dikecualikan — itu bukan kolom `user` sik.sql, memang tidak akan pernah
-// punya pasangan kolom, jangan dilaporkan sebagai orphan.
+// yang ke-insert manual. ALL_EXTRA_SLUGS ('dashboard'/'pengaturan-user'/
+// 'pengaturan-database'/dst) SENGAJA dikecualikan — itu bukan kolom `user`
+// sik.sql, memang tidak akan pernah punya pasangan kolom, jangan dilaporkan
+// sebagai orphan.
 async function getOrphanPermissions() {
     const db = await DatabaseService.get()
     const { rows: cols } = await db.query(`
@@ -160,7 +164,7 @@ async function getOrphanPermissions() {
     const existingCols = new Set(cols.map(c => c.COLUMN_NAME))
     const { rows: perms } = await db.query('SELECT slug, label FROM electron_permissions')
     return perms
-        .filter(p => !existingCols.has(p.slug) && !EXTRA_SLUGS.includes(p.slug))
+        .filter(p => !existingCols.has(p.slug) && !ALL_EXTRA_SLUGS.includes(p.slug))
         .map(p => p.slug)
 }
 

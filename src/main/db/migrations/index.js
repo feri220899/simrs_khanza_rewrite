@@ -8,7 +8,8 @@ import m003 from './003_create_electron_role_permissions.js'
 import m004 from './004_create_electron_user_roles.js'
 import m005 from './005_seed_electron_permissions_khanza_asli.js'
 import m006 from './006_seed_electron_permissions_extra.js'
+import m007 from './007_seed_electron_permissions_pengaturan_tabs.js'
 
 export default [
-    m001, m002, m003, m004, m005, m006,
+    m001, m002, m003, m004, m005, m006, m007,
 ]

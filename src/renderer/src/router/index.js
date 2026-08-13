@@ -80,11 +80,17 @@ const routes = [
     { path: '/aktivasi', component: Aktivasi, meta: { layout: false } },
     { path: '/login', component: Login, meta: { layout: false } },
     { path: '/dashboard', component: Dashboard, meta: { layout: true, auth: true, permission: 'dashboard' } },
-    // Pengaturan.vue = hub tab berjenjang (top-level User/Database, dst) —
-    // isi Role/User (ManajemenUser.vue) & Migrasi (MigrationPanel.vue) di-embed
-    // sebagai child tab di dalamnya, bukan route terpisah lagi.
-    { path: '/pengaturan/user', component: Pengaturan, meta: { layout: true, auth: true, permission: 'pengaturan-user' } },
-    { path: '/pengaturan/aplikasi', redirect: '/pengaturan/user' },
+    // Pengaturan.vue = hub tab berjenjang (top-level User/Database/
+    // Environment/Informasi) — isi tiap tab di-embed sebagai child di
+    // dalamnya, bukan route terpisah lagi. Rute-nya "/pengaturan/aplikasi"
+    // (bukan "/pengaturan/user" lagi) karena sekarang isinya jauh lebih dari
+    // sekadar user — permission per-tab ditangani SENDIRI-SENDIRI di dalam
+    // Pengaturan.vue (lihat PENGATURAN_TABS > visibleTabs), bukan lewat 1
+    // `meta.permission` di sini (lagipula router.beforeEach TIDAK pernah
+    // menegakkan meta.permission, cuma meta.auth — jadi field itu di sini
+    // dulu memang tidak aktif/menyesatkan).
+    { path: '/pengaturan/aplikasi', component: Pengaturan, meta: { layout: true, auth: true } },
+    { path: '/pengaturan/user', redirect: '/pengaturan/aplikasi' },
     ...FASE_1_ROUTES.map(r => ({ ...r, meta: { layout: true, auth: true } })),
     ...PLACEHOLDER_PATHS.map(path => ({ path, component: Placeholder, meta: { layout: true, auth: true } })),
     { path: '/:pathMatch(.*)*', component: Placeholder, meta: { layout: true, auth: true } },

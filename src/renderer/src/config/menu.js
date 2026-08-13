@@ -351,7 +351,11 @@ export const bottomMenu = [
   // dst) — dulu 2 entry terpisah ("Manajemen User" + "Konfigurasi Aplikasi",
   // yang kedua masih placeholder isinya cuma duplikat panel migrasi). Lihat
   // README.md > "Login & Permission" & Pengaturan.vue buat struktur tab-nya.
-  { to: '/pengaturan/user',           label: 'Pengaturan',                  icon: Settings,  permission: 'pengaturan-user' },
+  // `permission` array — link sidebar ini muncul kalau user punya SALAH SATU
+  // dari 4 permission tab di dalam Pengaturan.vue (authStore.can() sudah
+  // dukung array = OR), bukan cuma 'pengaturan-user'. Kalau nanti nambah tab
+  // baru di Pengaturan.vue, tambahkan slug permission-nya di sini juga.
+  { to: '/pengaturan/aplikasi',       label: 'Pengaturan',                  icon: Settings,  permission: ['pengaturan-aplikasi'] },
   { to: '/pengaturan/audit-login',    label: 'Audit Login',                 icon: History,   permission: 'tracer_login' },
   // Master data TNI/Polri (pangkat, golongan, jabatan, satuan) — data setup
   // jarang diubah, wajar ditaruh di Pengaturan, bukan sidebar utama.

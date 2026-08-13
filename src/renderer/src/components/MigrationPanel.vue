@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 // Dipakai di Pengaturan.vue (halaman umum) DAN sebagai tab di
-// ManajemenUser.vue (/pengaturan/user) — instalasi baru yang `sik`-nya
+// ManajemenUser.vue (/pengaturan/aplikasi) — instalasi baru yang `sik`-nya
 // belum punya migration electron_* akan gagal buka tab Role/User (tabelnya
 // belum ada), jadi panel ini WAJIB tetap ada & gampang ditemukan, bukan
 // cuma di satu tempat.
