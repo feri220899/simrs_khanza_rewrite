@@ -347,7 +347,7 @@ onMounted(async () => {
                                     </td>
                                 </tr>
                                 <tr v-if="selectedNoPermintaan === row.original.no_permintaan" class="bg-base-200/50">
-                                    <td :colspan="table.getVisibleLeafColumns().length" class="p-1.5">
+                                    <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
                                         <div class="rounded-sm border border-base-200 bg-base-100 shadow-sm overflow-hidden">
                                             <div v-if="loadingDetail" class="py-10 text-center"><span
                                                     class="loading loading-spinner loading-md text-primary"></span>
