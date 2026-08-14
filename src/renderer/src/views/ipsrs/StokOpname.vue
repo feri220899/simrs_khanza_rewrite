@@ -255,7 +255,7 @@ onMounted(muatBarang)
 
         <div v-show="activeTab === 'tambah'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div class="px-5 py-3.5 border-b border-base-200 flex flex-wrap items-end gap-3 shrink-0">
+                <div class="px-3 py-3.5 border-b border-base-200 flex flex-wrap items-end gap-3 shrink-0">
                     <div>
                         <label class="block text-xs font-medium text-base-content/60 mb-1">Tanggal</label>
                         <input v-model="tanggal" type="date" class="input input-bordered input-sm w-36" @change="muatBarang" />

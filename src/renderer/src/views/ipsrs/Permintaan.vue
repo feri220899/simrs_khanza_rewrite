@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, h, onMounted, watch } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
-import { Plus, List, ClipboardList, Trash2, Printer } from 'lucide-vue-next'
+import { Plus, List, ClipboardList, Trash2, Printer, FileText } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -166,7 +166,7 @@ function cetakDaftar() {
     if (data.length === 0) { showToast('Tidak ada data untuk dicetak', 'error'); return }
     const w = window.open('', '_blank', 'width=1000,height=700')
     if (!w) return
-    const rows = data.map(r => `<tr><td>${r.no_permintaan}</td><td>${r.ruang}</td><td>${r.nama_petugas||'-'}</td><td>${r.tanggal}</td><td>${r.status}</td></tr>`).join('')
+    const rows = data.map(r => `<tr><td>${r.no_permintaan}</td><td>${r.ruang}</td><td>${r.nama_petugas || '-'}</td><td>${r.tanggal}</td><td>${r.status}</td></tr>`).join('')
     w.document.write(`<html><head><title>Daftar Permintaan IPSRS</title><style>body{font:12px Arial;margin:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f0f0f0}</style></head><body><h2>Daftar Permintaan Barang Non Medis</h2><table><thead><tr><th>No. Permintaan</th><th>Ruangan</th><th>Petugas</th><th>Tanggal</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
     w.document.close()
     w.focus()
@@ -180,6 +180,55 @@ function cetakPermintaan(row) {
     if (!w) return
     const rows = detailItems.value.map(it => `<tr><td>${it.nama_brng}</td><td class="text-center">${it.nama_satuan}</td><td class="text-center">${it.jumlah}</td><td>${it.keterangan || ''}</td></tr>`).join('')
     w.document.write(`<html><head><title>Cetak Permintaan</title><style>body{font:12px Arial;margin:20px}h2{text-align:center;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #000;padding:6px}th{background:#eee}.text-center{text-align:center}.info{margin-bottom:15px;line-height:1.6}.info span{display:inline-block;width:120px;font-weight:bold}</style></head><body><h2>PERMINTAAN BARANG NON MEDIS</h2><div class="info"><div><span>No. Permintaan</span>: ${row.no_permintaan}</div><div><span>Ruangan</span>: ${row.ruang}</div><div><span>Tanggal</span>: ${row.tanggal}</div><div><span>Petugas</span>: ${row.nama_petugas}</div><div><span>Status</span>: ${row.status}</div></div><table><thead><tr><th>Barang</th><th class="text-center">Satuan</th><th class="text-center">Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
+
+// ── Tab: Rekap Permintaan ───────────────────────────────────────────────
+const today = new Date()
+const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
+const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10)
+
+const tglAwal = ref(defaultStart)
+const tglAkhir = ref(defaultEnd)
+const jenis = ref('')
+const barang = ref('')
+
+const columnsRekap = [
+    { accessorKey: 'kode_brng', header: 'Kode Barang', meta: { headerClass: 'w-32 font-medium' } },
+    { accessorKey: 'nama_brng', header: 'Nama Barang' },
+    { accessorKey: 'satuan', header: 'Satuan', meta: { headerClass: 'w-28 text-center', cellClass: 'text-center' } },
+    { accessorKey: 'jenis', header: 'Jenis', meta: { headerClass: 'w-32' } },
+    { accessorKey: 'jumlah', header: 'Jumlah', meta: { headerClass: 'w-24 text-right', cellClass: 'text-right tabular-nums' } }
+]
+
+const { table: tableRekap, loading: loadingRekap, search: searchRekap, fetchData: fetchRekap } = useServerTable({
+    columns: columnsRekap,
+    fetchFn: params => window.api.ipsrs.laporan.rekapPermintaan({ ...params, tglAwal: tglAwal.value, tglAkhir: tglAkhir.value, jenis: jenis.value, barang: barang.value }),
+    pageSize: 50,
+    defaultSortBy: 'kode_brng',
+    defaultSortOrder: 'asc',
+})
+
+const esc = (s) => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+function terapkanFilterRekap() {
+    fetchRekap()
+}
+
+function cetakRekap() {
+    const data = tableRekap.getRowModel().rows.map(r => r.original)
+    if (data.length === 0) { showToast('Tidak ada data untuk dicetak', 'error'); return }
+    const w = window.open('', '_blank', 'width=1000,height=700')
+    if (!w) { showToast('Popup cetak diblokir browser', 'error'); return }
+
+    const headerText = `<b>Tanggal:</b> ${esc(tglAwal.value)} s/d ${esc(tglAkhir.value)}`
+    const rowsHtml = data.map(r => `<tr><td>${esc(r.kode_brng)}</td><td>${esc(r.nama_brng)}</td><td class="text-center">${esc(r.satuan)}</td><td>${esc(r.jenis)}</td><td class="num">${esc(r.jumlah)}</td></tr>`).join('')
+
+    w.document.write(`<html><head><title>Rekap Permintaan Non Medis</title><style>body{font:12px Arial;margin:20px}h1{text-align:center;font-size:16px;margin:0 0 4px}h2{text-align:center;font-size:14px;font-weight:normal;margin:0 0 16px}.info{margin-bottom:12px;line-height:1.6}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #777;padding:6px;text-align:left}th{background:#eee}.num{text-align:right}.text-center{text-align:center}@media print{body{margin:10mm}}</style></head><body><h1>REKAP PERMINTAAN BARANG NON MEDIS</h1><h2>IPSRS — Sarana Prasarana</h2><div class="info">${headerText}</div><table><thead><tr><th>Kode Barang</th><th>Nama Barang</th><th class="text-center">Satuan</th><th>Jenis</th><th class="num">Jumlah</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`)
     w.document.close()
     w.focus()
     w.print()
@@ -208,6 +257,7 @@ onMounted(async () => {
                     <Plus class="size-3.5" />
                     Buat Permintaan
                 </button>
+
                 <button
                     :class="[ 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 cursor-pointer',
                         activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
@@ -215,10 +265,24 @@ onMounted(async () => {
                     <List class="size-3.5" />
                     Daftar Permintaan
                 </button>
+                <button
+                    :class="[ 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 cursor-pointer',
+                        activeTab === 'rekap' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'rekap'">
+                    <FileText class="size-3.5" />
+                    Rekap Permintaan
+                </button>
+
             </div>
-            <button v-show="activeTab === 'list'" class="btn btn-ghost btn-xs text-primary gap-1 cursor-pointer" @click="cetakDaftar">
+            <button v-show="activeTab === 'list'" class="btn btn-ghost btn-xs text-primary gap-1 cursor-pointer"
+                @click="cetakDaftar">
                 <Printer class="size-3.5" />
                 Cetak Daftar
+            </button>
+            <button v-show="activeTab === 'rekap'" class="btn btn-ghost btn-xs text-primary gap-1 cursor-pointer"
+                @click="cetakRekap">
+                <Printer class="size-3.5" />
+                Cetak Rekap
             </button>
         </div>
 
@@ -360,16 +424,21 @@ onMounted(async () => {
                                 </tr>
                                 <tr v-if="selectedNoPermintaan === row.original.no_permintaan" class="bg-base-200/50">
                                     <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
-                                         <div class="rounded-sm border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                             <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-b border-base-200 bg-base-200/40">
-                                                 <div class="flex items-center gap-3">
-                                                     <p class="text-xs font-semibold text-base-content/60 uppercase">Detail Item</p>
-                                                 </div>
-                                                 <button class="btn btn-ghost btn-xs text-primary" @click.stop="cetakPermintaan(row.original)" :disabled="loadingDetail || detailItems.length === 0">
-                                                     <Printer class="size-3.5 mr-1" /> Cetak Detail
-                                                 </button>
-                                             </div>
-                                             <div v-if="loadingDetail" class="py-10 text-center"><span
+                                        <div
+                                            class="rounded-sm border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                            <div
+                                                class="flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-b border-base-200 bg-base-200/40">
+                                                <div class="flex items-center gap-3">
+                                                    <p class="text-xs font-semibold text-base-content/60 uppercase">
+                                                        Detail Item</p>
+                                                </div>
+                                                <button class="btn btn-ghost btn-xs text-primary"
+                                                    @click.stop="cetakPermintaan(row.original)"
+                                                    :disabled="loadingDetail || detailItems.length === 0">
+                                                    <Printer class="size-3.5 mr-1" /> Cetak Detail
+                                                </button>
+                                            </div>
+                                            <div v-if="loadingDetail" class="py-10 text-center"><span
                                                     class="loading loading-spinner loading-md text-primary"></span>
                                             </div>
                                             <div v-else-if="detailItems.length === 0"
@@ -394,7 +463,7 @@ onMounted(async () => {
                                                                     item.kode_brng }}</p>
                                                             </td>
                                                             <td><span class="badge badge-ghost badge-sm">{{
-                                                                    item.nama_satuan }}</span></td>
+                                                                item.nama_satuan }}</span></td>
                                                             <td class="text-right font-semibold tabular-nums">{{
                                                                 Number(item.jumlah).toLocaleString('id-ID') }}</td>
                                                             <td class="pr-4 text-base-content/70">{{ item.keterangan ||
@@ -407,6 +476,69 @@ onMounted(async () => {
                                     </td>
                                 </tr>
                             </template>
+                        </tbody>
+                    </table>
+                </AppPagination>
+            </div>
+        </div>
+
+        <!-- Tab: Rekap Permintaan -->
+        <div v-show="activeTab === 'rekap'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div
+                class="bg-base-100 rounded-2xl border border-base-200 shadow-sm h-full flex flex-col overflow-hidden px-4 py-3">
+                <div class="flex flex-wrap items-end gap-2 mb-3 shrink-0">
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Dari Tanggal</label>
+                        <input v-model="tglAwal" type="date" class="input input-bordered input-sm w-40" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai Tanggal</label>
+                        <input v-model="tglAkhir" type="date" class="input input-bordered input-sm w-40" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Jenis</label>
+                        <input v-model="jenis" type="text" class="input input-bordered input-sm w-40"
+                            placeholder="Opsional" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Kode Barang</label>
+                        <input v-model="barang" type="text" class="input input-bordered input-sm w-40"
+                            placeholder="Opsional" />
+                    </div>
+                    <button class="btn btn-neutral btn-sm" @click="terapkanFilterRekap">Filter</button>
+                </div>
+                <AppPagination :table="tableRekap" v-model:search="searchRekap" class="flex-1 min-h-0">
+                    <table class="table table-sm">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-base-200 border-b-2 border-base-300">
+                                <th v-for="header in tableRekap.getFlatHeaders()" :key="header.id"
+                                    :class="[ 'text-xs font-semibold py-2', header.column.columnDef.meta?.headerClass ]">
+                                    <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loadingRekap">
+                                <td colspan="5" class="py-16 text-center"><span
+                                        class="loading loading-spinner loading-md text-primary"></span></td>
+                            </tr>
+                            <tr v-else-if="tableRekap.getRowModel().rows.length === 0">
+                                <td colspan="5" class="py-16 text-center">
+                                    <div class="flex flex-col items-center gap-3">
+                                        <div class="size-14 rounded-2xl bg-base-200 flex items-center justify-center">
+                                            <FileText class="size-7 text-base-content/30" />
+                                        </div>
+                                        <p class="font-semibold text-base-content/60">Data tidak ditemukan</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="row in tableRekap.getRowModel().rows" :key="row.id"
+                                class="border-b border-base-200 hover:bg-primary/5">
+                                <td v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                    :class="[ 'py-2 text-sm', cell.column.columnDef.meta?.cellClass ]">
+                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </AppPagination>

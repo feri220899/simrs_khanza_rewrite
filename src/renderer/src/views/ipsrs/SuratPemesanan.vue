@@ -2,7 +2,7 @@
 import { ref, reactive, computed, h, onMounted, watch } from 'vue'
 import { FlexRender } from '@tanstack/vue-table'
 import { useRoute } from 'vue-router'
-import { Plus, List, ClipboardList, Trash2 } from 'lucide-vue-next'
+import { Plus, List, ClipboardList, Trash2, Printer, FileText } from 'lucide-vue-next'
 import { useServerTable } from '../../composables/useServerTable.js'
 import { useToast } from '../../composables/useToast.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -63,11 +63,11 @@ function hapusBaris(i) {
 function pilihBarang(i, kodeBrng) {
     const b = opsiBarang.value.find(x => x.kode_brng === kodeBrng)
     if (!b) return
-    items.value[i].kode_brng = b.kode_brng
-    items.value[i].kode_sat = b.kode_sat
-    items.value[i].nama_satuan = b.nama_satuan
+    items.value[ i ].kode_brng = b.kode_brng
+    items.value[ i ].kode_sat = b.kode_sat
+    items.value[ i ].nama_satuan = b.nama_satuan
     // Default Harga Pesan = harga barang, tetap bisa diedit manual (bukan dikunci).
-    items.value[i].h_pesan = b.harga
+    items.value[ i ].h_pesan = b.harga
 }
 
 // Replika getData(): subtotal = jumlah*h_pesan, besardis = ROUND(subtotal*dis%/100), total = subtotal-besardis.
@@ -98,7 +98,7 @@ function rupiah(v) {
 }
 
 function esc(value) {
-    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char])
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[ char ])
 }
 
 async function cetakPO(row) {
@@ -145,7 +145,7 @@ async function simpan() {
         showToast('Surat Pemesanan berhasil disimpan.')
         header.kode_suplier = ''
         header.ppnPercent = 11,
-        header.meterai = 0
+            header.meterai = 0
         items.value = []
         await siapkanNomor()
         fetchData()
@@ -273,6 +273,75 @@ async function kembalikanProses(row) {
     fetchData()
 }
 
+
+// ── Tab: Ringkasan Pemesanan ───────────────────────────────────────────────
+const today = new Date()
+const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
+const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10)
+
+const tglAwal = ref(defaultStart)
+const tglAkhir = ref(defaultEnd)
+const noFaktur = ref('')
+const statusFilterRingkasan = ref('Semua')
+const suplier = ref('')
+const petugas = ref('')
+const jenis = ref('')
+const barang = ref('')
+
+const summary = ref({ jumlah: 0, total: 0 })
+
+const columnsRingkasan = [
+    { accessorKey: 'kode_brng', header: 'Kode Barang', meta: { headerClass: 'w-32 font-medium' } },
+    { accessorKey: 'nama_brng', header: 'Nama Barang' },
+    { accessorKey: 'namajenis', header: 'Jenis', meta: { headerClass: 'w-32' } },
+    { accessorKey: 'kode_sat', header: 'Kode Sat', meta: { headerClass: 'w-24 text-center', cellClass: 'text-center' } },
+    { accessorKey: 'satuan', header: 'Satuan', meta: { headerClass: 'w-28 text-center', cellClass: 'text-center' } },
+    { accessorKey: 'jumlah', header: 'Jumlah', meta: { headerClass: 'w-24 text-right', cellClass: 'text-right tabular-nums' } },
+    {
+        accessorKey: 'total', header: 'Total', meta: { headerClass: 'w-36 text-right', cellClass: 'text-right tabular-nums font-medium' },
+        cell: info => `Rp ${Number(info.getValue()).toLocaleString('id-ID')}`
+    }
+]
+
+const { table: tableRingkasan, loading: loadingRingkasan, search: searchRingkasan, fetchData: fetchRingkasan } = useServerTable({
+    columns: columnsRingkasan,
+    fetchFn: async params => {
+        const res = await window.api.ipsrs.laporan.ringkasanPemesanan({
+            ...params, tglAwal: tglAwal.value, tglAkhir: tglAkhir.value,
+            noFaktur: noFaktur.value, status: statusFilterRingkasan.value, suplier: suplier.value, petugas: petugas.value, jenis: jenis.value, barang: barang.value
+        })
+        summary.value = res.summary || { jumlah: 0, total: 0 }
+        return res
+    },
+    pageSize: 50,
+    defaultSortBy: 'kode_brng',
+    defaultSortOrder: 'asc',
+})
+
+function terapkanFilterRingkasan() {
+    fetchRingkasan()
+}
+
+function cetakRingkasan() {
+    const data = tableRingkasan.getRowModel().rows.map(r => r.original)
+    if (data.length === 0) { showToast('Tidak ada data untuk dicetak', 'error'); return }
+    const w = window.open('', '_blank', 'width=1000,height=700')
+    if (!w) { showToast('Popup cetak diblokir browser', 'error'); return }
+
+    const headerText = `<b>Tanggal:</b> ${esc(tglAwal.value)} s/d ${esc(tglAkhir.value)}<br>` +
+        `<b>Status:</b> ${esc(statusFilterRingkasan.value)}`
+
+    const rowsHtml = data.map(r => `<tr><td>${esc(r.kode_brng)}</td><td>${esc(r.nama_brng)}</td><td>${esc(r.namajenis)}</td><td class="text-center">${esc(r.kode_sat)}</td><td class="text-center">${esc(r.satuan)}</td><td class="num">${esc(r.jumlah)}</td><td class="num">${rupiah(r.total)}</td></tr>`).join('')
+
+    const summaryHtml = `<div class="summary"><div><span>Total Pemesanan</span><span>${rupiah(summary.value.total)}</span></div></div>`
+
+    w.document.write(`<html><head><title>Ringkasan Pemesanan Non Medis</title><style>body{font:12px Arial;margin:20px}h1{text-align:center;font-size:16px;margin:0 0 4px}h2{text-align:center;font-size:14px;font-weight:normal;margin:0 0 16px}.info{margin-bottom:12px;line-height:1.6}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #777;padding:6px;text-align:left}th{background:#eee}.num{text-align:right}.text-center{text-align:center}.summary{margin:14px 0 0 auto;width:300px}.summary div{display:flex;justify-content:space-between;padding:3px;border-top:2px solid #111;font-weight:bold}@media print{body{margin:10mm}}</style></head><body><h1>RINGKASAN SURAT PEMESANAN BARANG NON MEDIS</h1><h2>IPSRS — Sarana Prasarana</h2><div class="info">${headerText}</div><table><thead><tr><th>Kode Barang</th><th>Nama Barang</th><th>Jenis</th><th class="text-center">Kode Sat</th><th class="text-center">Satuan</th><th class="num">Jumlah</th><th class="num">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>${summaryHtml}</body></html>`)
+    w.document.close()
+    w.focus()
+    w.print()
+    w.close()
+}
+
 onMounted(async () => {
     await muatOpsi()
     await siapkanNomor()
@@ -285,53 +354,75 @@ onMounted(async () => {
     <div class="flex-1 flex flex-col min-h-0">
         <div class="mb-2 shrink-0">
             <h1 class="text-xl font-semibold tracking-tight">IPSRS — Surat Pemesanan Barang Non Medis</h1>
-            <p class="text-sm text-base-content/60 mt-0.5">PO ke Supplier (src/ipsrs/IPSRSSuratPemesanan.java, IPSRSCariSuratPemesanan.java)</p>
+            <p class="text-sm text-base-content/60 mt-0.5">PO ke Supplier (src/ipsrs/IPSRSSuratPemesanan.java,
+                IPSRSCariSuratPemesanan.java)</p>
         </div>
 
-        <div class="flex bg-base-200 rounded-xl p-1 w-fit mb-2 shrink-0 gap-0.5">
-            <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'buat' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
-                @click="activeTab = 'buat'">
-                <Plus class="size-4" />
-                Buat Surat Pemesanan
-            </button>
-            <button
-                :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
-                    activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']"
-                @click="activeTab = 'list'">
-                <List class="size-4" />
-                Daftar Surat Pemesanan
+        <div class="flex justify-between items-center mb-2 shrink-0 w-full">
+            <div class="flex bg-base-200 rounded-xl p-1 w-fit gap-0.5">
+                <button
+                    :class="[ 'px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
+                        activeTab === 'buat' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'buat'">
+                    <Plus class="size-4" />
+                    Buat Surat Pemesanan
+                </button>
+                <button
+                    :class="[ 'px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
+                        activeTab === 'list' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'list'">
+                    <List class="size-4" />
+                    Daftar Surat Pemesanan
+                </button>
+                <button
+                    :class="[ 'px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer',
+                        activeTab === 'ringkasan' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content' ]"
+                    @click="activeTab = 'ringkasan'">
+                    <FileText class="size-4" />
+                    Ringkasan Pemesanan
+                </button>
+            </div>
+            <button v-show="activeTab === 'ringkasan'" class="btn btn-ghost btn-xs text-primary gap-1 cursor-pointer"
+                @click="cetakRingkasan">
+                <Printer class="size-3.5" /> Cetak Ringkasan
             </button>
         </div>
 
         <!-- Tab: Buat -->
         <div v-show="activeTab === 'buat'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div
+                class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-base-200 grid grid-cols-1 sm:grid-cols-6 gap-3 shrink-0">
                     <div>
                         <label class="block text-xs font-medium text-base-content/60 mb-1">No. Pemesanan</label>
-                        <input :value="header.no_pemesanan" type="text" readonly class="input input-bordered input-sm w-full bg-base-200" />
+                        <input :value="header.no_pemesanan" type="text" readonly
+                            class="input input-bordered input-sm w-full bg-base-200" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-base-content/60 mb-1">Tanggal</label>
                         <input v-model="header.tanggal" type="date" class="input input-bordered input-sm w-full" />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-base-content/60 mb-1">Supplier <span class="text-error">*</span></label>
-                        <AppSelect v-model="header.kode_suplier" :options="opsiSuplier" value-prop="kode_suplier" label="nama_suplier" placeholder="Pilih Supplier" />
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Supplier <span
+                                class="text-error">*</span></label>
+                        <AppSelect v-model="header.kode_suplier" :options="opsiSuplier" value-prop="kode_suplier"
+                            label="nama_suplier" placeholder="Pilih Supplier" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-base-content/60 mb-1">Petugas</label>
-                        <input :value="authStore.user?.username" type="text" readonly class="input input-bordered input-sm w-full bg-base-200" />
+                        <input :value="authStore.user?.username" type="text" readonly
+                            class="input input-bordered input-sm w-full bg-base-200" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-base-content/60 mb-1">PPN (%)</label>
-                        <input v-model="header.ppnPercent" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
+                        <input v-model="header.ppnPercent" type="number" min="0"
+                            class="input input-bordered input-sm w-full text-right" />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-base-content/60 mb-1">Meterai <span class="text-error">*</span></label>
-                        <input v-model="header.meterai" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Meterai <span
+                                class="text-error">*</span></label>
+                        <input v-model="header.meterai" type="number" min="0"
+                            class="input input-bordered input-sm w-full text-right" />
                     </div>
                 </div>
 
@@ -358,24 +449,33 @@ onMounted(async () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="items.length === 0"><td colspan="9" class="py-16 text-center text-base-content/50">Belum ada baris, klik "Tambah Baris"</td></tr>
+                            <tr v-if="items.length === 0">
+                                <td colspan="9" class="py-16 text-center text-base-content/50">Belum ada baris, klik
+                                    "Tambah Baris"</td>
+                            </tr>
                             <tr v-else v-for="(it, i) in items" :key="i" class="border-b border-base-200">
                                 <td class="py-1.5">
                                     <AppSelect :model-value="it.kode_brng" @update:model-value="v => pilihBarang(i, v)"
-                                        :options="opsiBarang" value-prop="kode_brng" label="nama_brng" placeholder="Pilih Barang" />
+                                        :options="opsiBarang" value-prop="kode_brng" label="nama_brng"
+                                        placeholder="Pilih Barang" />
                                 </td>
                                 <td class="py-1.5">{{ it.nama_satuan || '-' }}</td>
                                 <td class="py-1.5">
-                                    <input v-model="it.jumlah" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
+                                    <input v-model="it.jumlah" type="number" min="0"
+                                        class="input input-bordered input-sm w-full text-right" />
                                 </td>
                                 <td class="py-1.5">
-                                    <input v-model="it.h_pesan" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
+                                    <input v-model="it.h_pesan" type="number" min="0"
+                                        class="input input-bordered input-sm w-full text-right" />
                                 </td>
                                 <td class="py-1.5">
-                                    <input v-model="it.dis" type="number" min="0" class="input input-bordered input-sm w-full text-right" />
+                                    <input v-model="it.dis" type="number" min="0"
+                                        class="input input-bordered input-sm w-full text-right" />
                                 </td>
-                                <td class="py-1.5 text-right">{{ hitungBaris(it).subtotal.toLocaleString('id-ID') }}</td>
-                                <td class="py-1.5 text-right">{{ hitungBaris(it).besardis.toLocaleString('id-ID') }}</td>
+                                <td class="py-1.5 text-right">{{ hitungBaris(it).subtotal.toLocaleString('id-ID') }}
+                                </td>
+                                <td class="py-1.5 text-right">{{ hitungBaris(it).besardis.toLocaleString('id-ID') }}
+                                </td>
                                 <td class="py-1.5 text-right">{{ hitungBaris(it).total.toLocaleString('id-ID') }}</td>
                                 <td class="py-1.5 text-center">
                                     <button class="btn btn-ghost btn-sm text-error" @click="hapusBaris(i)">
@@ -388,13 +488,35 @@ onMounted(async () => {
                 </div>
 
                 <div class="px-5 py-2 border-t border-base-200 shrink-0 flex items-center justify-between gap-4">
-                    <div v-if="!bolehBuat()" class="text-warning text-sm">Anda tidak punya akses membuat surat pemesanan.</div>
-                    <div v-else class="flex flex-wrap gap-x-8 gap-y-3 text-sm bg-base-200/30 rounded-xl px-5 py-2 border border-base-200">
-                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Subtotal</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.subtotal) }}</p></div>
-                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Potongan</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.potongan) }}</p></div>
-                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Total</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.total) }}</p></div>
-                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">PPN</p><p class="font-semibold tabular-nums">{{ rupiah(ringkasan.ppn) }}</p></div>
-                        <div class="flex flex-col items-end"><p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Tagihan</p><p class="font-bold text-primary tabular-nums">{{ rupiah(ringkasan.tagihan) }}</p></div>
+                    <div v-if="!bolehBuat()" class="text-warning text-sm">Anda tidak punya akses membuat surat
+                        pemesanan.</div>
+                    <div v-else
+                        class="flex flex-wrap gap-x-8 gap-y-3 text-sm bg-base-200/30 rounded-xl px-5 py-2 border border-base-200">
+                        <div class="flex flex-col items-end">
+                            <p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">
+                                Subtotal</p>
+                            <p class="font-semibold tabular-nums">{{ rupiah(ringkasan.subtotal) }}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">
+                                Potongan</p>
+                            <p class="font-semibold tabular-nums">{{ rupiah(ringkasan.potongan) }}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">Total
+                            </p>
+                            <p class="font-semibold tabular-nums">{{ rupiah(ringkasan.total) }}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">PPN
+                            </p>
+                            <p class="font-semibold tabular-nums">{{ rupiah(ringkasan.ppn) }}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <p class="text-[11px] uppercase tracking-wide text-base-content/50 w-full text-right">
+                                Tagihan</p>
+                            <p class="font-bold text-primary tabular-nums">{{ rupiah(ringkasan.tagihan) }}</p>
+                        </div>
                     </div>
                     <button class="btn btn-primary gap-2 shrink-0" :disabled="saving || !bolehBuat()" @click="simpan">
                         <span v-if="saving" class="loading loading-spinner loading-xs"></span>
@@ -407,28 +529,35 @@ onMounted(async () => {
         <!-- Tab: Daftar -->
         <div v-show="activeTab === 'list'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
             <div class="flex gap-2 mb-2 shrink-0">
-                <button v-for="s in [{v:'',l:'Semua'},{v:'Proses Pesan',l:'Proses Pesan'},{v:'Sudah Datang',l:'Sudah Datang'}]" :key="s.v"
-                    class="btn btn-sm" :class="statusFilter === s.v ? 'btn-primary' : 'btn-ghost'" @click="statusFilter = s.v">
+                <button
+                    v-for="s in [ { v: '', l: 'Semua' }, { v: 'Proses Pesan', l: 'Proses Pesan' }, { v: 'Sudah Datang', l: 'Sudah Datang' } ]"
+                    :key="s.v" class="btn btn-sm" :class="statusFilter === s.v ? 'btn-primary' : 'btn-ghost'"
+                    @click="statusFilter = s.v">
                     {{ s.l }}
                 </button>
             </div>
-            <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden px-4 py-3">
+            <div
+                class="bg-base-100 rounded-2xl border border-base-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden px-4 py-3">
                 <AppPagination :table="table" v-model:search="search" class="flex-1 min-h-0">
                     <table class="table">
                         <thead class="sticky top-0 z-10">
                             <tr class="bg-base-200 border-b-2 border-base-300">
                                 <th v-for="header in table.getFlatHeaders()" :key="header.id"
-                                    :class="['text-sm font-medium py-2', header.column.columnDef.meta?.headerClass,
-                                             header.column.getCanSort() ? 'cursor-pointer select-none hover:text-primary transition-colors' : '']"
+                                    :class="[ 'text-sm font-medium py-2', header.column.columnDef.meta?.headerClass,
+                                        header.column.getCanSort() ? 'cursor-pointer select-none hover:text-primary transition-colors' : '' ]"
                                     @click="header.column.getToggleSortingHandler()?.($event)">
                                     <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
                                     <span v-if="header.column.getIsSorted() === 'asc'" class="text-primary">↑</span>
-                                    <span v-else-if="header.column.getIsSorted() === 'desc'" class="text-primary">↓</span>
+                                    <span v-else-if="header.column.getIsSorted() === 'desc'"
+                                        class="text-primary">↓</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="loading"><td colspan="7" class="py-16 text-center"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>
+                            <tr v-if="loading">
+                                <td colspan="7" class="py-16 text-center"><span
+                                        class="loading loading-spinner loading-md text-primary"></span></td>
+                            </tr>
                             <tr v-else-if="table.getRowModel().rows.length === 0">
                                 <td colspan="7" class="py-16 text-center">
                                     <div class="flex flex-col items-center gap-3">
@@ -439,55 +568,183 @@ onMounted(async () => {
                                     </div>
                                 </td>
                             </tr>
-<template v-else v-for="row in table.getRowModel().rows" :key="row.id">
-                                 <tr
-                                     :class="['border-b border-base-200 cursor-pointer transition-colors', selectedNoPemesanan === row.original.no_pemesanan ? 'bg-primary/10' : 'hover:bg-primary/5']"
-                                     @click="toggleDetail(row.original.no_pemesanan)">
-                                     <td v-for="cell in row.getVisibleCells()" :key="cell.id" :class="['py-2', cell.column.columnDef.meta?.cellClass]">
-                                         <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                                     </td>
-                                 </tr>
-                                 <tr v-if="selectedNoPemesanan === row.original.no_pemesanan" class="bg-base-200/50">
-                                     <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
-                                         <div class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
-                                             <div v-if="loadingDetail" class="py-10 text-center"><span class="loading loading-spinner loading-md text-primary"></span></div>
-                                             <div v-else-if="detailItems.length === 0" class="py-10 text-center text-sm text-base-content/50">Tidak ada detail barang.</div>
-                                             <div v-else class="overflow-x-auto">
-                                                 <table class="table table-sm">
-                                                     <thead><tr class="bg-base-200/40"><th class="pl-4">Barang</th><th>Satuan</th><th class="text-right">Jumlah</th><th class="text-right">Harga</th><th class="text-right">Subtotal</th><th class="text-right">Diskon</th><th class="pr-4 text-right">Total</th></tr></thead>
-                                                     <tbody>
-                                                         <tr v-for="item in detailItems" :key="item.kode_brng" class="hover:bg-base-200/30">
-                                                             <td class="pl-4"><p class="font-medium">{{ item.nama_brng }}</p><p class="text-xs text-base-content/50">{{ item.kode_brng }}</p></td>
-                                                             <td><span class="badge badge-ghost badge-sm">{{ item.nama_satuan }}</span></td>
-                                                             <td class="text-right font-semibold tabular-nums">{{ Number(item.jumlah).toLocaleString('id-ID') }}</td>
-                                                             <td class="text-right tabular-nums">Rp {{ Number(item.h_pesan).toLocaleString('id-ID') }}</td>
-                                                             <td class="text-right tabular-nums">Rp {{ Number(item.subtotal).toLocaleString('id-ID') }}</td>
-                                                             <td class="text-right tabular-nums">{{ Number(item.dis).toLocaleString('id-ID') }}%<span class="block text-xs text-base-content/50">Rp {{ Number(item.besardis).toLocaleString('id-ID') }}</span></td>
-                                                             <td class="pr-4 text-right font-semibold tabular-nums text-primary">Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
-                                                         </tr>
-                                                      </tbody>
-                                                       <tfoot>
-                                                           <tr class="bg-base-200/30 border-t border-base-300 text-xs uppercase tracking-wide text-base-content/60">
-                                                               <th colspan="4" rowspan="2" class="text-right align-middle pr-4 text-sm normal-case text-base-content">Grand Total</th>
-                                                               <th class="text-right whitespace-nowrap">Subtotal</th>
-                                                               <th class="text-right whitespace-nowrap">Besaran Diskon</th>
-                                                               <th class="pr-4 text-right whitespace-nowrap">Total</th>
-                                                           </tr>
-                                                           <tr class="bg-base-200/20 font-bold">
-                                                               <td class="text-right whitespace-nowrap tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.subtotal), 0).toLocaleString('id-ID') }}</td>
-                                                               <td class="text-right whitespace-nowrap tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.besardis), 0).toLocaleString('id-ID') }}</td>
-                                                               <td class="pr-4 text-right whitespace-nowrap text-primary tabular-nums">Rp {{ detailItems.reduce((acc, x) => acc + Number(x.total), 0).toLocaleString('id-ID') }}</td>
-                                                           </tr>
-                                                       </tfoot>
-                                                  </table>
-                                             </div>
-                                         </div>
-                                     </td>
-                                 </tr>
-                             </template>
+                            <template v-else v-for="row in table.getRowModel().rows" :key="row.id">
+                                <tr :class="[ 'border-b border-base-200 cursor-pointer transition-colors', selectedNoPemesanan === row.original.no_pemesanan ? 'bg-primary/10' : 'hover:bg-primary/5' ]"
+                                    @click="toggleDetail(row.original.no_pemesanan)">
+                                    <td v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                        :class="[ 'py-2', cell.column.columnDef.meta?.cellClass ]">
+                                        <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                    </td>
+                                </tr>
+                                <tr v-if="selectedNoPemesanan === row.original.no_pemesanan" class="bg-base-200/50">
+                                    <td :colspan="table.getVisibleLeafColumns().length" class="p-4">
+                                        <div
+                                            class="rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+                                            <div v-if="loadingDetail" class="py-10 text-center"><span
+                                                    class="loading loading-spinner loading-md text-primary"></span>
+                                            </div>
+                                            <div v-else-if="detailItems.length === 0"
+                                                class="py-10 text-center text-sm text-base-content/50">Tidak ada detail
+                                                barang.</div>
+                                            <div v-else class="overflow-x-auto">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr class="bg-base-200/40">
+                                                            <th class="pl-4">Barang</th>
+                                                            <th>Satuan</th>
+                                                            <th class="text-right">Jumlah</th>
+                                                            <th class="text-right">Harga</th>
+                                                            <th class="text-right">Subtotal</th>
+                                                            <th class="text-right">Diskon</th>
+                                                            <th class="pr-4 text-right">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="item in detailItems" :key="item.kode_brng"
+                                                            class="hover:bg-base-200/30">
+                                                            <td class="pl-4">
+                                                                <p class="font-medium">{{ item.nama_brng }}</p>
+                                                                <p class="text-xs text-base-content/50">{{
+                                                                    item.kode_brng }}</p>
+                                                            </td>
+                                                            <td><span class="badge badge-ghost badge-sm">{{
+                                                                    item.nama_satuan }}</span></td>
+                                                            <td class="text-right font-semibold tabular-nums">{{
+                                                                Number(item.jumlah).toLocaleString('id-ID') }}</td>
+                                                            <td class="text-right tabular-nums">Rp {{
+                                                                Number(item.h_pesan).toLocaleString('id-ID') }}</td>
+                                                            <td class="text-right tabular-nums">Rp {{
+                                                                Number(item.subtotal).toLocaleString('id-ID') }}</td>
+                                                            <td class="text-right tabular-nums">{{
+                                                                Number(item.dis).toLocaleString('id-ID') }}%<span
+                                                                    class="block text-xs text-base-content/50">Rp {{
+                                                                    Number(item.besardis).toLocaleString('id-ID')
+                                                                    }}</span></td>
+                                                            <td
+                                                                class="pr-4 text-right font-semibold tabular-nums text-primary">
+                                                                Rp {{ Number(item.total).toLocaleString('id-ID') }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr
+                                                            class="bg-base-200/30 border-t border-base-300 text-xs uppercase tracking-wide text-base-content/60">
+                                                            <th colspan="4" rowspan="2"
+                                                                class="text-right align-middle pr-4 text-sm normal-case text-base-content">
+                                                                Grand Total</th>
+                                                            <th class="text-right whitespace-nowrap">Subtotal</th>
+                                                            <th class="text-right whitespace-nowrap">Besaran Diskon</th>
+                                                            <th class="pr-4 text-right whitespace-nowrap">Total</th>
+                                                        </tr>
+                                                        <tr class="bg-base-200/20 font-bold">
+                                                            <td class="text-right whitespace-nowrap tabular-nums">Rp {{
+                                                                detailItems.reduce((acc, x) => acc + Number(x.subtotal),
+                                                                0).toLocaleString('id-ID') }}</td>
+                                                            <td class="text-right whitespace-nowrap tabular-nums">Rp {{
+                                                                detailItems.reduce((acc, x) => acc + Number(x.besardis),
+                                                                0).toLocaleString('id-ID') }}</td>
+                                                            <td
+                                                                class="pr-4 text-right whitespace-nowrap text-primary tabular-nums">
+                                                                Rp {{detailItems.reduce((acc, x) => acc +
+                                                                Number(x.total), 0).toLocaleString('id-ID') }}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
                 </AppPagination>
+            </div>
+        </div>
+
+        <!-- Tab: Ringkasan Pemesanan -->
+        <div v-show="activeTab === 'ringkasan'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div
+                class="bg-base-100 rounded-2xl border border-base-200 shadow-sm h-full flex flex-col overflow-hidden px-4 py-3">
+                <div class="flex flex-wrap items-end gap-2 mb-3 shrink-0">
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Dari Tanggal</label>
+                        <input v-model="tglAwal" type="date" class="input input-bordered input-sm w-36" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai</label>
+                        <input v-model="tglAkhir" type="date" class="input input-bordered input-sm w-36" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">No. Faktur/Pemesanan</label>
+                        <input v-model="noFaktur" type="text" class="input input-bordered input-sm w-36" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Status</label>
+                        <select v-model="statusFilterRingkasan" class="select select-bordered select-sm w-36">
+                            <option value="Semua">Semua</option>
+                            <option value="Proses Pesan">Proses Pesan</option>
+                            <option value="Sudah Datang">Sudah Datang</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Supplier</label>
+                        <input v-model="suplier" type="text" class="input input-bordered input-sm w-32" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Petugas</label>
+                        <input v-model="petugas" type="text" class="input input-bordered input-sm w-32" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Jenis</label>
+                        <input v-model="jenis" type="text" class="input input-bordered input-sm w-32" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Barang</label>
+                        <input v-model="barang" type="text" class="input input-bordered input-sm w-32" />
+                    </div>
+                    <button class="btn btn-neutral btn-sm" @click="terapkanFilterRingkasan">Filter</button>
+                </div>
+                <AppPagination :table="tableRingkasan" v-model:search="searchRingkasan" class="flex-1 min-h-0">
+                    <table class="table table-sm">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-base-200 border-b-2 border-base-300">
+                                <th v-for="header in tableRingkasan.getFlatHeaders()" :key="header.id"
+                                    :class="[ 'text-xs font-semibold py-2', header.column.columnDef.meta?.headerClass ]">
+                                    <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loadingRingkasan">
+                                <td colspan="7" class="py-16 text-center"><span
+                                        class="loading loading-spinner loading-md text-primary"></span></td>
+                            </tr>
+                            <tr v-else-if="tableRingkasan.getRowModel().rows.length === 0">
+                                <td colspan="7" class="py-16 text-center">
+                                    <div class="flex flex-col items-center gap-3">
+                                        <div class="size-14 rounded-2xl bg-base-200 flex items-center justify-center">
+                                            <FileText class="size-7 text-base-content/30" />
+                                        </div>
+                                        <p class="font-semibold text-base-content/60">Data tidak ditemukan</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="row in tableRingkasan.getRowModel().rows" :key="row.id"
+                                class="border-b border-base-200 hover:bg-primary/5">
+                                <td v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                    :class="[ 'py-2 text-sm', cell.column.columnDef.meta?.cellClass ]">
+                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </AppPagination>
+                <div v-if="!loadingRingkasan && tableRingkasan.getRowModel().rows.length > 0"
+                    class="pt-3 border-t border-base-200 flex justify-end gap-6 text-sm">
+                    <div class="text-base-content/60">Total Item: <span class="font-semibold text-base-content">{{
+                            summary.jumlah }}</span></div>
+                    <div class="text-base-content/60">Total Nilai: <span class="font-semibold text-base-content">Rp {{
+                        Number(summary.total).toLocaleString('id-ID') }}</span></div>
+                </div>
             </div>
         </div>
     </div>
