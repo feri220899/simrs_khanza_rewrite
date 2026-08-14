@@ -312,6 +312,10 @@ contextBridge.exposeInMainWorld('api', {
             delete: (token)        => ipcRenderer.invoke('perpustakaan:pengaturan:delete', token),
         },
     },
+    laporan: {
+        rl13: () => ipcRenderer.invoke('laporan:rl13:get'),
+        borAlos: (params) => ipcRenderer.invoke('laporan:borAlos:get', params),
+    },
     // Migration DB — status boleh dibaca siapa saja yang login, tapi jalankan
     // migration divalidasi ulang role-nya di main process (lihat main/index.js),
     // bukan cuma disembunyikan tombolnya di renderer.
