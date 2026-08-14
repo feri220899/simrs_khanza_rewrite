@@ -675,6 +675,8 @@ app.whenReady().then(async () => {
 
     handle('laporan:rl13:get', () => LaporanRlService.rl13())
     handle('laporan:borAlos:get', (_, params) => LaporanRlService.borAlos(params))
+    handle('laporan:rl3:get', (_, params) => LaporanRlService.rl3(params))
+    handle('laporan:rl4:get', (_, params) => LaporanRlService.rl4(params))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di

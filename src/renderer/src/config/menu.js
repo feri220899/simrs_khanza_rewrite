@@ -299,7 +299,7 @@ export const allMenu = [
           // varian: rl33, rl37, rl38 (masing2 permission terpisah dari rl32)
           { to: '/laporan/rl',           label: 'RL 3.2 – 3.8',                      icon: FileText,  permission: 'rl32' },
           // varian: rl4b, rl4asebab, rl4bsebab
-          { to: '/laporan/rl4',          label: 'RL 4A / 4B',                        icon: FileText,  permission: 'rl4a' },
+          { to: '/laporan/rl4',          label: 'RL 4A / 4B',                        icon: FileText,  permission: ['rl4a', 'rl4b', 'rl4asebab', 'rl4bsebab'] },
           { to: '/laporan/tempat-tidur', label: 'Ketersediaan Tempat Tidur (RL1.3)', icon: BedDouble, permission: 'rl1_3_ketersediaan_kamar' },
           { to: '/laporan/bor-alos',     label: 'BOR / ALOS',                        icon: Gauge,     permission: 'hitung_bor' },
           // varian: surveilans_ranap, penyakit_pd3i, surveilans_pd3i

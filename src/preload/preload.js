@@ -315,6 +315,8 @@ contextBridge.exposeInMainWorld('api', {
     laporan: {
         rl13: () => ipcRenderer.invoke('laporan:rl13:get'),
         borAlos: (params) => ipcRenderer.invoke('laporan:borAlos:get', params),
+        rl3: (params) => ipcRenderer.invoke('laporan:rl3:get', params),
+        rl4: (params) => ipcRenderer.invoke('laporan:rl4:get', params),
     },
     // Migration DB — status boleh dibaca siapa saja yang login, tapi jalankan
     // migration divalidasi ulang role-nya di main process (lihat main/index.js),
