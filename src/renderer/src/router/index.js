@@ -25,6 +25,8 @@ import IpsrsPengajuan      from '../views/ipsrs/Pengajuan.vue'
 import IpsrsSuratPemesanan from '../views/ipsrs/SuratPemesanan.vue'
 import IpsrsStokOpname     from '../views/ipsrs/StokOpname.vue'
 import IpsrsRiwayat        from '../views/ipsrs/Riwayat.vue'
+import LaporanRl13         from '../views/laporan/KetersediaanTempatTidur.vue'
+import LaporanBorAlos       from '../views/laporan/BorAlos.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -61,6 +63,8 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/surat-pemesanan', component: IpsrsSuratPemesanan },
     { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
+    { path: '/laporan/tempat-tidur', component: LaporanRl13 },
+    { path: '/laporan/bor-alos', component: LaporanBorAlos },
 ]
 
 const PLACEHOLDER_PATHS = [
@@ -85,7 +89,7 @@ const PLACEHOLDER_PATHS = [
     '/ppi/audit-bundle', '/ppi/kepatuhan', '/ppi/hais-bangsal',
     '/pcra-icra/pra-konstruksi', '/pcra-icra/identifikasi-risiko',
     '/insiden-keselamatan',
-    '/laporan/rl', '/laporan/rl4', '/laporan/tempat-tidur', '/laporan/bor-alos', '/laporan/surveilans',
+    '/laporan/rl', '/laporan/rl4', '/laporan/surveilans',
     '/zis-csr', '/e-eksekutif', '/sms-gateway',
     '/bridging/sep', '/bridging/klaim', '/bridging/referensi',
     '/tni-polri/daftar-ranap', '/tni-polri/laporan',

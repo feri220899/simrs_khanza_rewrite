@@ -22,6 +22,7 @@ import PerpustakaanDendaService     from './db/modules/PerpustakaanDendaService.
 import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaService.js'
 import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
 import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
+import LaporanRlService from './db/modules/LaporanRlService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -671,6 +672,9 @@ app.whenReady().then(async () => {
     handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))
     handle('ipsrs:laporan:ringkasanPengajuan', (_, params) => IpsrsLaporanService.ringkasanPengajuan(params))
     handle('ipsrs:laporan:ringkasanPemesanan', (_, params) => IpsrsLaporanService.ringkasanPemesanan(params))
+
+    handle('laporan:rl13:get', () => LaporanRlService.rl13())
+    handle('laporan:borAlos:get', (_, params) => LaporanRlService.borAlos(params))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
