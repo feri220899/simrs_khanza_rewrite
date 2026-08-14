@@ -36,6 +36,7 @@ import IpsrsBarangService from './db/modules/IpsrsBarangService.js'
 import IpsrsRiwayatService from './db/modules/IpsrsRiwayatService.js'
 import IpsrsStokService from './db/modules/IpsrsStokService.js'
 import IpsrsPermintaanService from './db/modules/IpsrsPermintaanService.js'
+import IpsrsLaporanService from './db/modules/IpsrsLaporanService.js'
 import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
 
@@ -666,6 +667,10 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
         return auth.ok ? IpsrsSuratPemesananService.deleteOne(noPemesanan) : { success: false, message: auth.message }
     })
+
+    handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))
+    handle('ipsrs:laporan:ringkasanPengajuan', (_, params) => IpsrsLaporanService.ringkasanPengajuan(params))
+    handle('ipsrs:laporan:ringkasanPemesanan', (_, params) => IpsrsLaporanService.ringkasanPemesanan(params))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di

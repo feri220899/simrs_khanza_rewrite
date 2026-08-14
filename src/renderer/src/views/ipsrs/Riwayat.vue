@@ -53,22 +53,22 @@ function resetFilterTanggal() {
             <p class="text-sm text-base-content/60 mt-0.5">Log pergerakan stok, read-only (src/ipsrs/IPSRSRiwayatBarang.java)</p>
         </div>
 
-        <div class="flex flex-wrap items-end gap-2 mb-3 shrink-0">
-            <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1">Dari Tanggal</label>
-                <input v-model="tgl1" type="date" class="input input-bordered input-sm w-40" />
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai Tanggal</label>
-                <input v-model="tgl2" type="date" class="input input-bordered input-sm w-40" />
-            </div>
-            <input v-model="kodeBarng" class="input input-bordered input-sm w-44" placeholder="Kode barang dedicated" />
-            <button class="btn btn-primary btn-sm" @click="terapkanFilterTanggal">Terapkan</button>
-            <button class="btn btn-ghost btn-sm" @click="resetFilterTanggal">Reset</button>
-        </div>
-
+        
         <div class="flex-1 min-h-0 overflow-hidden">
             <div class="bg-base-100 rounded-2xl border border-base-200 shadow-sm h-full flex flex-col overflow-hidden px-4 py-3">
+                <div class="flex flex-wrap items-end gap-2 mb-3 shrink-0">
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Dari Tanggal</label>
+                        <input v-model="tgl1" type="date" class="input input-bordered input-sm w-40" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-base-content/60 mb-1">Sampai Tanggal</label>
+                        <input v-model="tgl2" type="date" class="input input-bordered input-sm w-40" />
+                    </div>
+                    <input v-model="kodeBarng" class="input input-bordered input-sm w-44" placeholder="Kode barang dedicated" />
+                    <button class="btn btn-primary btn-sm" @click="terapkanFilterTanggal">Terapkan</button>
+                    <button class="btn btn-ghost btn-sm" @click="resetFilterTanggal">Reset</button>
+                </div>
                 <AppPagination :table="table" v-model:search="search" class="flex-1 min-h-0">
                     <table class="table">
                         <thead class="sticky top-0 z-10">
