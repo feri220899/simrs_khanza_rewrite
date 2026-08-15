@@ -369,6 +369,18 @@ export const allMenu = [
               { to: '/e-eksekutif/non-medis/penerimaan-vendor', label: 'Penerimaan Vendor / Bulan', icon: TrendingUp, permission: 'ipsrs_barang' },
             ]
           },
+          {
+            label: 'Inventori Dapur', icon: Utensils, permission: 'dapur_barang',
+            children: [
+              { to: '/e-eksekutif/dapur/sisa-stok', label: 'Sisa Stok & Nilai Aset', icon: Package, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/pengadaan', label: 'Ringkasan Pengadaan', icon: FileCheck2, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/penerimaan', label: 'Ringkasan Penerimaan', icon: ArrowLeftRight, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/hibah', label: 'Ringkasan Hibah', icon: HandHeart, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/stok-keluar', label: 'Ringkasan Stok Keluar', icon: ArrowLeftRight, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/retur-suplier', label: 'Retur Ke Suplier', icon: RefreshCcw, permission: 'dapur_barang' },
+              { to: '/e-eksekutif/dapur/penerimaan-vendor', label: 'Penerimaan Vendor / Bulan', icon: TrendingUp, permission: 'dapur_barang' },
+            ]
+          },
         ],
       },
       // 26. SMS Gateway
