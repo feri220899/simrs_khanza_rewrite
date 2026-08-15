@@ -396,6 +396,21 @@ export const allMenu = [
               { to: '/e-eksekutif/kasir/rekening', label: 'Pendapatan Per Akun Rekening', icon: Landmark, permission: 'e_eksekutif' },
             ]
           },
+          {
+            label: 'Keuangan & Akuntansi', icon: Landmark, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/keuangan/hutang/farmasi', label: 'Hutang Vendor Farmasi', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/hutang/nonmedis', label: 'Hutang Vendor Non Medis', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/hutang/dapur', label: 'Hutang Vendor Dapur', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/hutang/inventaris', label: 'Hutang Vendor Inventaris', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/hutang/lain', label: 'Beban Hutang Lain', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/piutang/pasien', label: 'Piutang Pasien Belum Lunas', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/piutang/obat', label: 'Piutang Obat Belum Lunas', icon: AlertOctagon, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/laporan', label: 'Laporan Keuangan', icon: FileBarChart, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/rekening-tahun', label: 'Rekening Tahun', icon: FolderOpen, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/keuangan/saldo-bulanan', label: 'Saldo Akun Per Bulan', icon: FolderOpen, permission: 'e_eksekutif' },
+            ]
+          },
         ],
       },
       // 26. SMS Gateway

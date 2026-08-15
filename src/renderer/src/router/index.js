@@ -33,6 +33,8 @@ import EEksekutifLanding     from '../views/eeksekutif/Landing.vue'
 import EEksekutifPelayanan   from '../views/eeksekutif/PelayananView.vue'
 import EEksekutifMutu        from '../views/eeksekutif/MutuPelayanan.vue'
 import EEksekutifKasir       from '../views/eeksekutif/PendapatanKasir.vue'
+import EEksekutifKeuangan    from '../views/eeksekutif/RingkasanKeuangan.vue'
+import EEksekutifAkuntansi   from '../views/eeksekutif/LaporanAkuntansi.vue'
 import EEksekutifSisaStok    from '../views/eeksekutif/farmasi/SisaStok.vue'
 import EEksekutifDaruratStok from '../views/eeksekutif/farmasi/DaruratStok.vue'
 import EEksekutifKadaluarsa  from '../views/eeksekutif/farmasi/KadaluarsaBatch.vue'
@@ -104,6 +106,16 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/kasir/akun-piutang', component: EEksekutifKasir, props: { title: 'Piutang Per Akun Piutang', jenis: 'piutang' } },
     { path: '/e-eksekutif/kasir/akun-closing', component: EEksekutifKasir, props: { title: 'Pendapatan Per Akun Closing', jenis: 'closing' } },
     { path: '/e-eksekutif/kasir/rekening', component: EEksekutifKasir, props: { title: 'Pendapatan Per Akun Rekening', jenis: 'rekening_closing' } },
+    { path: '/e-eksekutif/keuangan/hutang/farmasi', component: EEksekutifKeuangan, props: { title: 'Hutang Vendor Farmasi', mode: 'hutang', jenis: 'farmasi' } },
+    { path: '/e-eksekutif/keuangan/hutang/nonmedis', component: EEksekutifKeuangan, props: { title: 'Hutang Vendor Non Medis', mode: 'hutang', jenis: 'nonmedis' } },
+    { path: '/e-eksekutif/keuangan/hutang/dapur', component: EEksekutifKeuangan, props: { title: 'Hutang Vendor Dapur', mode: 'hutang', jenis: 'dapur' } },
+    { path: '/e-eksekutif/keuangan/hutang/inventaris', component: EEksekutifKeuangan, props: { title: 'Hutang Vendor Inventaris', mode: 'hutang', jenis: 'inventaris' } },
+    { path: '/e-eksekutif/keuangan/hutang/lain', component: EEksekutifKeuangan, props: { title: 'Beban Hutang Lain', mode: 'hutang', jenis: 'lain' } },
+    { path: '/e-eksekutif/keuangan/piutang/pasien', component: EEksekutifKeuangan, props: { title: 'Piutang Pasien Belum Lunas', mode: 'piutang', jenis: 'pasien' } },
+    { path: '/e-eksekutif/keuangan/piutang/obat', component: EEksekutifKeuangan, props: { title: 'Piutang Obat Belum Lunas', mode: 'piutang', jenis: 'obat' } },
+    { path: '/e-eksekutif/keuangan/laporan', component: EEksekutifAkuntansi, props: { title: 'Laporan Keuangan', jenis: 'laporan' } },
+    { path: '/e-eksekutif/keuangan/rekening-tahun', component: EEksekutifAkuntansi, props: { title: 'Rekening Tahun', jenis: 'rekening' } },
+    { path: '/e-eksekutif/keuangan/saldo-bulanan', component: EEksekutifAkuntansi, props: { title: 'Saldo Akun Per Bulan', jenis: 'saldo' } },
     { path: '/e-eksekutif/farmasi/sisa-stok', component: EEksekutifSisaStok },
     { path: '/e-eksekutif/farmasi/darurat-stok', component: EEksekutifDaruratStok },
     { path: '/e-eksekutif/farmasi/kadaluarsa', component: EEksekutifKadaluarsa },
