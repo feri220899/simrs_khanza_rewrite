@@ -28,6 +28,7 @@ import EEksekutifNonMedisService from './db/modules/EEksekutifNonMedisService.js
 import EEksekutifDapurService from './db/modules/EEksekutifDapurService.js'
 import EEksekutifMutuService from './db/modules/EEksekutifMutuService.js'
 import EEksekutifKasirService from './db/modules/EEksekutifKasirService.js'
+import EEksekutifAkuntansiService from './db/modules/EEksekutifAkuntansiService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -711,6 +712,31 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'e_eksekutif')
         if (!auth.ok) throw new Error(auth.message)
         return EEksekutifKasirService.kasir(tgl1, tgl2, jenis)
+    })
+    handle('eeksekutif:akuntansi:hutang', (_, token, jenis) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifAkuntansiService.hutang(jenis)
+    })
+    handle('eeksekutif:akuntansi:piutangBelumLunas', (_, token, jenis) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifAkuntansiService.piutangBelumLunas(jenis)
+    })
+    handle('eeksekutif:akuntansi:laporanKeuangan', (_, token, tahun) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifAkuntansiService.laporanKeuangan(tahun)
+    })
+    handle('eeksekutif:akuntansi:rekeningTahun', (_, token, tahun) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifAkuntansiService.rekeningTahun(tahun)
+    })
+    handle('eeksekutif:akuntansi:saldoAkunPerBulan', (_, token, tahun) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifAkuntansiService.saldoAkunPerBulan(tahun)
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
