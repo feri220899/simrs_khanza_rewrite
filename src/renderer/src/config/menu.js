@@ -322,7 +322,17 @@ export const allMenu = [
       // permission (mis. password terpisah, mirip DlgPasswordBPJS). WAJIB
       // ditelusuri ke DlgEEksekutif.java sebelum modul ini digarap — jangan
       // pakai slug 'e-eksekutif' di produksi, itu bukan nama kolom asli.
-      { to: '/e-eksekutif', label: 'E-Eksekutif', icon: LineChart, permission: 'e-eksekutif' },
+      {
+        label: 'E-Eksekutif', icon: LineChart, permission: 'e_eksekutif',
+        children: [
+          { to: '/e-eksekutif', label: 'Dashboard', icon: LineChart, permission: 'e_eksekutif' },
+          { to: '/e-eksekutif/rawat-jalan', label: 'Pelayanan Rawat Jalan', icon: LineChart, permission: 'e_eksekutif' },
+          { to: '/e-eksekutif/igd', label: 'Pelayanan IGD', icon: LineChart, permission: 'e_eksekutif' },
+          { to: '/e-eksekutif/rawat-inap', label: 'Pelayanan Rawat Inap', icon: LineChart, permission: 'e_eksekutif' },
+          { to: '/e-eksekutif/laboratorium', label: 'Pelayanan Laboratorium', icon: LineChart, permission: 'e_eksekutif' },
+          { to: '/e-eksekutif/radiologi', label: 'Pelayanan Radiologi', icon: LineChart, permission: 'e_eksekutif' },
+        ],
+      },
       // 26. SMS Gateway
       { to: '/sms-gateway', label: 'SMS Gateway', icon: MessageSquare, permission: 'sms' },
       // 27. Bridging BPJS — tidak ada flag umum "bpjs", puluhan permission
