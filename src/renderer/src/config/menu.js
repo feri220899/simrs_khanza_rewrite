@@ -336,6 +336,27 @@ export const allMenu = [
               { to: '/e-eksekutif/radiologi', label: 'Radiologi', icon: Radiation, permission: 'e_eksekutif' },
             ]
           },
+          {
+            label: 'Inventori Farmasi', icon: Boxes, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/farmasi/sisa-stok', label: 'Sisa Stok & Nilai Aset', icon: Package, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/darurat-stok', label: 'Darurat Stok (Defecta)', icon: AlertTriangle, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/kadaluarsa', label: 'Kadaluarsa 3 Bulan', icon: History, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/pengadaan', label: 'Ringkasan Pengadaan', icon: FileCheck2, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/penerimaan', label: 'Ringkasan Penerimaan', icon: ArrowLeftRight, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/hibah', label: 'Ringkasan Hibah', icon: HandHeart, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/penjualan', label: 'Ringkasan Penjualan', icon: Monitor, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/beri-obat', label: 'Ringkasan Beri Obat', icon: Pill, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/piutang', label: 'Ringkasan Piutang Obat', icon: FileWarning, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/stok-keluar', label: 'Ringkasan Stok Keluar', icon: ArrowLeftRight, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/retur-suplier', label: 'Retur Ke Suplier', icon: RefreshCcw, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/retur-pasien', label: 'Retur Dari Pasien', icon: RefreshCcw, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/obat-poli', label: 'Obat Per Poli', icon: Stethoscope, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/obat-dokter', label: 'Obat Per Dokter', icon: UserCircle, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/penerimaan-vendor', label: 'Penerimaan Vendor / Bulan', icon: TrendingUp, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/farmasi/stok-mati', label: 'Stok Tidak Bergerak', icon: Archive, permission: 'e_eksekutif' },
+            ]
+          },
         ],
       },
       // 26. SMS Gateway

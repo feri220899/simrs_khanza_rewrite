@@ -48,16 +48,16 @@ onMounted(muatData)
                 <h1 class="text-xl font-semibold">{{ title }}</h1>
                 <p class="text-sm text-base-content/60">Laporan eksekutif {{ title.toLowerCase() }}</p>
             </div>
-            <form @submit.prevent="muatData" class="flex flex-wrap items-center gap-2 bg-base-100 p-2 rounded-xl border border-base-200 shadow-sm">
-                <div class="flex items-center gap-2 text-sm">
-                    <Calendar class="size-4 text-base-content/50" />
-                    <input type="date" v-model="tgl1" class="input input-xs input-bordered" required />
-                    <span>s/d</span>
-                    <input type="date" v-model="tgl2" class="input input-xs input-bordered" required />
-                </div>
-                <button type="submit" class="btn btn-primary btn-xs gap-1" :disabled="loading">
-                    <RefreshCcw class="size-3" /> Tampilkan Data & Grafik
-                </button>
+            <form @submit.prevent="muatData" class="flex flex-wrap items-end gap-3 bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm">
+                <label class="form-control">
+                    <span class="label py-0.5"><span class="label-text text-xs">Tanggal Awal</span></span>
+                    <span class="input input-sm input-bordered flex items-center gap-2"><Calendar class="size-4 text-base-content/50" /><input v-model="tgl1" type="date" required /></span>
+                </label>
+                <label class="form-control">
+                    <span class="label py-0.5"><span class="label-text text-xs">Tanggal Akhir</span></span>
+                    <input v-model="tgl2" type="date" class="input input-sm input-bordered" required />
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm gap-1" :disabled="loading"><RefreshCcw class="size-4" /> Tampilkan Data & Grafik</button>
             </form>
         </div>
 

@@ -285,6 +285,386 @@ async function radiologi(tgl1, tgl2) {
     }
 }
 
+async function sisaStokFarmasi() {
+    const db = await DatabaseService.get()
+    const bangsal = await db.query(`SELECT kd_bangsal, nm_bangsal FROM bangsal WHERE status='1' AND kd_bangsal<>'-' ORDER BY kd_bangsal ASC`)
+    
+    let sqlkolomstok = ""
+    for (const b of bangsal.rows) {
+        sqlkolomstok += `, SUM(CASE WHEN g.kd_bangsal='${b.kd_bangsal}' THEN g.total_stok ELSE 0 END) AS stok_${b.kd_bangsal}`
+    }
+
+    const queryStok = await db.query(
+        `SELECT databarang.kode_brng, databarang.nama_brng, databarang.kode_sat, databarang.dasar, jenis.nama AS nama_jenis, kategori_barang.nama AS nama_kategori, golongan_barang.nama AS nama_golongan ${sqlkolomstok} ` +
+        `FROM databarang ` +
+        `INNER JOIN jenis ON databarang.kdjns=jenis.kdjns ` +
+        `INNER JOIN golongan_barang ON databarang.kode_golongan=golongan_barang.kode ` +
+        `INNER JOIN kategori_barang ON databarang.kode_kategori=kategori_barang.kode ` +
+        `LEFT JOIN (SELECT gudangbarang.kode_brng, gudangbarang.kd_bangsal, SUM(gudangbarang.stok) AS total_stok FROM gudangbarang WHERE gudangbarang.no_batch='' AND gudangbarang.no_faktur='' GROUP BY gudangbarang.kode_brng, gudangbarang.kd_bangsal) g ON g.kode_brng=databarang.kode_brng ` +
+        `WHERE databarang.status='1' GROUP BY databarang.kode_brng, jenis.nama, kategori_barang.nama, golongan_barang.nama ORDER BY databarang.kode_brng ASC`
+    )
+
+    let totalAset = 0
+    const jenisAset = {}
+    const kategoriAset = {}
+    const golonganAset = {}
+    const list = []
+
+    for (const row of queryStok.rows) {
+        let totalBarang = 0
+        for (const b of bangsal.rows) {
+            const stok = Number(row[`stok_${b.kd_bangsal}`] || 0)
+            totalBarang += stok
+        }
+
+        const nilaiAset = Number(row.dasar || 0) * totalBarang
+        totalAset += nilaiAset
+
+        if (nilaiAset > 0) {
+            jenisAset[row.nama_jenis] = (jenisAset[row.nama_jenis] || 0) + nilaiAset
+            kategoriAset[row.nama_kategori] = (kategoriAset[row.nama_kategori] || 0) + nilaiAset
+            golonganAset[row.nama_golongan] = (golonganAset[row.nama_golongan] || 0) + nilaiAset
+        }
+
+        list.push({ ...row, totalBarang, nilaiAset })
+    }
+
+    const toChart = (obj) => Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, value]) => ({ label, value }))
+
+    return {
+        bangsal: bangsal.rows,
+        items: list,
+        totalAset,
+        charts: [
+            { title: 'Nilai Aset Per Jenis', data: toChart(jenisAset) },
+            { title: 'Nilai Aset Per Kategori', data: toChart(kategoriAset) },
+            { title: 'Nilai Aset Per Golongan', data: toChart(golonganAset) },
+        ]
+    }
+}
+
+async function daruratStokFarmasi() {
+    const db = await DatabaseService.get()
+    const query = await db.query(
+        `SELECT databarang.kode_brng, databarang.nama_brng, kodesatuan.satuan, databarang.stokminimal, jenis.nama AS nama_jenis, IFNULL(stok.stoksaatini, 0) AS stoksaatini ` +
+        `FROM databarang ` +
+        `INNER JOIN kodesatuan ON databarang.kode_sat=kodesatuan.kode_sat ` +
+        `INNER JOIN jenis ON databarang.kdjns=jenis.kdjns ` +
+        `LEFT JOIN (` +
+            `SELECT gudangbarang.kode_brng, SUM(gudangbarang.stok) AS stoksaatini ` +
+            `FROM gudangbarang INNER JOIN bangsal ON gudangbarang.kd_bangsal=bangsal.kd_bangsal ` +
+            `WHERE bangsal.status='1' AND gudangbarang.no_batch='' AND gudangbarang.no_faktur='' GROUP BY gudangbarang.kode_brng` +
+        `) AS stok ON databarang.kode_brng=stok.kode_brng ` +
+        `WHERE databarang.status='1' AND IFNULL(stok.stoksaatini, 0) <= databarang.stokminimal ORDER BY databarang.nama_brng ASC`
+    )
+
+    return query.rows
+}
+
+async function kadaluarsaBatchFarmasi() {
+    const db = await DatabaseService.get()
+    const query = await db.query(
+        `SELECT data_batch.no_batch, data_batch.kode_brng, databarang.nama_brng, kodesatuan.satuan, ` +
+        `DATE_FORMAT(data_batch.tgl_beli, '%Y-%m-%d') as tgl_beli, DATE_FORMAT(data_batch.tgl_kadaluarsa, '%Y-%m-%d') as tgl_kadaluarsa, ` +
+        `data_batch.asal, data_batch.no_faktur, data_batch.dasar, data_batch.jumlahbeli, data_batch.sisa ` +
+        `FROM data_batch ` +
+        `INNER JOIN databarang ON data_batch.kode_brng=databarang.kode_brng ` +
+        `INNER JOIN kodesatuan ON databarang.kode_sat=kodesatuan.kode_sat ` +
+        `WHERE data_batch.tgl_kadaluarsa BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 3 MONTH) ` +
+        `ORDER BY data_batch.tgl_kadaluarsa ASC`
+    )
+    return query.rows
+}
+
+async function ringkasanMutasiFarmasi(tgl1, tgl2, jenisMutasi) {
+    const db = await DatabaseService.get()
+    const params = [tgl1, tgl2]
+    
+    let sql = ""
+    if (jenisMutasi === 'pengadaan') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah2) AS jumlah, SUM(db.total) AS total 
+               FROM pembelian h INNER JOIN detailbeli db ON h.no_faktur=db.no_faktur 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_beli BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'penerimaan') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah2) AS jumlah, SUM(db.total) AS total 
+               FROM pemesanan h INNER JOIN detailpesan db ON h.no_faktur=db.no_faktur 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_pesan BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'hibah') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah2) AS jumlah, SUM(db.subtotaldiakui) AS total 
+               FROM hibah_obat_bhp h INNER JOIN detailhibah_obat_bhp db ON h.no_hibah=db.no_hibah 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_hibah BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'penjualan') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah) AS jumlah, SUM(db.total) AS total 
+               FROM penjualan h INNER JOIN detailjual db ON h.nota_jual=db.nota_jual 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_jual BETWEEN ? AND ? AND h.status='Sudah Dibayar' GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'beriobat') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jml) AS jumlah, SUM(db.total) AS total 
+               FROM detail_pemberian_obat db 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE db.tgl_perawatan BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'piutang') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah) AS jumlah, SUM(db.total) AS total 
+               FROM piutang h INNER JOIN detailpiutang db ON h.nota_piutang=db.nota_piutang 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_piutang BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'stokkeluar') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jumlah) AS jumlah, SUM(db.total) AS total 
+               FROM pengeluaran_obat_bhp h INNER JOIN detail_pengeluaran_obat_bhp db ON h.no_keluar=db.no_keluar 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tanggal BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'retursuplier') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jml_retur2) AS jumlah, SUM(db.total) AS total 
+               FROM returbeli h INNER JOIN detreturbeli db ON h.no_retur_beli=db.no_retur_beli 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_retur BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    } else if (jenisMutasi === 'returpasien') {
+        sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nama AS namajenis, g.nama AS namagolongan, k.nama AS namakategori, 
+               SUM(db.jml_retur) AS jumlah, SUM(db.subtotal) AS total 
+               FROM returjual h INNER JOIN detreturjual db ON h.no_retur_jual=db.no_retur_jual 
+               INNER JOIN databarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON b.kode_sat=s.kode_sat 
+               INNER JOIN jenis j ON b.kdjns=j.kdjns INNER JOIN golongan_barang g ON b.kode_golongan=g.kode 
+               INNER JOIN kategori_barang k ON b.kode_kategori=k.kode 
+               WHERE h.tgl_retur BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
+    }
+
+    if (!sql) throw new Error("Jenis mutasi tidak valid: " + jenisMutasi)
+
+    const result = await db.query(sql, params)
+    
+    let totalTransaksi = 0
+    const jenis = {}
+    const kategori = {}
+    const golongan = {}
+
+    const items = result.rows.map(row => {
+        const total = Number(row.total || 0)
+        totalTransaksi += total
+        if (total > 0) {
+            jenis[row.namajenis] = (jenis[row.namajenis] || 0) + total
+            kategori[row.namakategori] = (kategori[row.namakategori] || 0) + total
+            golongan[row.namagolongan] = (golongan[row.namagolongan] || 0) + total
+        }
+        return {
+            ...row,
+            jumlah: Number(row.jumlah || 0),
+            total
+        }
+    })
+
+    const toChart = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }))
+    const byJumlahDesc = [...items].sort((a, b) => b.jumlah - a.jumlah).slice(0, 10)
+    const byTotalDesc = [...items].sort((a, b) => b.total - a.total).slice(0, 10)
+
+    return {
+        items,
+        totalTransaksi,
+        charts: [
+            { title: 'Berdasarkan Golongan', data: toChart(golongan) },
+            { title: 'Berdasarkan Jenis', data: toChart(jenis) },
+            { title: 'Berdasarkan Kategori', data: toChart(kategori) },
+        ],
+        topJumlah: byJumlahDesc.map(i => ({ label: i.nama_brng, value: i.jumlah })),
+        topTotal: byTotalDesc.map(i => ({ label: i.nama_brng, value: i.total }))
+    }
+}
+
+async function ringkasanObatPoliklinik(tgl1, tgl2) {
+    const db = await DatabaseService.get()
+    const result = await db.query(
+        `SELECT db.kode_brng, b.nama_brng, p.nm_poli, SUM(db.embalase) AS embalase, SUM(db.tuslah) AS tuslah, SUM(db.total) AS total 
+         FROM detail_pemberian_obat db 
+         INNER JOIN reg_periksa rp ON db.no_rawat=rp.no_rawat 
+         INNER JOIN poliklinik p ON rp.kd_poli=p.kd_poli 
+         INNER JOIN databarang b ON db.kode_brng=b.kode_brng 
+         WHERE rp.status_lanjut='Ralan' AND rp.tgl_registrasi BETWEEN ? AND ? 
+         GROUP BY rp.kd_poli, db.kode_brng ORDER BY p.nm_poli, b.nama_brng`, [tgl1, tgl2]
+    )
+
+    let totalGlobal = 0
+    const poliMap = {}
+    
+    for (const row of result.rows) {
+        const biayaObat = Number(row.total || 0) - (Number(row.embalase || 0) + Number(row.tuslah || 0))
+        totalGlobal += biayaObat
+        poliMap[row.nm_poli] = (poliMap[row.nm_poli] || 0) + biayaObat
+    }
+
+    const toChart = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }))
+
+    return {
+        items: result.rows.map(row => ({
+            ...row, 
+            embalase: Number(row.embalase || 0), 
+            tuslah: Number(row.tuslah || 0), 
+            total: Number(row.total || 0),
+            biayaObat: Number(row.total || 0) - (Number(row.embalase || 0) + Number(row.tuslah || 0))
+        })),
+        totalBiaya: totalGlobal,
+        chart: toChart(poliMap)
+    }
+}
+
+async function ringkasanObatDokter(tgl1, tgl2, statusLanjut = 'Semua') {
+    const db = await DatabaseService.get()
+    let filterStatus = ""
+    if (statusLanjut === 'Ralan') filterStatus = " AND rp.status_lanjut='Ralan'"
+    if (statusLanjut === 'Ranap') filterStatus = " AND rp.status_lanjut='Ranap'"
+    
+    const result = await db.query(
+        `SELECT db.kode_brng, b.nama_brng, d.nm_dokter, SUM(db.embalase) AS embalase, SUM(db.tuslah) AS tuslah, SUM(db.total) AS total 
+         FROM detail_pemberian_obat db 
+         INNER JOIN reg_periksa rp ON db.no_rawat=rp.no_rawat 
+         INNER JOIN dokter d ON rp.kd_dokter=d.kd_dokter 
+         INNER JOIN databarang b ON db.kode_brng=b.kode_brng 
+         WHERE rp.tgl_registrasi BETWEEN ? AND ? ${filterStatus} 
+         GROUP BY rp.kd_dokter, db.kode_brng ORDER BY d.nm_dokter, b.nama_brng`, [tgl1, tgl2]
+    )
+
+    let totalGlobal = 0
+    const dokterMap = {}
+    
+    for (const row of result.rows) {
+        const biayaObat = Number(row.total || 0) - (Number(row.embalase || 0) + Number(row.tuslah || 0))
+        totalGlobal += biayaObat
+        dokterMap[row.nm_dokter] = (dokterMap[row.nm_dokter] || 0) + biayaObat
+    }
+
+    const toChart = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }))
+
+    return {
+        items: result.rows.map(row => ({
+            ...row, 
+            embalase: Number(row.embalase || 0), 
+            tuslah: Number(row.tuslah || 0), 
+            total: Number(row.total || 0),
+            biayaObat: Number(row.total || 0) - (Number(row.embalase || 0) + Number(row.tuslah || 0))
+        })),
+        totalBiaya: totalGlobal,
+        chart: toChart(dokterMap)
+    }
+}
+
+async function penerimaanVendorPerBulan(tahun) {
+    const db = await DatabaseService.get()
+    // Kueri matrix per vendor per bulan untuk tahun tertentu.
+    const query = await db.query(`
+        SELECT datasuplier.nama_suplier, 
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-01' THEN detailpesan.total ELSE 0 END),0) as bln1,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-02' THEN detailpesan.total ELSE 0 END),0) as bln2,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-03' THEN detailpesan.total ELSE 0 END),0) as bln3,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-04' THEN detailpesan.total ELSE 0 END),0) as bln4,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-05' THEN detailpesan.total ELSE 0 END),0) as bln5,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-06' THEN detailpesan.total ELSE 0 END),0) as bln6,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-07' THEN detailpesan.total ELSE 0 END),0) as bln7,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-08' THEN detailpesan.total ELSE 0 END),0) as bln8,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-09' THEN detailpesan.total ELSE 0 END),0) as bln9,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-10' THEN detailpesan.total ELSE 0 END),0) as bln10,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-11' THEN detailpesan.total ELSE 0 END),0) as bln11,
+            IFNULL(SUM(CASE WHEN LEFT(pemesanan.tgl_pesan, 7) = '${tahun}-12' THEN detailpesan.total ELSE 0 END),0) as bln12 
+        FROM pemesanan INNER JOIN detailpesan ON pemesanan.no_faktur = detailpesan.no_faktur 
+        INNER JOIN datasuplier ON pemesanan.kode_suplier = datasuplier.kode_suplier 
+        WHERE LEFT(pemesanan.tgl_pesan, 4) = ? 
+        GROUP BY datasuplier.kode_suplier ORDER BY datasuplier.nama_suplier ASC`, [tahun])
+    
+    let totalAll = 0
+    const perBulan = Array(12).fill(0)
+    const items = query.rows.map(row => {
+        let sumVendor = 0
+        for (let i = 1; i <= 12; i++) {
+            const v = Number(row[`bln${i}`] || 0)
+            sumVendor += v
+            perBulan[i-1] += v
+        }
+        totalAll += sumVendor
+        return { nama_suplier: row.nama_suplier, bulan: Array.from({length: 12}, (_, i) => Number(row[`bln${i+1}`] || 0)), total: sumVendor }
+    })
+    
+    return {
+        items,
+        totalAll,
+        chartVendor: items.map(i => ({ label: i.nama_suplier, value: i.total })).sort((a,b)=>b.value-a.value),
+        chartBulan: perBulan.map((val, i) => ({ label: `Bulan ${i+1}`, value: val }))
+    }
+}
+
+async function stokTidakBergerak(bulan) {
+    const db = await DatabaseService.get()
+    // Identik dengan liststoktidakbergerak.php
+    const result = await db.query(
+        `SELECT databarang.kode_brng, databarang.nama_brng, kodesatuan.satuan, jenis.nama as namajenis, golongan_barang.nama as namagolongan, 
+         kategori_barang.nama as namakategori, databarang.dasar, IFNULL(stok.stoksaatini, 0) as stoksaatini 
+         FROM databarang INNER JOIN kodesatuan ON databarang.kode_sat=kodesatuan.kode_sat 
+         INNER JOIN jenis ON databarang.kdjns=jenis.kdjns 
+         INNER JOIN golongan_barang ON databarang.kode_golongan=golongan_barang.kode 
+         INNER JOIN kategori_barang ON databarang.kode_kategori=kategori_barang.kode 
+         INNER JOIN (SELECT kode_brng, SUM(stok) as stoksaatini FROM gudangbarang WHERE no_batch='' AND no_faktur='' GROUP BY kode_brng) as stok 
+         ON databarang.kode_brng=stok.kode_brng 
+         WHERE databarang.status='1' AND IFNULL(stok.stoksaatini, 0) > 0 AND databarang.kode_brng NOT IN (
+            SELECT kode_brng FROM riwayat_barang_medis WHERE posisi<>'Opname' AND tanggal BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL ? MONTH) AND CURRENT_DATE() GROUP BY kode_brng
+         ) ORDER BY databarang.nama_brng ASC`, [bulan]
+    )
+
+    let totalAset = 0
+    const jenis = {}, kategori = {}, golongan = {}
+
+    const items = result.rows.map(row => {
+        const sisa = Number(row.stoksaatini || 0)
+        const dasar = Number(row.dasar || 0)
+        const aset = sisa * dasar
+        totalAset += aset
+
+        if (aset > 0) {
+            jenis[row.namajenis] = (jenis[row.namajenis] || 0) + aset
+            kategori[row.namakategori] = (kategori[row.namakategori] || 0) + aset
+            golongan[row.namagolongan] = (golongan[row.namagolongan] || 0) + aset
+        }
+
+        return { ...row, stoksaatini: sisa, dasar, aset }
+    })
+
+    const toChart = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }))
+
+    return {
+        items,
+        totalAset,
+        charts: [
+            { title: 'Berdasarkan Golongan', data: toChart(golongan) },
+            { title: 'Berdasarkan Jenis', data: toChart(jenis) },
+            { title: 'Berdasarkan Kategori', data: toChart(kategori) },
+        ]
+    }
+}
+
 function groupRows(rows) {
     const result = []
     let currentLabel = null
@@ -315,4 +695,8 @@ function mergeStats(bases, label1, rows1, label2, rows2) {
     return result
 }
 
-export default { landing, rawatJalan, igd, rawatInap, lab, radiologi }
+export default { 
+    landing, rawatJalan, igd, rawatInap, lab, radiologi, 
+    sisaStokFarmasi, daruratStokFarmasi, kadaluarsaBatchFarmasi, ringkasanMutasiFarmasi,
+    ringkasanObatPoliklinik, ringkasanObatDokter, penerimaanVendorPerBulan, stokTidakBergerak
+}
