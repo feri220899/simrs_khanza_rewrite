@@ -27,6 +27,7 @@ import EEksekutifService from './db/modules/EEksekutifService.js'
 import EEksekutifNonMedisService from './db/modules/EEksekutifNonMedisService.js'
 import EEksekutifDapurService from './db/modules/EEksekutifDapurService.js'
 import EEksekutifMutuService from './db/modules/EEksekutifMutuService.js'
+import EEksekutifKasirService from './db/modules/EEksekutifKasirService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -705,6 +706,11 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'e_eksekutif')
         if (!auth.ok) throw new Error(auth.message)
         return EEksekutifMutuService.lamaPelayanan(tgl1, tgl2, jenis)
+    })
+    handle('eeksekutif:kasir:pendapatan', (_, token, tgl1, tgl2, jenis) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifKasirService.kasir(tgl1, tgl2, jenis)
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
