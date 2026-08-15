@@ -312,6 +312,14 @@ contextBridge.exposeInMainWorld('api', {
             delete: (token)        => ipcRenderer.invoke('perpustakaan:pengaturan:delete', token),
         },
     },
+    eeksekutif: {
+        landing: () => ipcRenderer.invoke('eeksekutif:landing'),
+        rawatJalan: (tgl1, tgl2) => ipcRenderer.invoke('eeksekutif:rawatJalan', tgl1, tgl2),
+        igd: (tgl1, tgl2) => ipcRenderer.invoke('eeksekutif:igd', tgl1, tgl2),
+        rawatInap: (tgl1, tgl2) => ipcRenderer.invoke('eeksekutif:rawatInap', tgl1, tgl2),
+        lab: (tgl1, tgl2) => ipcRenderer.invoke('eeksekutif:lab', tgl1, tgl2),
+        radiologi: (tgl1, tgl2) => ipcRenderer.invoke('eeksekutif:radiologi', tgl1, tgl2),
+    },
     laporan: {
         rl13: () => ipcRenderer.invoke('laporan:rl13:get'),
         borAlos: (params) => ipcRenderer.invoke('laporan:borAlos:get', params),

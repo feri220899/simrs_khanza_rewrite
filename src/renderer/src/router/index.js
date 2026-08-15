@@ -29,6 +29,8 @@ import LaporanRl13         from '../views/laporan/KetersediaanTempatTidur.vue'
 import LaporanBorAlos       from '../views/laporan/BorAlos.vue'
 import LaporanRl3            from '../views/laporan/Rl3.vue'
 import LaporanRl4            from '../views/laporan/Rl4.vue'
+import EEksekutifLanding     from '../views/eeksekutif/Landing.vue'
+import EEksekutifPelayanan   from '../views/eeksekutif/PelayananView.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -69,6 +71,12 @@ const FASE_1_ROUTES = [
     { path: '/laporan/bor-alos', component: LaporanBorAlos },
     { path: '/laporan/rl', component: LaporanRl3 },
     { path: '/laporan/rl4', component: LaporanRl4 },
+    { path: '/e-eksekutif', component: EEksekutifLanding },
+    { path: '/e-eksekutif/rawat-jalan', component: EEksekutifPelayanan, props: { title: 'Pelayanan Rawat Jalan', type: 'rawatJalan' } },
+    { path: '/e-eksekutif/igd', component: EEksekutifPelayanan, props: { title: 'Pelayanan Gawat Darurat', type: 'igd' } },
+    { path: '/e-eksekutif/rawat-inap', component: EEksekutifPelayanan, props: { title: 'Pelayanan Rawat Inap', type: 'rawatInap' } },
+    { path: '/e-eksekutif/laboratorium', component: EEksekutifPelayanan, props: { title: 'Pelayanan Laboratorium', type: 'lab' } },
+    { path: '/e-eksekutif/radiologi', component: EEksekutifPelayanan, props: { title: 'Pelayanan Radiologi', type: 'radiologi' } },
 ]
 
 const PLACEHOLDER_PATHS = [
@@ -94,7 +102,7 @@ const PLACEHOLDER_PATHS = [
     '/pcra-icra/pra-konstruksi', '/pcra-icra/identifikasi-risiko',
     '/insiden-keselamatan',
     '/laporan/surveilans',
-    '/zis-csr', '/e-eksekutif', '/sms-gateway',
+    '/zis-csr', '/sms-gateway',
     '/bridging/sep', '/bridging/klaim', '/bridging/referensi',
     '/tni-polri/daftar-ranap', '/tni-polri/laporan',
     '/pengaturan/audit-login', '/pengaturan/master-tni-polri',

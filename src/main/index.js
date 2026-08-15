@@ -23,6 +23,7 @@ import PerpustakaanBayarDendaService from './db/modules/PerpustakaanBayarDendaSe
 import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanService.js'
 import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
 import LaporanRlService from './db/modules/LaporanRlService.js'
+import EEksekutifService from './db/modules/EEksekutifService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -677,6 +678,12 @@ app.whenReady().then(async () => {
     handle('laporan:borAlos:get', (_, params) => LaporanRlService.borAlos(params))
     handle('laporan:rl3:get', (_, params) => LaporanRlService.rl3(params))
     handle('laporan:rl4:get', (_, params) => LaporanRlService.rl4(params))
+    handle('eeksekutif:landing', () => EEksekutifService.landing())
+    handle('eeksekutif:rawatJalan', (_, tgl1, tgl2) => EEksekutifService.rawatJalan(tgl1, tgl2))
+    handle('eeksekutif:igd', (_, tgl1, tgl2) => EEksekutifService.igd(tgl1, tgl2))
+    handle('eeksekutif:rawatInap', (_, tgl1, tgl2) => EEksekutifService.rawatInap(tgl1, tgl2))
+    handle('eeksekutif:lab', (_, tgl1, tgl2) => EEksekutifService.lab(tgl1, tgl2))
+    handle('eeksekutif:radiologi', (_, tgl1, tgl2) => EEksekutifService.radiologi(tgl1, tgl2))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
