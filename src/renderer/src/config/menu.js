@@ -357,6 +357,18 @@ export const allMenu = [
               { to: '/e-eksekutif/farmasi/stok-mati', label: 'Stok Tidak Bergerak', icon: Archive, permission: 'e_eksekutif' },
             ]
           },
+          {
+            label: 'Inventori Non Medis', icon: Boxes, permission: 'ipsrs_barang',
+            children: [
+              { to: '/e-eksekutif/non-medis/sisa-stok', label: 'Sisa Stok & Nilai Aset', icon: Package, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/pengadaan', label: 'Ringkasan Pengadaan', icon: FileCheck2, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/penerimaan', label: 'Ringkasan Penerimaan', icon: ArrowLeftRight, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/hibah', label: 'Ringkasan Hibah', icon: HandHeart, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/stok-keluar', label: 'Ringkasan Stok Keluar', icon: ArrowLeftRight, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/retur-suplier', label: 'Retur Ke Suplier', icon: RefreshCcw, permission: 'ipsrs_barang' },
+              { to: '/e-eksekutif/non-medis/penerimaan-vendor', label: 'Penerimaan Vendor / Bulan', icon: TrendingUp, permission: 'ipsrs_barang' },
+            ]
+          },
         ],
       },
       // 26. SMS Gateway

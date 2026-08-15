@@ -38,6 +38,9 @@ import EEksekutifRingkasanMutasi from '../views/eeksekutif/farmasi/RingkasanMuta
 import EEksekutifObatPer         from '../views/eeksekutif/farmasi/ObatPer.vue'
 import EEksekutifVendorPerBulan  from '../views/eeksekutif/farmasi/VendorPerBulan.vue'
 import EEksekutifStokMati        from '../views/eeksekutif/farmasi/StokTidakBergerak.vue'
+import EEksekutifNonMedisSisaStok from '../views/eeksekutif/non-medis/SisaStok.vue'
+import EEksekutifNonMedisMutasi   from '../views/eeksekutif/non-medis/RingkasanMutasi.vue'
+import EEksekutifNonMedisVendor  from '../views/eeksekutif/non-medis/VendorPerBulan.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -100,6 +103,13 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/farmasi/obat-dokter', component: EEksekutifObatPer, props: { mode: 'dokter' } },
     { path: '/e-eksekutif/farmasi/penerimaan-vendor', component: EEksekutifVendorPerBulan },
     { path: '/e-eksekutif/farmasi/stok-mati', component: EEksekutifStokMati },
+    { path: '/e-eksekutif/non-medis/sisa-stok', component: EEksekutifNonMedisSisaStok },
+    { path: '/e-eksekutif/non-medis/pengadaan', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Pengadaan Non Medis', jenis: 'pengadaan' } },
+    { path: '/e-eksekutif/non-medis/penerimaan', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Penerimaan Non Medis', jenis: 'penerimaan' } },
+    { path: '/e-eksekutif/non-medis/hibah', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Hibah Non Medis', jenis: 'hibah' } },
+    { path: '/e-eksekutif/non-medis/stok-keluar', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Stok Keluar Non Medis', jenis: 'stokkeluar' } },
+    { path: '/e-eksekutif/non-medis/retur-suplier', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Retur Suplier Non Medis', jenis: 'retursuplier' } },
+    { path: '/e-eksekutif/non-medis/penerimaan-vendor', component: EEksekutifNonMedisVendor },
 ]
 
 const PLACEHOLDER_PATHS = [
