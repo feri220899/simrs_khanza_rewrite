@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { ChevronDown, Settings, LayoutGrid, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 import { allMenu, bottomMenu } from '../config/menu'
+import SidebarMenuTree from './SidebarMenuTree.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -97,20 +98,23 @@ function toggleOpen(label) {
     openItems.value = s
 }
 
+function containsPath(item) {
+    if (item.to === route.path) return true
+    return item.children?.some(containsPath) || false
+}
+
 function isParentActive(item) {
-    return item.children?.some(c => route.path === c.to)
+    return containsPath(item)
 }
 
 function syncOpenFromRoute() {
-    allMenu.forEach(section => {
-        section.items.forEach(item => {
-            if (item.children?.some(c => route.path === c.to)) {
-                const s = new Set(openItems.value)
-                s.add(item.label)
-                openItems.value = s
-            }
-        })
-    })
+    const s = new Set(openItems.value)
+    const visit = (item) => {
+        if (item.children?.some(containsPath)) s.add(item.label)
+        item.children?.forEach(visit)
+    }
+    allMenu.forEach(section => section.items.forEach(visit))
+    openItems.value = s
 }
 
 watch(() => route.path, () => { syncOpenFromRoute(); flyout.value = null })
@@ -121,43 +125,40 @@ const bolehAkses = (permHalaman, permModul) =>
 
 const bolehPengaturan = computed(() => bottomMenu.some(m => authStore.can(m.permission)))
 
+function filterPermission(items, parentPermission = null) {
+    return items.flatMap(item => {
+        if (item.children) {
+            const children = filterPermission(item.children, item.permission || parentPermission)
+            return children.length ? [{ ...item, children }] : []
+        }
+        return bolehAkses(item.permission, parentPermission) ? [item] : []
+    })
+}
+
 const visibleMenu = computed(() =>
     allMenu
-        .map(section => ({
-            ...section,
-            items: section.items
-                .map(item => item.children
-                    ? { ...item, children: item.children.filter(c => bolehAkses(c.permission, item.permission)) }
-                    : item)
-                .filter(item => item.children
-                    ? item.children.length > 0
-                    : authStore.can(item.permission)),
-        }))
+        .map(section => ({ ...section, items: filterPermission(section.items) }))
         .filter(section => section.items.length > 0)
 )
 
 // Hasil pencarian — dihitung DARI visibleMenu (jadi tetap menghormati
 // permission, tidak nampilin menu yang harusnya tersembunyi).
+function filterSearch(items, q, ancestorMatch = false) {
+    return items.flatMap(item => {
+        const match = ancestorMatch || item.label.toLowerCase().includes(q)
+        if (item.children) {
+            const children = filterSearch(item.children, q, match)
+            return children.length ? [{ ...item, children }] : []
+        }
+        return match ? [item] : []
+    })
+}
+
 const filteredMenu = computed(() => {
     const q = searchQuery.value.trim().toLowerCase()
     if (!q) return visibleMenu.value
-
     return visibleMenu.value
-        .map(section => ({
-            ...section,
-            items: section.items
-                .map(item => {
-                    if (!item.children) {
-                        return item.label.toLowerCase().includes(q) ? item : null
-                    }
-                    const labelMatch = item.label.toLowerCase().includes(q)
-                    const children = labelMatch
-                        ? item.children
-                        : item.children.filter(c => c.label.toLowerCase().includes(q))
-                    return children.length ? { ...item, children } : null
-                })
-                .filter(Boolean),
-        }))
+        .map(section => ({ ...section, items: filterSearch(section.items, q) }))
         .filter(section => section.items.length > 0)
 })
 
@@ -239,15 +240,8 @@ onMounted(syncOpenFromRoute)
                             </button>
 
                             <!-- Expanded: submenu inline (auto-expand kalau lagi search) -->
-                            <ul v-if="!collapsed && (openItems.has(item.label) || isSearching)"
-                                class="mt-0.5 ml-2 pl-3 border-l border-base-300 space-y-0.5">
-                                <li v-for="child in item.children" :key="child.to">
-                                    <RouterLink :to="child.to" :class="childNavClass(child.to)">
-                                        <component v-if="child.icon" :is="child.icon" class="size-3.5 shrink-0" />
-                                        <span class="truncate">{{ child.label }}</span>
-                                    </RouterLink>
-                                </li>
-                            </ul>
+                            <SidebarMenuTree v-if="!collapsed && (openItems.has(item.label) || isSearching)"
+                                :items="item.children" :force-open="isSearching" />
                         </template>
 
                         <RouterLink v-else :to="item.to" :class="[navClass(item.to), collapsed ? 'justify-center' : '']">
