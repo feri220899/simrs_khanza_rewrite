@@ -326,11 +326,16 @@ export const allMenu = [
         label: 'E-Eksekutif', icon: LineChart, permission: 'e_eksekutif',
         children: [
           { to: '/e-eksekutif', label: 'Dashboard', icon: LineChart, permission: 'e_eksekutif' },
-          { to: '/e-eksekutif/rawat-jalan', label: 'Pelayanan Rawat Jalan', icon: LineChart, permission: 'e_eksekutif' },
-          { to: '/e-eksekutif/igd', label: 'Pelayanan IGD', icon: LineChart, permission: 'e_eksekutif' },
-          { to: '/e-eksekutif/rawat-inap', label: 'Pelayanan Rawat Inap', icon: LineChart, permission: 'e_eksekutif' },
-          { to: '/e-eksekutif/laboratorium', label: 'Pelayanan Laboratorium', icon: LineChart, permission: 'e_eksekutif' },
-          { to: '/e-eksekutif/radiologi', label: 'Pelayanan Radiologi', icon: LineChart, permission: 'e_eksekutif' },
+          {
+            label: 'Pelayanan', icon: Activity, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/rawat-jalan', label: 'Rawat Jalan', icon: Stethoscope, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/igd', label: 'IGD', icon: Siren, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/rawat-inap', label: 'Rawat Inap', icon: BedDouble, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/laboratorium', label: 'Laboratorium', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/radiologi', label: 'Radiologi', icon: Radiation, permission: 'e_eksekutif' },
+            ]
+          },
         ],
       },
       // 26. SMS Gateway
@@ -387,14 +392,20 @@ export const bottomMenu = [
 ]
 
 export function buildBreadcrumbs(path) {
-    for (const section of allMenu) {
-        for (const item of section.items) {
+    function findPath(items) {
+        for (const item of items) {
             if (item.to === path) return [{ label: item.label, icon: item.icon }]
             if (item.children) {
-                const child = item.children.find(c => c.to === path)
-                if (child) return [{ label: item.label, icon: item.icon }, { label: child.label, icon: child.icon }]
+                const childPath = findPath(item.children)
+                if (childPath) return [{ label: item.label, icon: item.icon }, ...childPath]
             }
         }
+        return null
+    }
+
+    for (const section of allMenu) {
+        const found = findPath(section.items)
+        if (found) return found
     }
     for (const item of bottomMenu) {
         if (item.to === path) return [{ label: item.label, icon: item.icon }]
