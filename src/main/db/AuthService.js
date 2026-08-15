@@ -127,7 +127,7 @@ function verifySession(token) {
 function requirePermission(token, slug) {
     const session = verifySession(token)
     if (!session.success) return { ok: false, message: 'Sesi tidak valid, silakan login ulang' }
-    if (!session.user.permissions.includes(slug)) {
+    if (!isFullAdmin(session.user.role) && !session.user.permissions.includes(slug)) {
         return { ok: false, message: `Anda tidak punya akses '${slug}' untuk aksi ini` }
     }
     return { ok: true, user: session.user }

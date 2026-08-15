@@ -26,6 +26,7 @@ import LaporanRlService from './db/modules/LaporanRlService.js'
 import EEksekutifService from './db/modules/EEksekutifService.js'
 import EEksekutifNonMedisService from './db/modules/EEksekutifNonMedisService.js'
 import EEksekutifDapurService from './db/modules/EEksekutifDapurService.js'
+import EEksekutifMutuService from './db/modules/EEksekutifMutuService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -700,6 +701,11 @@ app.whenReady().then(async () => {
     handle('eeksekutif:sisaStokDapur', () => EEksekutifDapurService.sisaStokDapur())
     handle('eeksekutif:ringkasanMutasiDapur', (_, tgl1, tgl2, jenisMutasi) => EEksekutifDapurService.ringkasanMutasiDapur(tgl1, tgl2, jenisMutasi))
     handle('eeksekutif:penerimaanVendorDapurPerBulan', (_, tahun) => EEksekutifDapurService.penerimaanVendorDapurPerBulan(tahun))
+    handle('eeksekutif:mutu:lamaPelayanan', (_, token, tgl1, tgl2, jenis) => {
+        const auth = AuthService.requirePermission(token, 'e_eksekutif')
+        if (!auth.ok) throw new Error(auth.message)
+        return EEksekutifMutuService.lamaPelayanan(tgl1, tgl2, jenis)
+    })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
