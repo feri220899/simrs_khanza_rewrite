@@ -31,6 +31,7 @@ import LaporanRl3            from '../views/laporan/Rl3.vue'
 import LaporanRl4            from '../views/laporan/Rl4.vue'
 import EEksekutifLanding     from '../views/eeksekutif/Landing.vue'
 import EEksekutifPelayanan   from '../views/eeksekutif/PelayananView.vue'
+import EEksekutifMutu        from '../views/eeksekutif/MutuPelayanan.vue'
 import EEksekutifSisaStok    from '../views/eeksekutif/farmasi/SisaStok.vue'
 import EEksekutifDaruratStok from '../views/eeksekutif/farmasi/DaruratStok.vue'
 import EEksekutifKadaluarsa  from '../views/eeksekutif/farmasi/KadaluarsaBatch.vue'
@@ -90,6 +91,13 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/rawat-inap', component: EEksekutifPelayanan, props: { title: 'Pelayanan Rawat Inap', type: 'rawatInap' } },
     { path: '/e-eksekutif/laboratorium', component: EEksekutifPelayanan, props: { title: 'Pelayanan Laboratorium', type: 'lab' } },
     { path: '/e-eksekutif/radiologi', component: EEksekutifPelayanan, props: { title: 'Pelayanan Radiologi', type: 'radiologi' } },
+    { path: '/e-eksekutif/mutu/poli', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Poli', jenis: 'poli' } },
+    { path: '/e-eksekutif/mutu/rawat-jalan', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Rawat Jalan', jenis: 'rawatJalan' } },
+    { path: '/e-eksekutif/mutu/apotek', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Apotek', jenis: 'apotek' } },
+    { path: '/e-eksekutif/mutu/lab-pa', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Lab PA', jenis: 'labpa' } },
+    { path: '/e-eksekutif/mutu/lab-pk', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Lab PK', jenis: 'labpk' } },
+    { path: '/e-eksekutif/mutu/lab-mb', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Lab MB', jenis: 'labmb' } },
+    { path: '/e-eksekutif/mutu/radiologi', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Radiologi', jenis: 'radiologi' } },
     { path: '/e-eksekutif/farmasi/sisa-stok', component: EEksekutifSisaStok },
     { path: '/e-eksekutif/farmasi/darurat-stok', component: EEksekutifDaruratStok },
     { path: '/e-eksekutif/farmasi/kadaluarsa', component: EEksekutifKadaluarsa },

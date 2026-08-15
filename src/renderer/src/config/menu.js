@@ -315,13 +315,6 @@ export const allMenu = [
       // sik.sql punya ~15 flag zis_*_penerima_dankes terpisah (ukuran rumah,
       // dinding, lantai, atap, dst) — pertimbangkan dipecah kalau digarap.
       { to: '/zis-csr', label: 'ZIS / CSR', icon: HandHeart, permission: 'zis_penghasilan_penerima_dankes' },
-      // 25. E-Eksekutif — TODO-permission BESAR: TIDAK KETEMU permission yang
-      // cocok di 1211 kolom sik.sql sama sekali. Kemungkinan: (a) digabung ke
-      // banyak flag 'grafik_*' individual (grafik_kunjungan_*, grafik_HAIs_*,
-      // dst — puluhan), atau (b) diproteksi mekanisme lain di luar tabel
-      // permission (mis. password terpisah, mirip DlgPasswordBPJS). WAJIB
-      // ditelusuri ke DlgEEksekutif.java sebelum modul ini digarap — jangan
-      // pakai slug 'e-eksekutif' di produksi, itu bukan nama kolom asli.
       {
         label: 'E-Eksekutif', icon: LineChart, permission: 'e_eksekutif',
         children: [
@@ -334,6 +327,18 @@ export const allMenu = [
               { to: '/e-eksekutif/rawat-inap', label: 'Rawat Inap', icon: BedDouble, permission: 'e_eksekutif' },
               { to: '/e-eksekutif/laboratorium', label: 'Laboratorium', icon: FlaskConical, permission: 'e_eksekutif' },
               { to: '/e-eksekutif/radiologi', label: 'Radiologi', icon: Radiation, permission: 'e_eksekutif' },
+            ]
+          },
+          {
+            label: 'Kendali Mutu', icon: ClipboardCheck, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/mutu/poli', label: 'Lama Pelayanan Poli', icon: Stethoscope, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/rawat-jalan', label: 'Lama Pelayanan Rawat Jalan', icon: ClipboardList, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/apotek', label: 'Lama Pelayanan Apotek', icon: Pill, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-pa', label: 'Lama Pelayanan Lab PA', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-pk', label: 'Lama Pelayanan Lab PK', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-mb', label: 'Lama Pelayanan Lab MB', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/radiologi', label: 'Lama Pelayanan Radiologi', icon: Radiation, permission: 'e_eksekutif' },
             ]
           },
           {
