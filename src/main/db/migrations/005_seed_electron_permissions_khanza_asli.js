@@ -57,7 +57,7 @@ const PERMISSION_SLUGS = [
     'bulanan_kso', 'harian_menejemen', 'bulanan_menejemen', 'inhealth_cek_eligibilitas', 'inhealth_referensi_jenpel_ruang_rawat',
     'inhealth_referensi_poli', 'inhealth_referensi_faskes', 'inhealth_sjp', 'piutang_ralan', 'piutang_ranap',
     'detail_piutang_penjab', 'lama_pelayanan_ralan', 'catatan_pasien', 'rl4b', 'rl4asebab',
-    'rl4bsebab', 'data_HAIs', 'harian_HAIs', 'bulanan_HAIs', 'hitung_bor', 'e_eksekutif',
+    'rl4bsebab', 'data_HAIs', 'harian_HAIs', 'bulanan_HAIs', 'hitung_bor',
     'perusahaan_pasien', 'resep_dokter', 'lama_pelayanan_apotek', 'hitung_alos', 'detail_tindakan',
     'rujukan_poli_internal', 'rekap_poli_anak', 'grafik_kunjungan_poli', 'grafik_kunjungan_perdokter', 'grafik_kunjungan_perpekerjaan',
     'grafik_kunjungan_perpendidikan', 'grafik_kunjungan_pertahun', 'berkas_digital_perawatan', 'penyakit_menular_ranap', 'penyakit_menular_ralan',
