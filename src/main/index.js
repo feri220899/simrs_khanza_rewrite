@@ -24,6 +24,7 @@ import PerpustakaanPengaturanService from './db/modules/PerpustakaanPengaturanSe
 import SuratMasukKeluarService from './db/modules/SuratMasukKeluarService.js'
 import LaporanRlService from './db/modules/LaporanRlService.js'
 import EEksekutifService from './db/modules/EEksekutifService.js'
+import EEksekutifNonMedisService from './db/modules/EEksekutifNonMedisService.js'
 import MinioService from './electron/MinioService.js'
 import CacheService from './electron/CacheService.js'
 import TokoJenisService from './db/modules/TokoJenisService.js'
@@ -692,6 +693,9 @@ app.whenReady().then(async () => {
     handle('eeksekutif:ringkasanObatDokter', (_, tgl1, tgl2, statusLanjut) => EEksekutifService.ringkasanObatDokter(tgl1, tgl2, statusLanjut))
     handle('eeksekutif:penerimaanVendorPerBulan', (_, tahun) => EEksekutifService.penerimaanVendorPerBulan(tahun))
     handle('eeksekutif:stokTidakBergerak', (_, bulan) => EEksekutifService.stokTidakBergerak(bulan))
+    handle('eeksekutif:sisaStokNonMedis', () => EEksekutifNonMedisService.sisaStokNonMedis())
+    handle('eeksekutif:ringkasanMutasiNonMedis', (_, tgl1, tgl2, jenisMutasi) => EEksekutifNonMedisService.ringkasanMutasiNonMedis(tgl1, tgl2, jenisMutasi))
+    handle('eeksekutif:penerimaanVendorNonMedisPerBulan', (_, tahun) => EEksekutifNonMedisService.penerimaanVendorNonMedisPerBulan(tahun))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
