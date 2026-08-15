@@ -58,8 +58,8 @@ async function ringkasanMutasiNonMedis(tgl1, tgl2, jenisMutasi) {
                WHERE h.tgl_pesan BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
     } else if (jenisMutasi === 'hibah') {
         sql = `SELECT db.kode_brng, b.nama_brng, s.satuan, j.nm_jenis AS namajenis, 
-               SUM(db.jumlah) AS jumlah, SUM(db.total) AS total 
-               FROM ipsrs_hibah h INNER JOIN ipsrs_detail_hibah db ON h.no_hibah=db.no_hibah 
+               SUM(db.jumlah) AS jumlah, SUM(db.subtotalhibah) AS total 
+                FROM ipsrs_hibah h INNER JOIN ipsrs_detail_hibah db ON h.no_hibah=db.no_hibah 
                INNER JOIN ipsrsbarang b ON db.kode_brng=b.kode_brng INNER JOIN kodesatuan s ON db.kode_sat=s.kode_sat 
                INNER JOIN ipsrsjenisbarang j ON b.jenis=j.kd_jenis 
                WHERE h.tgl_hibah BETWEEN ? AND ? GROUP BY db.kode_brng ORDER BY b.nama_brng ASC`
