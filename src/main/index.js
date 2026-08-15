@@ -684,6 +684,14 @@ app.whenReady().then(async () => {
     handle('eeksekutif:rawatInap', (_, tgl1, tgl2) => EEksekutifService.rawatInap(tgl1, tgl2))
     handle('eeksekutif:lab', (_, tgl1, tgl2) => EEksekutifService.lab(tgl1, tgl2))
     handle('eeksekutif:radiologi', (_, tgl1, tgl2) => EEksekutifService.radiologi(tgl1, tgl2))
+    handle('eeksekutif:sisaStokFarmasi', () => EEksekutifService.sisaStokFarmasi())
+    handle('eeksekutif:daruratStokFarmasi', () => EEksekutifService.daruratStokFarmasi())
+    handle('eeksekutif:kadaluarsaBatchFarmasi', () => EEksekutifService.kadaluarsaBatchFarmasi())
+    handle('eeksekutif:ringkasanMutasiFarmasi', (_, tgl1, tgl2, jenisMutasi) => EEksekutifService.ringkasanMutasiFarmasi(tgl1, tgl2, jenisMutasi))
+    handle('eeksekutif:ringkasanObatPoliklinik', (_, tgl1, tgl2) => EEksekutifService.ringkasanObatPoliklinik(tgl1, tgl2))
+    handle('eeksekutif:ringkasanObatDokter', (_, tgl1, tgl2, statusLanjut) => EEksekutifService.ringkasanObatDokter(tgl1, tgl2, statusLanjut))
+    handle('eeksekutif:penerimaanVendorPerBulan', (_, tahun) => EEksekutifService.penerimaanVendorPerBulan(tahun))
+    handle('eeksekutif:stokTidakBergerak', (_, bulan) => EEksekutifService.stokTidakBergerak(bulan))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di

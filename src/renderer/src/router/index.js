@@ -31,6 +31,13 @@ import LaporanRl3            from '../views/laporan/Rl3.vue'
 import LaporanRl4            from '../views/laporan/Rl4.vue'
 import EEksekutifLanding     from '../views/eeksekutif/Landing.vue'
 import EEksekutifPelayanan   from '../views/eeksekutif/PelayananView.vue'
+import EEksekutifSisaStok    from '../views/eeksekutif/farmasi/SisaStok.vue'
+import EEksekutifDaruratStok from '../views/eeksekutif/farmasi/DaruratStok.vue'
+import EEksekutifKadaluarsa  from '../views/eeksekutif/farmasi/KadaluarsaBatch.vue'
+import EEksekutifRingkasanMutasi from '../views/eeksekutif/farmasi/RingkasanMutasi.vue'
+import EEksekutifObatPer         from '../views/eeksekutif/farmasi/ObatPer.vue'
+import EEksekutifVendorPerBulan  from '../views/eeksekutif/farmasi/VendorPerBulan.vue'
+import EEksekutifStokMati        from '../views/eeksekutif/farmasi/StokTidakBergerak.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -77,6 +84,22 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/rawat-inap', component: EEksekutifPelayanan, props: { title: 'Pelayanan Rawat Inap', type: 'rawatInap' } },
     { path: '/e-eksekutif/laboratorium', component: EEksekutifPelayanan, props: { title: 'Pelayanan Laboratorium', type: 'lab' } },
     { path: '/e-eksekutif/radiologi', component: EEksekutifPelayanan, props: { title: 'Pelayanan Radiologi', type: 'radiologi' } },
+    { path: '/e-eksekutif/farmasi/sisa-stok', component: EEksekutifSisaStok },
+    { path: '/e-eksekutif/farmasi/darurat-stok', component: EEksekutifDaruratStok },
+    { path: '/e-eksekutif/farmasi/kadaluarsa', component: EEksekutifKadaluarsa },
+    { path: '/e-eksekutif/farmasi/pengadaan', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Pengadaan Obat, Alkes & BHP Medis', jenis: 'pengadaan' } },
+    { path: '/e-eksekutif/farmasi/penerimaan', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Penerimaan Obat, Alkes & BHP Medis', jenis: 'penerimaan' } },
+    { path: '/e-eksekutif/farmasi/hibah', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Hibah Obat, Alkes & BHP Medis', jenis: 'hibah' } },
+    { path: '/e-eksekutif/farmasi/penjualan', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Penjualan Obat, Alkes & BHP Medis', jenis: 'penjualan' } },
+    { path: '/e-eksekutif/farmasi/beri-obat', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Pemberian Obat', jenis: 'beriobat' } },
+    { path: '/e-eksekutif/farmasi/piutang', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Piutang Obat', jenis: 'piutang' } },
+    { path: '/e-eksekutif/farmasi/stok-keluar', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Stok Keluar', jenis: 'stokkeluar' } },
+    { path: '/e-eksekutif/farmasi/retur-suplier', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Retur Suplier', jenis: 'retursuplier' } },
+    { path: '/e-eksekutif/farmasi/retur-pasien', component: EEksekutifRingkasanMutasi, props: { title: 'Ringkasan Retur Pasien', jenis: 'returpasien' } },
+    { path: '/e-eksekutif/farmasi/obat-poli', component: EEksekutifObatPer, props: { mode: 'poli' } },
+    { path: '/e-eksekutif/farmasi/obat-dokter', component: EEksekutifObatPer, props: { mode: 'dokter' } },
+    { path: '/e-eksekutif/farmasi/penerimaan-vendor', component: EEksekutifVendorPerBulan },
+    { path: '/e-eksekutif/farmasi/stok-mati', component: EEksekutifStokMati },
 ]
 
 const PLACEHOLDER_PATHS = [

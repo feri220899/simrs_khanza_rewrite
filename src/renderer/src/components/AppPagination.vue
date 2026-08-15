@@ -15,9 +15,9 @@
                 />
             </label>
             <select
-                :value="table.getState().pagination.pageSize"
+                :value="pageSize"
                 class="select select-sm w-28"
-                @change="table.setPageSize(Number($event.target.value))"
+                @change="setPageSize(Number($event.target.value))"
             >
                 <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }} baris</option>
             </select>
@@ -43,8 +43,8 @@
             <div class="flex items-center gap-1">
                 <button
                     class="btn btn-ghost btn-sm btn-square"
-                    :disabled="!table.getCanPreviousPage()"
-                    @click="table.previousPage()"
+                    :disabled="currentPage <= 1"
+                    @click="goPage(currentPage - 1)"
                 >
                     <ChevronLeft class="size-4" />
                 </button>
@@ -55,7 +55,7 @@
                         v-else
                         class="btn btn-sm btn-square"
                         :class="item.page === currentPage ? 'btn-primary' : 'btn-ghost'"
-                        @click="table.setPageIndex(item.page - 1)"
+                        @click="goPage(item.page)"
                     >
                         {{ item.page }}
                     </button>
@@ -63,8 +63,8 @@
 
                 <button
                     class="btn btn-ghost btn-sm btn-square"
-                    :disabled="!table.getCanNextPage()"
-                    @click="table.nextPage()"
+                    :disabled="currentPage >= pageCount"
+                    @click="goPage(currentPage + 1)"
                 >
                     <ChevronRight class="size-4" />
                 </button>
@@ -79,20 +79,38 @@ import { computed } from 'vue'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-vue-next'
 
 const props = defineProps({
-    table:           { type: Object,  required: true },
+    table:           { type: Object,  default: null  },
+    page:            { type: Number,  default: 1     },
+    pageSize:        { type: Number,  default: 10    },
+    total:           { type: Number,  default: 0     },
     search:          { type: String,  default: ''    },
     pageSizeOptions: { type: Array,   default: () => [10, 20, 25, 50, 100] },
 })
 
-defineEmits(['update:search'])
+const emit = defineEmits(['update:search', 'update:page', 'update:pageSize'])
 
-const currentPage = computed(() => props.table.getState().pagination.pageIndex + 1)
-const pageCount   = computed(() => props.table.getPageCount())
-const pageSize    = computed(() => props.table.getState().pagination.pageSize)
-const totalRows   = computed(() => props.table.getRowCount())
+const isTable = computed(() => !!props.table)
+
+const currentPage = computed(() => isTable.value ? props.table.getState().pagination.pageIndex + 1 : props.page)
+const pageSize    = computed(() => isTable.value ? props.table.getState().pagination.pageSize : props.pageSize)
+const totalRows   = computed(() => isTable.value ? props.table.getRowCount() : props.total)
+const pageCount   = computed(() => isTable.value ? props.table.getPageCount() : Math.ceil(totalRows.value / pageSize.value) || 1)
 
 const from = computed(() => totalRows.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1)
 const to   = computed(() => Math.min(currentPage.value * pageSize.value, totalRows.value))
+
+function setPageSize(size) {
+    if (isTable.value) props.table.setPageSize(size)
+    else {
+        emit('update:pageSize', size)
+        emit('update:page', 1)
+    }
+}
+
+function goPage(p) {
+    if (isTable.value) props.table.setPageIndex(p - 1)
+    else emit('update:page', p)
+}
 
 const pages = computed(() => {
     const total   = pageCount.value
