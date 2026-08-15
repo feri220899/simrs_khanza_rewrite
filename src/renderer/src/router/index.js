@@ -41,6 +41,9 @@ import EEksekutifStokMati        from '../views/eeksekutif/farmasi/StokTidakBerg
 import EEksekutifNonMedisSisaStok from '../views/eeksekutif/non-medis/SisaStok.vue'
 import EEksekutifNonMedisMutasi   from '../views/eeksekutif/non-medis/RingkasanMutasi.vue'
 import EEksekutifNonMedisVendor  from '../views/eeksekutif/non-medis/VendorPerBulan.vue'
+import EEksekutifDapurSisaStok from '../views/eeksekutif/dapur/SisaStok.vue'
+import EEksekutifDapurMutasi   from '../views/eeksekutif/dapur/RingkasanMutasi.vue'
+import EEksekutifDapurVendor   from '../views/eeksekutif/dapur/VendorPerBulan.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -110,6 +113,13 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/non-medis/stok-keluar', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Stok Keluar Non Medis', jenis: 'stokkeluar' } },
     { path: '/e-eksekutif/non-medis/retur-suplier', component: EEksekutifNonMedisMutasi, props: { title: 'Ringkasan Retur Suplier Non Medis', jenis: 'retursuplier' } },
     { path: '/e-eksekutif/non-medis/penerimaan-vendor', component: EEksekutifNonMedisVendor },
+    { path: '/e-eksekutif/dapur/sisa-stok', component: EEksekutifDapurSisaStok },
+    { path: '/e-eksekutif/dapur/pengadaan', component: EEksekutifDapurMutasi, props: { title: 'Ringkasan Pengadaan Dapur', jenis: 'pengadaan' } },
+    { path: '/e-eksekutif/dapur/penerimaan', component: EEksekutifDapurMutasi, props: { title: 'Ringkasan Penerimaan Dapur', jenis: 'penerimaan' } },
+    { path: '/e-eksekutif/dapur/hibah', component: EEksekutifDapurMutasi, props: { title: 'Ringkasan Hibah Dapur', jenis: 'hibah' } },
+    { path: '/e-eksekutif/dapur/stok-keluar', component: EEksekutifDapurMutasi, props: { title: 'Ringkasan Stok Keluar Dapur', jenis: 'stokkeluar' } },
+    { path: '/e-eksekutif/dapur/retur-suplier', component: EEksekutifDapurMutasi, props: { title: 'Ringkasan Retur Suplier Dapur', jenis: 'retursuplier' } },
+    { path: '/e-eksekutif/dapur/penerimaan-vendor', component: EEksekutifDapurVendor },
 ]
 
 const PLACEHOLDER_PATHS = [

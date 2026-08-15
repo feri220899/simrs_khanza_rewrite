@@ -330,6 +330,9 @@ contextBridge.exposeInMainWorld('api', {
         sisaStokNonMedis: () => ipcRenderer.invoke('eeksekutif:sisaStokNonMedis'),
         ringkasanMutasiNonMedis: (tgl1, tgl2, jenisMutasi) => ipcRenderer.invoke('eeksekutif:ringkasanMutasiNonMedis', tgl1, tgl2, jenisMutasi),
         penerimaanVendorNonMedisPerBulan: (tahun) => ipcRenderer.invoke('eeksekutif:penerimaanVendorNonMedisPerBulan', tahun),
+        sisaStokDapur: () => ipcRenderer.invoke('eeksekutif:sisaStokDapur'),
+        ringkasanMutasiDapur: (tgl1, tgl2, jenisMutasi) => ipcRenderer.invoke('eeksekutif:ringkasanMutasiDapur', tgl1, tgl2, jenisMutasi),
+        penerimaanVendorDapurPerBulan: (tahun) => ipcRenderer.invoke('eeksekutif:penerimaanVendorDapurPerBulan', tahun),
     },
     laporan: {
         rl13: () => ipcRenderer.invoke('laporan:rl13:get'),
