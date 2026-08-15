@@ -297,13 +297,13 @@ export const allMenu = [
         label: 'Laporan RS', icon: FileBarChart,
         children: [
           // varian: rl33, rl37, rl38 (masing2 permission terpisah dari rl32)
-          { to: '/harian_menejemen/rl',           label: 'RL 3.2 – 3.8',                      icon: FileText,  permission: 'rl32' },
+          { to: '/laporan/rl',           label: 'RL 3.2 – 3.8',                      icon: FileText,  permission: 'rl32' },
           // varian: rl4b, rl4asebab, rl4bsebab
-          { to: '/harian_menejemen/rl4',          label: 'RL 4A / 4B',                        icon: FileText,  permission: ['rl4a', 'rl4b', 'rl4asebab', 'rl4bsebab'] },
-          { to: '/harian_menejemen/tempat-tidur', label: 'Ketersediaan Tempat Tidur (RL1.3)', icon: BedDouble, permission: 'rl1_3_ketersediaan_kamar' },
-          { to: '/harian_menejemen/bor-alos',     label: 'BOR / ALOS',                        icon: Gauge,     permission: 'hitung_bor' },
+          { to: '/laporan/rl4',          label: 'RL 4A / 4B',                        icon: FileText,  permission: ['rl4a', 'rl4b', 'rl4asebab', 'rl4bsebab'] },
+          { to: '/laporan/tempat-tidur', label: 'Ketersediaan Tempat Tidur (RL1.3)', icon: BedDouble, permission: 'rl1_3_ketersediaan_kamar' },
+          { to: '/laporan/bor-alos',     label: 'BOR / ALOS',                        icon: Gauge,     permission: 'hitung_bor' },
           // varian: surveilans_ranap, penyakit_pd3i, surveilans_pd3i
-          { to: '/harian_menejemen/surveilans',   label: 'Surveilans Penyakit (DKK)',         icon: Activity,  permission: 'surveilans_ralan' },
+          { to: '/laporan/surveilans',   label: 'Surveilans Penyakit (DKK)',         icon: Activity,  permission: 'surveilans_ralan' },
         ],
       },
     ],
@@ -406,7 +406,7 @@ export const allMenu = [
               { to: '/e-eksekutif/keuangan/hutang/lain', label: 'Beban Hutang Lain', icon: AlertOctagon, permission: 'harian_menejemen' },
               { to: '/e-eksekutif/keuangan/piutang/pasien', label: 'Piutang Pasien Belum Lunas', icon: AlertOctagon, permission: 'harian_menejemen' },
               { to: '/e-eksekutif/keuangan/piutang/obat', label: 'Piutang Obat Belum Lunas', icon: AlertOctagon, permission: 'harian_menejemen' },
-              { to: '/e-eksekutif/keuangan/harian_menejemen', label: 'Laporan Keuangan', icon: FileBarChart, permission: 'harian_menejemen' },
+              { to: '/e-eksekutif/keuangan/laporan', label: 'Laporan Keuangan', icon: FileBarChart, permission: 'harian_menejemen' },
               { to: '/e-eksekutif/keuangan/rekening-tahun', label: 'Rekening Tahun', icon: FolderOpen, permission: 'harian_menejemen' },
               { to: '/e-eksekutif/keuangan/saldo-bulanan', label: 'Saldo Akun Per Bulan', icon: FolderOpen, permission: 'harian_menejemen' },
             ]
