@@ -334,6 +334,7 @@ contextBridge.exposeInMainWorld('api', {
         ringkasanMutasiDapur: (tgl1, tgl2, jenisMutasi) => ipcRenderer.invoke('eeksekutif:ringkasanMutasiDapur', tgl1, tgl2, jenisMutasi),
         penerimaanVendorDapurPerBulan: (tahun) => ipcRenderer.invoke('eeksekutif:penerimaanVendorDapurPerBulan', tahun),
         mutuLamaPelayanan: (token, tgl1, tgl2, jenis) => ipcRenderer.invoke('eeksekutif:mutu:lamaPelayanan', token, tgl1, tgl2, jenis),
+        kasirPendapatan: (token, tgl1, tgl2, jenis) => ipcRenderer.invoke('eeksekutif:kasir:pendapatan', token, tgl1, tgl2, jenis),
     },
     laporan: {
         rl13: () => ipcRenderer.invoke('laporan:rl13:get'),

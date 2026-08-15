@@ -330,18 +330,6 @@ export const allMenu = [
             ]
           },
           {
-            label: 'Kendali Mutu', icon: ClipboardCheck, permission: 'e_eksekutif',
-            children: [
-              { to: '/e-eksekutif/mutu/poli', label: 'Lama Pelayanan Poli', icon: Stethoscope, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/rawat-jalan', label: 'Lama Pelayanan Rawat Jalan', icon: ClipboardList, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/apotek', label: 'Lama Pelayanan Apotek', icon: Pill, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/lab-pa', label: 'Lama Pelayanan Lab PA', icon: FlaskConical, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/lab-pk', label: 'Lama Pelayanan Lab PK', icon: FlaskConical, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/lab-mb', label: 'Lama Pelayanan Lab MB', icon: FlaskConical, permission: 'e_eksekutif' },
-              { to: '/e-eksekutif/mutu/radiologi', label: 'Lama Pelayanan Radiologi', icon: Radiation, permission: 'e_eksekutif' },
-            ]
-          },
-          {
             label: 'Inventori Farmasi', icon: Boxes, permission: 'e_eksekutif',
             children: [
               { to: '/e-eksekutif/farmasi/sisa-stok', label: 'Sisa Stok & Nilai Aset', icon: Package, permission: 'e_eksekutif' },
@@ -384,6 +372,28 @@ export const allMenu = [
               { to: '/e-eksekutif/dapur/stok-keluar', label: 'Ringkasan Stok Keluar', icon: ArrowLeftRight, permission: 'dapur_barang' },
               { to: '/e-eksekutif/dapur/retur-suplier', label: 'Retur Ke Suplier', icon: RefreshCcw, permission: 'dapur_barang' },
               { to: '/e-eksekutif/dapur/penerimaan-vendor', label: 'Penerimaan Vendor / Bulan', icon: TrendingUp, permission: 'dapur_barang' },
+            ]
+          },
+          {
+            label: 'Kendali Mutu', icon: ClipboardCheck, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/mutu/poli', label: 'Lama Pelayanan Poli', icon: Stethoscope, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/rawat-jalan', label: 'Lama Pelayanan Rawat Jalan', icon: ClipboardList, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/apotek', label: 'Lama Pelayanan Apotek', icon: Pill, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-pa', label: 'Lama Pelayanan Lab PA', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-pk', label: 'Lama Pelayanan Lab PK', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/lab-mb', label: 'Lama Pelayanan Lab MB', icon: FlaskConical, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/mutu/radiologi', label: 'Lama Pelayanan Radiologi', icon: Radiation, permission: 'e_eksekutif' },
+            ]
+          },
+          {
+            label: 'Pendapatan Kasir', icon: Wallet, permission: 'e_eksekutif',
+            children: [
+              { to: '/e-eksekutif/kasir/akun-bayar', label: 'Pembayaran Per Akun Bayar', icon: CreditCard, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/kasir/rekening-coa', label: 'Pembayaran Per Akun Rekening/COA', icon: Landmark, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/kasir/akun-piutang', label: 'Piutang Per Akun Piutang', icon: FileWarning, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/kasir/akun-closing', label: 'Pendapatan Per Akun Closing', icon: Wallet, permission: 'e_eksekutif' },
+              { to: '/e-eksekutif/kasir/rekening', label: 'Pendapatan Per Akun Rekening', icon: Landmark, permission: 'e_eksekutif' },
             ]
           },
         ],

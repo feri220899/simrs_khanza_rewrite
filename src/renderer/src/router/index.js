@@ -32,6 +32,7 @@ import LaporanRl4            from '../views/laporan/Rl4.vue'
 import EEksekutifLanding     from '../views/eeksekutif/Landing.vue'
 import EEksekutifPelayanan   from '../views/eeksekutif/PelayananView.vue'
 import EEksekutifMutu        from '../views/eeksekutif/MutuPelayanan.vue'
+import EEksekutifKasir       from '../views/eeksekutif/PendapatanKasir.vue'
 import EEksekutifSisaStok    from '../views/eeksekutif/farmasi/SisaStok.vue'
 import EEksekutifDaruratStok from '../views/eeksekutif/farmasi/DaruratStok.vue'
 import EEksekutifKadaluarsa  from '../views/eeksekutif/farmasi/KadaluarsaBatch.vue'
@@ -98,6 +99,11 @@ const FASE_1_ROUTES = [
     { path: '/e-eksekutif/mutu/lab-pk', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Lab PK', jenis: 'labpk' } },
     { path: '/e-eksekutif/mutu/lab-mb', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Lab MB', jenis: 'labmb' } },
     { path: '/e-eksekutif/mutu/radiologi', component: EEksekutifMutu, props: { title: 'Lama Pelayanan Radiologi', jenis: 'radiologi' } },
+    { path: '/e-eksekutif/kasir/akun-bayar', component: EEksekutifKasir, props: { title: 'Pembayaran Per Akun Bayar', jenis: 'bayar' } },
+    { path: '/e-eksekutif/kasir/rekening-coa', component: EEksekutifKasir, props: { title: 'Pembayaran Per Akun Rekening / COA', jenis: 'rekening_bayar' } },
+    { path: '/e-eksekutif/kasir/akun-piutang', component: EEksekutifKasir, props: { title: 'Piutang Per Akun Piutang', jenis: 'piutang' } },
+    { path: '/e-eksekutif/kasir/akun-closing', component: EEksekutifKasir, props: { title: 'Pendapatan Per Akun Closing', jenis: 'closing' } },
+    { path: '/e-eksekutif/kasir/rekening', component: EEksekutifKasir, props: { title: 'Pendapatan Per Akun Rekening', jenis: 'rekening_closing' } },
     { path: '/e-eksekutif/farmasi/sisa-stok', component: EEksekutifSisaStok },
     { path: '/e-eksekutif/farmasi/darurat-stok', component: EEksekutifDaruratStok },
     { path: '/e-eksekutif/farmasi/kadaluarsa', component: EEksekutifKadaluarsa },
