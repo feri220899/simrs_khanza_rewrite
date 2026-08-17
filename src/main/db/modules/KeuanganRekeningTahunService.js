@@ -18,16 +18,13 @@ async function save(tahun, data) {
     try {
         await client.query('START TRANSACTION')
         
-        // Hapus semua saldo di tahun tersebut
-        await client.query('DELETE FROM rekeningtahun WHERE thn = ?', [tahun])
-        
-        // Insert data baru batch
+        // Insert data baru batch pakai ON DUPLICATE KEY UPDATE untuk menghindari delete semua
         if (data && data.length > 0) {
             for (const item of data) {
                 if (!item.kd_rek || item.saldo_awal === undefined || item.saldo_awal === null) continue;
                 
                 await client.query(
-                    'INSERT INTO rekeningtahun (thn, kd_rek, saldo_awal) VALUES (?, ?, ?)',
+                    'INSERT INTO rekeningtahun (thn, kd_rek, saldo_awal) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE saldo_awal = VALUES(saldo_awal)',
                     [tahun, item.kd_rek, item.saldo_awal]
                 )
             }

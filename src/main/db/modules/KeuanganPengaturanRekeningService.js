@@ -110,6 +110,7 @@ async function saveMappingDefault(groupKey, data) {
 
         const existing = await client.query(`SELECT * FROM ${config.table} LIMIT 1`)
         if (existing.rows.length === 0) {
+            await client.query('ROLLBACK')
             return { success: false, message: `Data awal ${config.table} belum ada. Isi lengkap dulu dari aplikasi Khanza asli sebelum diedit parsial di Electron.` }
         }
 

@@ -778,6 +778,10 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'akun_bayar')
         return auth.ok ? KeuanganMasterAkunService.createAkunBayar(data) : { success: false, message: auth.message }
     })
+    handle('keuangan:masterAkun:updateBayar', (_, token, oldNama, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar')
+        return auth.ok ? KeuanganMasterAkunService.updateAkunBayar(oldNama, data) : { success: false, message: auth.message }
+    })
     handle('keuangan:masterAkun:deleteBayar', (_, token, nama) => {
         const auth = AuthService.requirePermission(token, 'akun_bayar')
         return auth.ok ? KeuanganMasterAkunService.deleteAkunBayar(nama) : { success: false, message: auth.message }
@@ -787,6 +791,10 @@ app.whenReady().then(async () => {
     handle('keuangan:masterAkun:createPiutang', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'akun_piutang')
         return auth.ok ? KeuanganMasterAkunService.createAkunPiutang(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:updatePiutang', (_, token, oldNama, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_piutang')
+        return auth.ok ? KeuanganMasterAkunService.updateAkunPiutang(oldNama, data) : { success: false, message: auth.message }
     })
     handle('keuangan:masterAkun:deletePiutang', (_, token, nama) => {
         const auth = AuthService.requirePermission(token, 'akun_piutang')
@@ -798,6 +806,10 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'akun_bayar_hutang')
         return auth.ok ? KeuanganMasterAkunService.createAkunBayarHutang(data) : { success: false, message: auth.message }
     })
+    handle('keuangan:masterAkun:updateBayarHutang', (_, token, oldNama, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar_hutang')
+        return auth.ok ? KeuanganMasterAkunService.updateAkunBayarHutang(oldNama, data) : { success: false, message: auth.message }
+    })
     handle('keuangan:masterAkun:deleteBayarHutang', (_, token, nama) => {
         const auth = AuthService.requirePermission(token, 'akun_bayar_hutang')
         return auth.ok ? KeuanganMasterAkunService.deleteAkunBayarHutang(nama) : { success: false, message: auth.message }
@@ -805,11 +817,15 @@ app.whenReady().then(async () => {
 
     handle('keuangan:masterAkun:listAset', () => KeuanganMasterAkunService.listAkunAset())
     handle('keuangan:masterAkun:createAset', (_, token, data) => {
-        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        const auth = AuthService.requirePermission(token, 'akun_aset_inventaris')
         return auth.ok ? KeuanganMasterAkunService.createAkunAset(data) : { success: false, message: auth.message }
     })
+    handle('keuangan:masterAkun:updateAset', (_, token, oldIdJenis, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_aset_inventaris')
+        return auth.ok ? KeuanganMasterAkunService.updateAkunAset(oldIdJenis, data) : { success: false, message: auth.message }
+    })
     handle('keuangan:masterAkun:deleteAset', (_, token, nama) => {
-        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        const auth = AuthService.requirePermission(token, 'akun_aset_inventaris')
         return auth.ok ? KeuanganMasterAkunService.deleteAkunAset(nama) : { success: false, message: auth.message }
     })
 
@@ -817,6 +833,10 @@ app.whenReady().then(async () => {
     handle('keuangan:masterAkun:createKategoriPemasukan', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'kategori_pemasukan_lain')
         return auth.ok ? KeuanganMasterAkunService.createKategoriPemasukan(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:updateKategoriPemasukan', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pemasukan_lain')
+        return auth.ok ? KeuanganMasterAkunService.updateKategoriPemasukan(oldKode, data) : { success: false, message: auth.message }
     })
     handle('keuangan:masterAkun:deleteKategoriPemasukan', (_, token, kode) => {
         const auth = AuthService.requirePermission(token, 'kategori_pemasukan_lain')
@@ -828,9 +848,27 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
         return auth.ok ? KeuanganMasterAkunService.createKategoriPengeluaran(data) : { success: false, message: auth.message }
     })
+    handle('keuangan:masterAkun:updateKategoriPengeluaran', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganMasterAkunService.updateKategoriPengeluaran(oldKode, data) : { success: false, message: auth.message }
+    })
     handle('keuangan:masterAkun:deleteKategoriPengeluaran', (_, token, kode) => {
         const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
         return auth.ok ? KeuanganMasterAkunService.deleteKategoriPengeluaran(kode) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listPenagihanPiutang', () => KeuanganMasterAkunService.listAkunPenagihanPiutang())
+    handle('keuangan:masterAkun:createPenagihanPiutang', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_penagihan_piutang')
+        return auth.ok ? KeuanganMasterAkunService.createAkunPenagihanPiutang(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:updatePenagihanPiutang', (_, token, oldKdRek, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_penagihan_piutang')
+        return auth.ok ? KeuanganMasterAkunService.updateAkunPenagihanPiutang(oldKdRek, data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deletePenagihanPiutang', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'akun_penagihan_piutang')
+        return auth.ok ? KeuanganMasterAkunService.deleteAkunPenagihanPiutang(kode) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java

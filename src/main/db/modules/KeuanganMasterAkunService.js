@@ -15,12 +15,32 @@ async function listAkunBayar() {
 async function createAkunBayar(data) {
     if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO akun_bayar (nama_bayar, kd_rek, ppn) VALUES (?, ?, ?)',
             [data.nama_bayar.trim(), data.kd_rek.trim(), Number(data.ppn || 0)]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateAkunBayar(oldNama, data) {
+    if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE akun_bayar SET nama_bayar = ?, kd_rek = ?, ppn = ? WHERE nama_bayar = ?',
+            [data.nama_bayar.trim(), data.kd_rek.trim(), Number(data.ppn || 0), oldNama]
         )
         return { success: true }
     } catch (err) {
@@ -55,12 +75,35 @@ async function createAkunPiutang(data) {
     if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
     if (!data.kd_pj?.trim()) return { success: false, message: 'Penjamin tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_pj.trim().length > 3) return { success: false, message: 'Kode penjamin maksimal 3 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO akun_piutang (nama_bayar, kd_rek, kd_pj) VALUES (?, ?, ?)',
             [data.nama_bayar.trim(), data.kd_rek.trim(), data.kd_pj.trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateAkunPiutang(oldNama, data) {
+    if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (!data.kd_pj?.trim()) return { success: false, message: 'Penjamin tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_pj.trim().length > 3) return { success: false, message: 'Kode penjamin maksimal 3 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE akun_piutang SET nama_bayar = ?, kd_rek = ?, kd_pj = ? WHERE nama_bayar = ?',
+            [data.nama_bayar.trim(), data.kd_rek.trim(), data.kd_pj.trim(), oldNama]
         )
         return { success: true }
     } catch (err) {
@@ -93,12 +136,32 @@ async function listAkunBayarHutang() {
 async function createAkunBayarHutang(data) {
     if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO akun_bayar_hutang (nama_bayar, kd_rek) VALUES (?, ?)',
             [data.nama_bayar.trim(), data.kd_rek.trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateAkunBayarHutang(oldNama, data) {
+    if (!data.nama_bayar?.trim()) return { success: false, message: 'Nama bayar tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.nama_bayar.trim().length > 50) return { success: false, message: 'Nama bayar maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE akun_bayar_hutang SET nama_bayar = ?, kd_rek = ? WHERE nama_bayar = ?',
+            [data.nama_bayar.trim(), data.kd_rek.trim(), oldNama]
         )
         return { success: true }
     } catch (err) {
@@ -132,12 +195,32 @@ async function listAkunAset() {
 async function createAkunAset(data) {
     if (!data.id_jenis?.trim()) return { success: false, message: 'Jenis inventaris tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.id_jenis.trim().length > 10) return { success: false, message: 'ID jenis maksimal 10 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO akun_aset_inventaris (kd_rek, id_jenis) VALUES (?, ?)',
             [data.kd_rek.trim(), data.id_jenis.trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateAkunAset(oldIdJenis, data) {
+    if (!data.id_jenis?.trim()) return { success: false, message: 'Jenis inventaris tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (data.id_jenis.trim().length > 10) return { success: false, message: 'ID jenis maksimal 10 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE akun_aset_inventaris SET kd_rek = ?, id_jenis = ? WHERE id_jenis = ?',
+            [data.kd_rek.trim(), data.id_jenis.trim(), oldIdJenis]
         )
         return { success: true }
     } catch (err) {
@@ -173,12 +256,38 @@ async function createKategoriPemasukan(data) {
     if (!data.nama_kategori?.trim()) return { success: false, message: 'Nama kategori tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Akun debet tidak boleh kosong' }
     if (!data.kd_rek2?.trim()) return { success: false, message: 'Akun kredit (kontra akun) tidak boleh kosong' }
+    if (data.kode_kategori.trim().length > 5) return { success: false, message: 'Kode kategori maksimal 5 karakter' }
+    if (data.nama_kategori.trim().length > 50) return { success: false, message: 'Nama kategori maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_rek2.trim().length > 15) return { success: false, message: 'Kode rekening 2 maksimal 15 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO kategori_pemasukan_lain (kode_kategori, nama_kategori, kd_rek, kd_rek2) VALUES (?, ?, ?, ?)',
             [data.kode_kategori.trim(), data.nama_kategori.trim(), data.kd_rek.trim(), data.kd_rek2.trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateKategoriPemasukan(oldKode, data) {
+    if (!data.kode_kategori?.trim()) return { success: false, message: 'Kode kategori tidak boleh kosong' }
+    if (!data.nama_kategori?.trim()) return { success: false, message: 'Nama kategori tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Akun debet tidak boleh kosong' }
+    if (!data.kd_rek2?.trim()) return { success: false, message: 'Akun kredit (kontra akun) tidak boleh kosong' }
+    if (data.kode_kategori.trim().length > 5) return { success: false, message: 'Kode kategori maksimal 5 karakter' }
+    if (data.nama_kategori.trim().length > 50) return { success: false, message: 'Nama kategori maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_rek2.trim().length > 15) return { success: false, message: 'Kode rekening 2 maksimal 15 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE kategori_pemasukan_lain SET kode_kategori = ?, nama_kategori = ?, kd_rek = ?, kd_rek2 = ? WHERE kode_kategori = ?',
+            [data.kode_kategori.trim(), data.nama_kategori.trim(), data.kd_rek.trim(), data.kd_rek2.trim(), oldKode]
         )
         return { success: true }
     } catch (err) {
@@ -214,12 +323,38 @@ async function createKategoriPengeluaran(data) {
     if (!data.nama_kategori?.trim()) return { success: false, message: 'Nama kategori tidak boleh kosong' }
     if (!data.kd_rek?.trim()) return { success: false, message: 'Akun debet tidak boleh kosong' }
     if (!data.kd_rek2?.trim()) return { success: false, message: 'Akun kredit (kontra akun) tidak boleh kosong' }
+    if (data.kode_kategori.trim().length > 5) return { success: false, message: 'Kode kategori maksimal 5 karakter' }
+    if (data.nama_kategori.trim().length > 50) return { success: false, message: 'Nama kategori maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_rek2.trim().length > 15) return { success: false, message: 'Kode rekening 2 maksimal 15 karakter' }
     
     const db = await DatabaseService.get()
     try {
         await db.query(
             'INSERT INTO kategori_pengeluaran_harian (kode_kategori, nama_kategori, kd_rek, kd_rek2) VALUES (?, ?, ?, ?)',
             [data.kode_kategori.trim(), data.nama_kategori.trim(), data.kd_rek.trim(), data.kd_rek2.trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateKategoriPengeluaran(oldKode, data) {
+    if (!data.kode_kategori?.trim()) return { success: false, message: 'Kode kategori tidak boleh kosong' }
+    if (!data.nama_kategori?.trim()) return { success: false, message: 'Nama kategori tidak boleh kosong' }
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Akun debet tidak boleh kosong' }
+    if (!data.kd_rek2?.trim()) return { success: false, message: 'Akun kredit (kontra akun) tidak boleh kosong' }
+    if (data.kode_kategori.trim().length > 5) return { success: false, message: 'Kode kategori maksimal 5 karakter' }
+    if (data.nama_kategori.trim().length > 50) return { success: false, message: 'Nama kategori maksimal 50 karakter' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.kd_rek2.trim().length > 15) return { success: false, message: 'Kode rekening 2 maksimal 15 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE kategori_pengeluaran_harian SET kode_kategori = ?, nama_kategori = ?, kd_rek = ?, kd_rek2 = ? WHERE kode_kategori = ?',
+            [data.kode_kategori.trim(), data.nama_kategori.trim(), data.kd_rek.trim(), data.kd_rek2.trim(), oldKode]
         )
         return { success: true }
     } catch (err) {
@@ -237,14 +372,74 @@ async function deleteKategoriPengeluaran(kode_kategori) {
     }
 }
 
-// (Akun Penagihan Piutang tidak dibuat backend terpisah karena di Java hanya table biasa dan CRUD minimal, 
-//  kita group ke master akun juga nanti jika diperlukan, tapi ini 6 master kunci dulu).
+// --- KELOMPOK AKUN PENAGIHAN PIUTANG ---
+async function listAkunPenagihanPiutang() {
+    const db = await DatabaseService.get()
+    const res = await db.query(`
+        SELECT a.kd_rek, a.nama_bank, a.atas_nama, a.no_rek, r.nm_rek
+        FROM akun_penagihan_piutang a
+        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+        ORDER BY a.nama_bank ASC
+    `)
+    return res.rows
+}
+
+async function createAkunPenagihanPiutang(data) {
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (!data.nama_bank?.trim()) return { success: false, message: 'Nama bank tidak boleh kosong' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.nama_bank.trim().length > 70) return { success: false, message: 'Nama bank maksimal 70 karakter' }
+    if (data.atas_nama?.trim().length > 50) return { success: false, message: 'Atas nama maksimal 50 karakter' }
+    if (data.no_rek?.trim().length > 20) return { success: false, message: 'No rekening maksimal 20 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'INSERT INTO akun_penagihan_piutang (kd_rek, nama_bank, atas_nama, no_rek) VALUES (?, ?, ?, ?)',
+            [data.kd_rek.trim(), data.nama_bank.trim(), (data.atas_nama || '').trim(), (data.no_rek || '').trim()]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function updateAkunPenagihanPiutang(oldKdRek, data) {
+    if (!data.kd_rek?.trim()) return { success: false, message: 'Kode rekening tidak boleh kosong' }
+    if (!data.nama_bank?.trim()) return { success: false, message: 'Nama bank tidak boleh kosong' }
+    if (data.kd_rek.trim().length > 15) return { success: false, message: 'Kode rekening maksimal 15 karakter' }
+    if (data.nama_bank.trim().length > 70) return { success: false, message: 'Nama bank maksimal 70 karakter' }
+    if (data.atas_nama?.trim().length > 50) return { success: false, message: 'Atas nama maksimal 50 karakter' }
+    if (data.no_rek?.trim().length > 20) return { success: false, message: 'No rekening maksimal 20 karakter' }
+    
+    const db = await DatabaseService.get()
+    try {
+        await db.query(
+            'UPDATE akun_penagihan_piutang SET kd_rek = ?, nama_bank = ?, atas_nama = ?, no_rek = ? WHERE kd_rek = ?',
+            [data.kd_rek.trim(), data.nama_bank.trim(), (data.atas_nama || '').trim(), (data.no_rek || '').trim(), oldKdRek]
+        )
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
+
+async function deleteAkunPenagihanPiutang(kd_rek) {
+    const db = await DatabaseService.get()
+    try {
+        await db.query('DELETE FROM akun_penagihan_piutang WHERE kd_rek = ?', [kd_rek])
+        return { success: true }
+    } catch (err) {
+        return { success: false, message: err.message }
+    }
+}
 
 export default { 
-    listAkunBayar, createAkunBayar, deleteAkunBayar,
-    listAkunPiutang, createAkunPiutang, deleteAkunPiutang,
-    listAkunBayarHutang, createAkunBayarHutang, deleteAkunBayarHutang,
-    listAkunAset, createAkunAset, deleteAkunAset,
-    listKategoriPemasukan, createKategoriPemasukan, deleteKategoriPemasukan,
-    listKategoriPengeluaran, createKategoriPengeluaran, deleteKategoriPengeluaran
+    listAkunBayar, createAkunBayar, updateAkunBayar, deleteAkunBayar,
+    listAkunPiutang, createAkunPiutang, updateAkunPiutang, deleteAkunPiutang,
+    listAkunBayarHutang, createAkunBayarHutang, updateAkunBayarHutang, deleteAkunBayarHutang,
+    listAkunAset, createAkunAset, updateAkunAset, deleteAkunAset,
+    listKategoriPemasukan, createKategoriPemasukan, updateKategoriPemasukan, deleteKategoriPemasukan,
+    listKategoriPengeluaran, createKategoriPengeluaran, updateKategoriPengeluaran, deleteKategoriPengeluaran,
+    listAkunPenagihanPiutang, createAkunPenagihanPiutang, updateAkunPenagihanPiutang, deleteAkunPenagihanPiutang
 }
