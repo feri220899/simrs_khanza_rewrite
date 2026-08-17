@@ -48,6 +48,7 @@ import EEksekutifNonMedisVendor  from '../views/eeksekutif/non-medis/VendorPerBu
 import EEksekutifDapurSisaStok from '../views/eeksekutif/dapur/SisaStok.vue'
 import EEksekutifDapurMutasi   from '../views/eeksekutif/dapur/RingkasanMutasi.vue'
 import EEksekutifDapurVendor   from '../views/eeksekutif/dapur/VendorPerBulan.vue'
+import KeuanganJurnal from '../views/keuangan/Jurnal.vue'
 import KeuanganRekening from '../views/keuangan/Rekening.vue'
 import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
 import KeuanganPengaturanRekening from '../views/keuangan/PengaturanRekening.vue'
@@ -88,6 +89,7 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/surat-pemesanan', component: IpsrsSuratPemesanan },
     { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
+    { path: '/keuangan/jurnal', component: KeuanganJurnal },
     { path: '/keuangan/rekening', component: KeuanganRekening },
     { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
     { path: '/keuangan/pengaturan-rekening', component: KeuanganPengaturanRekening },
@@ -173,7 +175,7 @@ const PLACEHOLDER_PATHS = [
     '/mcu/perusahaan', '/mcu/booking', '/mcu/kesimpulan',
     '/kasir/rawat-jalan', '/kasir/rawat-inap', '/kasir/closing', '/kasir/deposit', '/kasir/piutang', '/kasir/virtual-account',
     // '/keuangan/jurnal', '/keuangan/laba-rugi', '/keuangan/rekening',
-    '/keuangan/jurnal', '/keuangan/laba-rugi',
+    '/keuangan/laba-rugi',
     '/kepegawaian/kehadiran', '/kepegawaian/jadwal', '/kepegawaian/penggajian', '/kepegawaian/riwayat',
     '/inventaris/barang', '/inventaris/mutasi', '/inventaris/kadaluarsa',
     '/ppi/audit-bundle', '/ppi/kepatuhan', '/ppi/hais-bangsal',

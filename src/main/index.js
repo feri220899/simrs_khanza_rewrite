@@ -50,6 +50,7 @@ import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
 import KeuanganMasterAkunService from './db/modules/KeuanganMasterAkunService.js'
+import KeuanganJurnalService from './db/modules/KeuanganJurnalService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -870,6 +871,17 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'akun_penagihan_piutang')
         return auth.ok ? KeuanganMasterAkunService.deleteAkunPenagihanPiutang(kode) : { success: false, message: auth.message }
     })
+
+    handle('keuangan:jurnal:list', (_, params) => KeuanganJurnalService.list(params))
+    handle('keuangan:jurnal:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'posting_jurnal')
+        return auth.ok ? KeuanganJurnalService.create(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:jurnal:delete', (_, token, noJurnal) => {
+        const auth = AuthService.requirePermission(token, 'posting_jurnal')
+        return auth.ok ? KeuanganJurnalService.deleteOne(noJurnal) : { success: false, message: auth.message }
+    })
+    handle('keuangan:jurnal:nextNo', (_, tanggal) => KeuanganJurnalService.getNextNoJurnal(tanggal))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
