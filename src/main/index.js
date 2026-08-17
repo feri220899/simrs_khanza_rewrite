@@ -46,6 +46,8 @@ import IpsrsPermintaanService from './db/modules/IpsrsPermintaanService.js'
 import IpsrsLaporanService from './db/modules/IpsrsLaporanService.js'
 import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
+import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
+import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -737,6 +739,26 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'harian_menejemen')
         if (!auth.ok) throw new Error(auth.message)
         return EEksekutifAkuntansiService.saldoAkunPerBulan(tahun)
+    })
+
+    // Keuangan — Master Rekening (COA) & Rekening Tahun
+    handle('keuangan:rekening:list', () => KeuanganRekeningService.list())
+    handle('keuangan:rekening:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        return auth.ok ? KeuanganRekeningService.create(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:rekening:update', (_, token, oldKode, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        return auth.ok ? KeuanganRekeningService.update(oldKode, data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:rekening:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        return auth.ok ? KeuanganRekeningService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+    handle('keuangan:rekeningTahun:list', (_, tahun) => KeuanganRekeningTahunService.list(tahun))
+    handle('keuangan:rekeningTahun:save', (_, token, tahun, data) => {
+        const auth = AuthService.requirePermission(token, 'rekening_tahun')
+        return auth.ok ? KeuanganRekeningTahunService.save(tahun, data) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
