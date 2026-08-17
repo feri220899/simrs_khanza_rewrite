@@ -167,6 +167,7 @@ export const allMenu = [
           { to: '/keuangan/laba-rugi',  label: 'Laba Rugi',       icon: TrendingUp, permission: 'keuangan' },
           { to: '/keuangan/rekening',       label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
           { to: '/keuangan/rekening-tahun', label: 'Rekening Tahun',   icon: FolderOpen, permission: 'rekening_tahun' },
+          { to: '/keuangan/pengaturan-rekening', label: 'Pengaturan Rekening', icon: Settings, permission: 'pengaturan_rekening' },
         ],
       },
       // 14. Toko — SISTEM RETAIL LENGKAP (33 file di src/toko/), investigasi

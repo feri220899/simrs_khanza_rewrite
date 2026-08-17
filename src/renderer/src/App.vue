@@ -1,13 +1,17 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppHeader from './components/AppHeader.vue'
 import AppToast from './components/AppToast.vue'
 import AppUpdater from './components/AppUpdater.vue'
+import { useAuthStore } from './stores/auth'
 
 const route = useRoute()
 const hasLayout = computed(() => route.meta.layout !== false)
+
+// Jadwalkan auto-logout untuk token lama (dari localStorage) saat app dibuka.
+onMounted(() => useAuthStore().scheduleAutoLogout())
 </script>
 
 <template>

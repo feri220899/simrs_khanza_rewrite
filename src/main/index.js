@@ -48,6 +48,7 @@ import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
+import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -759,6 +760,15 @@ app.whenReady().then(async () => {
     handle('keuangan:rekeningTahun:save', (_, token, tahun, data) => {
         const auth = AuthService.requirePermission(token, 'rekening_tahun')
         return auth.ok ? KeuanganRekeningTahunService.save(tahun, data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:pengaturanRekening:get', (_, token) => {
+        const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
+        if (!auth.ok) throw new Error(auth.message)
+        return KeuanganPengaturanRekeningService.getMappingDefault()
+    })
+    handle('keuangan:pengaturanRekening:save', (_, token, groupKey, data) => {
+        const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
+        return auth.ok ? KeuanganPengaturanRekeningService.saveMappingDefault(groupKey, data) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
