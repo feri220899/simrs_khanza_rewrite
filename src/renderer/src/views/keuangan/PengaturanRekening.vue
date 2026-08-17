@@ -163,10 +163,10 @@ onMounted(load)
             </div>
         </div>
 
-        <div role="tablist" class="tabs tabs-boxed mb-4 w-fit shrink-0">
-            <button v-for="group in groups" :key="group.key" class="tab" :class="active === group.key ? 'tab-active' : ''" @click="active = group.key; page = 1; search = ''">
+        <div role="tablist" class="tabs tabs-boxed mb-3 w-fit shrink-0">
+            <a v-for="group in groups" :key="group.key" role="tab" class="tab cursor-pointer" :class="active === group.key ? 'tab-active' : ''" @click="active = group.key; page = 1; search = ''">
                 {{ group.label }}
-            </button>
+            </a>
         </div>
 
         <div class="bg-base-100 border border-base-200 rounded-2xl p-4 mb-4 shrink-0">

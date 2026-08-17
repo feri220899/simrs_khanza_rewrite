@@ -90,6 +90,7 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
     { path: '/keuangan/jurnal', component: KeuanganJurnal },
+
     { path: '/keuangan/rekening', component: KeuanganRekening },
     { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
     { path: '/keuangan/pengaturan-rekening', component: KeuanganPengaturanRekening },

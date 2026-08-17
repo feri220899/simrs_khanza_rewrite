@@ -180,10 +180,10 @@ onMounted(load)
             </div>
         </div>
 
-        <div role="tablist" class="tabs tabs-boxed mb-4 w-fit shrink-0">
-            <button v-for="tab in visibleTabs" :key="tab.key" class="tab" :class="activeTab === tab.key ? 'tab-active' : ''" @click="activeTab = tab.key">
+        <div role="tablist" class="tabs tabs-boxed mb-3 w-fit shrink-0">
+            <a v-for="tab in visibleTabs" :key="tab.key" role="tab" class="tab cursor-pointer" :class="activeTab === tab.key ? 'tab-active' : ''" @click="activeTab = tab.key">
                 {{ tab.label }}
-            </button>
+            </a>
         </div>
 
         <AppPagination v-model:search="search" v-model:page="page" v-model:page-size="pageSize" :total="filteredRows.length" :page-sizes="[10, 20, 50, 100]">
