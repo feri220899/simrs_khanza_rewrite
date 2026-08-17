@@ -160,7 +160,8 @@ export const allMenu = [
       {
         label: 'Keuangan / Akuntansi', icon: BarChart2, permission: 'keuangan',
         children: [
-          { to: '/keuangan/jurnal',     label: 'Jurnal',          icon: BookText,   permission: 'posting_jurnal' },
+          { to: '/keuangan/jurnal',     label: 'Jurnal & Riwayat', icon: BookText,   permission: 'posting_jurnal' },
+
           // TODO-permission: TIDAK ADA kolom "laba_rugi" di sik.sql sama sekali —
           // fallback ke 'keuangan' (flag generik modul keuangan), cek ulang ke
           // DlgLabaRugi.java (kelas mana yang beneran gate akses-nya) sebelum final.

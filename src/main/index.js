@@ -51,6 +51,7 @@ import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunServ
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
 import KeuanganMasterAkunService from './db/modules/KeuanganMasterAkunService.js'
 import KeuanganJurnalService from './db/modules/KeuanganJurnalService.js'
+import KeuanganJurnalHarianService from './db/modules/KeuanganJurnalHarianService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -882,6 +883,9 @@ app.whenReady().then(async () => {
         return auth.ok ? KeuanganJurnalService.deleteOne(noJurnal) : { success: false, message: auth.message }
     })
     handle('keuangan:jurnal:nextNo', (_, tanggal) => KeuanganJurnalService.getNextNoJurnal(tanggal))
+
+    handle('keuangan:jurnalHarian:list', (_, params) => KeuanganJurnalHarianService.list(params))
+    handle('keuangan:jurnalHarian:accounts', (_, tahun) => KeuanganJurnalHarianService.accounts(tahun))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
