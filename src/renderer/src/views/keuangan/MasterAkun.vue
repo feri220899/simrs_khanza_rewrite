@@ -13,9 +13,10 @@ const tabs = [
     { key: 'bayar', label: 'Akun Bayar Kasir', permission: 'akun_bayar' },
     { key: 'piutang', label: 'Akun Piutang Penjamin', permission: 'akun_piutang' },
     { key: 'bayarHutang', label: 'Akun Bayar Hutang', permission: 'akun_bayar_hutang' },
-    { key: 'aset', label: 'Akun Aset Inventaris', permission: 'akun_rekening' },
+    { key: 'aset', label: 'Akun Aset Inventaris', permission: 'akun_aset_inventaris' },
     { key: 'pemasukan', label: 'Kategori Pemasukan', permission: 'kategori_pemasukan_lain' },
     { key: 'pengeluaran', label: 'Kategori Pengeluaran', permission: 'kategori_pengeluaran_harian' },
+    { key: 'penagihanPiutang', label: 'Akun Penagihan Piutang', permission: 'akun_penagihan_piutang' }
 ]
 
 const visibleTabs = computed(() => tabs.filter(t => authStore.can(t.permission)))
@@ -67,6 +68,12 @@ function openNew() {
     showModal.value = true
 }
 
+function openEdit(row) {
+    editing.value = { ...row }
+    form.value = { ...row }
+    showModal.value = true
+}
+
 function closeModal() {
     showModal.value = false
     form.value = {}
@@ -94,7 +101,8 @@ async function load() {
         else if (activeTab.value === 'aset') rows.value = await window.api.keuangan.masterAkun.listAset()
         else if (activeTab.value === 'pemasukan') rows.value = await window.api.keuangan.masterAkun.listKategoriPemasukan()
         else if (activeTab.value === 'pengeluaran') rows.value = await window.api.keuangan.masterAkun.listKategoriPengeluaran()
-
+        else if (activeTab.value === 'penagihanPiutang') rows.value = await window.api.keuangan.masterAkun.listPenagihanPiutang()
+ 
     } catch (err) {
         showToast(err?.message || 'Gagal memuat data master', 'error')
     } finally {
@@ -109,12 +117,13 @@ async function save() {
         const token = authStore.token
         const d = form.value
 
-        if (activeTab.value === 'bayar') result = await window.api.keuangan.masterAkun.createBayar(token, d)
-        else if (activeTab.value === 'piutang') result = await window.api.keuangan.masterAkun.createPiutang(token, d)
-        else if (activeTab.value === 'bayarHutang') result = await window.api.keuangan.masterAkun.createBayarHutang(token, d)
-        else if (activeTab.value === 'aset') result = await window.api.keuangan.masterAkun.createAset(token, d)
-        else if (activeTab.value === 'pemasukan') result = await window.api.keuangan.masterAkun.createKategoriPemasukan(token, d)
-        else if (activeTab.value === 'pengeluaran') result = await window.api.keuangan.masterAkun.createKategoriPengeluaran(token, d)
+        if (activeTab.value === 'bayar') result = editing.value ? await window.api.keuangan.masterAkun.updateBayar(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createBayar(token, d)
+        else if (activeTab.value === 'piutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePiutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createPiutang(token, d)
+        else if (activeTab.value === 'bayarHutang') result = editing.value ? await window.api.keuangan.masterAkun.updateBayarHutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createBayarHutang(token, d)
+        else if (activeTab.value === 'aset') result = editing.value ? await window.api.keuangan.masterAkun.updateAset(token, editing.value.id_jenis, d) : await window.api.keuangan.masterAkun.createAset(token, d)
+        else if (activeTab.value === 'pemasukan') result = editing.value ? await window.api.keuangan.masterAkun.updateKategoriPemasukan(token, editing.value.kode_kategori, d) : await window.api.keuangan.masterAkun.createKategoriPemasukan(token, d)
+        else if (activeTab.value === 'pengeluaran') result = editing.value ? await window.api.keuangan.masterAkun.updateKategoriPengeluaran(token, editing.value.kode_kategori, d) : await window.api.keuangan.masterAkun.createKategoriPengeluaran(token, d)
+        else if (activeTab.value === 'penagihanPiutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePenagihanPiutang(token, editing.value.kd_rek, d) : await window.api.keuangan.masterAkun.createPenagihanPiutang(token, d)
 
         if (!result.success) return showToast(result.message || 'Gagal menyimpan', 'error')
         showToast('Berhasil disimpan')
@@ -139,6 +148,7 @@ async function remove(row) {
         else if (activeTab.value === 'aset') result = await window.api.keuangan.masterAkun.deleteAset(token, row.id_jenis)
         else if (activeTab.value === 'pemasukan') result = await window.api.keuangan.masterAkun.deleteKategoriPemasukan(token, row.kode_kategori)
         else if (activeTab.value === 'pengeluaran') result = await window.api.keuangan.masterAkun.deleteKategoriPengeluaran(token, row.kode_kategori)
+        else if (activeTab.value === 'penagihanPiutang') result = await window.api.keuangan.masterAkun.deletePenagihanPiutang(token, row.kd_rek)
 
         if (!result.success) return showToast(result.message || 'Gagal menghapus', 'error')
         showToast('Berhasil dihapus')
@@ -181,7 +191,7 @@ onMounted(load)
                 <div v-if="loading" class="absolute inset-0 bg-base-100/80 z-20 flex flex-col items-center justify-center">
                     <span class="loading loading-spinner loading-md text-primary"></span>
                 </div>
-                <table class="table table-sm w-full table-fixed">
+                <table class="table table-sm w-full table-fixed whitespace-nowrap">
                     <thead class="sticky top-0 bg-base-200 z-10 shadow-sm">
                         <!-- Header Dinamis -->
                         <tr v-if="activeTab === 'bayar' || activeTab === 'bayarHutang'">
@@ -191,24 +201,26 @@ onMounted(load)
                             <th v-if="activeTab === 'bayar'" class="w-24 text-right bg-base-200">PPN (%)</th>
                             <th class="w-16 text-right bg-base-200">Aksi</th>
                         </tr>
-                        <tr v-else-if="activeTab === 'piutang'">
-                            <th class="w-1/4 bg-base-200">Nama Asuransi / Piutang</th>
-                            <th class="bg-base-200">Rekening</th>
-                            <th class="bg-base-200">Penjamin (Tabel Penjab)</th>
-                            <th class="w-16 text-right bg-base-200">Aksi</th>
-                        </tr>
+                        <tr v-else-if="activeTab === 'piutang'"><th class="w-1/4 bg-base-200">Nama Asuransi / Piutang</th><th class="bg-base-200">Rekening</th><th class="bg-base-200">Penjamin (Tabel Penjab)</th><th class="w-16 text-right bg-base-200">Aksi</th></tr>
                         <tr v-else-if="activeTab === 'aset'">
                             <th class="w-1/4 bg-base-200">ID Jenis</th>
                             <th class="bg-base-200">Nama Jenis Inventaris</th>
                             <th class="bg-base-200">Rekening Aset</th>
                             <th class="w-16 text-right bg-base-200">Aksi</th>
                         </tr>
+                        <tr v-else-if="activeTab === 'penagihanPiutang'">
+                            <th class="bg-base-200">Rekening</th>
+                            <th class="bg-base-200">Nama Bank</th>
+                            <th class="bg-base-200">Atas Nama</th>
+                            <th class="bg-base-200">No Rekening</th>
+                            <th class="w-24 text-right bg-base-200">Aksi</th>
+                        </tr>
                         <tr v-else>
                             <th class="w-24 bg-base-200">Kode Kategori</th>
                             <th class="w-1/3 bg-base-200">Nama Kategori</th>
                             <th class="bg-base-200">Rekening Debet</th>
                             <th class="bg-base-200">Rekening Kredit (Kontra)</th>
-                            <th class="w-16 text-right bg-base-200">Aksi</th>
+                            <th class="w-24 text-right bg-base-200">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -230,6 +242,12 @@ onMounted(load)
                                 <td>{{ row.nama_jenis }}</td>
                                 <td><span class="font-mono text-primary">{{ row.kd_rek }}</span><br><span class="text-xs">{{ row.nm_rek }}</span></td>
                             </template>
+                            <template v-else-if="activeTab === 'penagihanPiutang'">
+                                <td><span class="font-mono text-primary">{{ row.kd_rek }}</span><br><span class="text-xs">{{ row.nm_rek }}</span></td>
+                                <td>{{ row.nama_bank }}</td>
+                                <td>{{ row.atas_nama }}</td>
+                                <td class="font-mono">{{ row.no_rek }}</td>
+                            </template>
                             <template v-else>
                                 <td class="font-mono font-semibold">{{ row.kode_kategori }}</td>
                                 <td>{{ row.nama_kategori }}</td>
@@ -238,6 +256,7 @@ onMounted(load)
                             </template>
                             
                             <td class="text-right">
+                                <button class="btn btn-ghost btn-xs text-info" title="Edit" @click="openEdit(row)"><Pencil class="size-3.5" /></button>
                                 <button class="btn btn-ghost btn-xs text-error" title="Hapus" @click="remove(row)"><Trash2 class="size-3.5" /></button>
                             </td>
                         </tr>
@@ -251,7 +270,7 @@ onMounted(load)
         <dialog class="modal" :class="{ 'modal-open': showModal }">
             <div class="modal-box p-0 rounded-2xl border border-base-200 overflow-hidden">
                 <div class="bg-base-200/60 px-6 py-4 flex items-center justify-between border-b border-base-200">
-                    <h3 class="font-bold text-lg">Tambah {{ visibleTabs.find(t => t.key === activeTab)?.label }}</h3>
+                    <h3 class="font-bold text-lg">{{ editing ? 'Edit' : 'Tambah' }} {{ visibleTabs.find(t => t.key === activeTab)?.label }}</h3>
                     <button class="btn btn-sm btn-circle btn-ghost" type="button" @click="closeModal"><X class="size-4" /></button>
                 </div>
                 <form @submit.prevent="save">
@@ -260,7 +279,13 @@ onMounted(load)
                             <label class="form-control gap-1"><span class="label-text font-semibold">Nama Bayar / Asuransi</span><input v-model="form.nama_bayar" type="text" class="input input-sm input-bordered" required /></label>
                         </template>
                         <template v-else-if="activeTab === 'aset'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Jenis Inventaris (Kode ID)</span><input v-model="form.id_jenis" type="text" class="input input-sm input-bordered font-mono" required /></label>
+                            <label class="form-control gap-1"><span class="label-text font-semibold">Jenis Inventaris (Kode ID)</span><AppSelect v-model="form.id_jenis" :options="inventarisOptions" value-prop="id_jenis" label="display" placeholder="Pilih jenis inventaris..." /></label>
+                        </template>
+                        <template v-else-if="activeTab === 'penagihanPiutang'">
+                            <label class="form-control gap-1"><span class="label-text font-semibold">Rekening</span><AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." /></label>
+                            <label class="form-control gap-1"><span class="label-text font-semibold">Nama Bank</span><input v-model="form.nama_bank" type="text" class="input input-sm input-bordered" required /></label>
+                            <label class="form-control gap-1"><span class="label-text font-semibold">Atas Nama</span><input v-model="form.atas_nama" type="text" class="input input-sm input-bordered" /></label>
+                            <label class="form-control gap-1"><span class="label-text font-semibold">No Rekening</span><input v-model="form.no_rek" type="text" class="input input-sm input-bordered" /></label>
                         </template>
                         <template v-else>
                             <label class="form-control gap-1"><span class="label-text font-semibold">Kode Kategori</span><input v-model="form.kode_kategori" type="text" class="input input-sm input-bordered font-mono" required /></label>
