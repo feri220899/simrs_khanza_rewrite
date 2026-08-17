@@ -216,18 +216,15 @@ onMounted(() => {
 
 <template>
     <div class="flex flex-col h-full min-h-0">
-        <div class="shrink-0">
-            <div>
-                <h1 class="text-xl font-bold flex items-center gap-1">
-                    <BookText class="size-6 text-primary" /> Jurnal & Riwayat
-                </h1>
-                <p class="text-sm text-base-content/60">Pengelolaan transaksi jurnal dan buku riwayat harian</p>
-            </div>
-            <div role="tablist" class="tabs tabs-boxed mb-0 w-fit shrink-0">
-                <a role="tab" class="tab cursor-pointer" :class="activeTab === 'jurnal' ? 'tab-active' : ''"
-                    @click="activeTab = 'jurnal'">Jurnal Umum</a>
-                <a role="tab" class="tab cursor-pointer" :class="activeTab === 'harian' ? 'tab-active' : ''"
-                    @click="activeTab = 'harian'">Jurnal Harian</a>
+        <div class="mb-3 shrink-0">
+            <h1 class="text-xl font-bold flex items-center gap-1 mb-1">
+                <BookText class="size-6 text-primary" /> Jurnal & Riwayat
+            </h1>
+            <p class="text-sm text-base-content/60 mb-3">Pengelolaan transaksi jurnal dan buku riwayat harian</p>
+            
+            <div class="flex bg-base-200 rounded-xl p-1 w-fit gap-0.5">
+                <button :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer', activeTab === 'jurnal' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']" @click="activeTab = 'jurnal'">Jurnal Umum</button>
+                <button :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer', activeTab === 'harian' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']" @click="activeTab = 'harian'">Jurnal Harian</button>
             </div>
         </div>
 
