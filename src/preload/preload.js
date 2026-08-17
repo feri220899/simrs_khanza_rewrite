@@ -225,6 +225,12 @@ contextBridge.exposeInMainWorld('api', {
         },
     },
     keuangan: {
+        jurnal: {
+            list: (params) => ipcRenderer.invoke('keuangan:jurnal:list', params),
+            create: (token, data) => ipcRenderer.invoke('keuangan:jurnal:create', token, data),
+            delete: (token, noJurnal) => ipcRenderer.invoke('keuangan:jurnal:delete', token, noJurnal),
+            nextNo: (tanggal) => ipcRenderer.invoke('keuangan:jurnal:nextNo', tanggal),
+        },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),
             create: (token, data) => ipcRenderer.invoke('keuangan:rekening:create', token, data),

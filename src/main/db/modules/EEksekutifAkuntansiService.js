@@ -41,32 +41,44 @@ function buildAkunTree(rows) {
     return { nodes, roots }
 }
 
-function calcAkunTree(node) {
+function calcAkunTree(node, visiting = new Set(), visited = new Set()) {
+    if (!node?.kd_rek) return node
+    if (visiting.has(node.kd_rek)) return node
+    if (visited.has(node.kd_rek)) return node
+
+    visiting.add(node.kd_rek)
+
     let saldo_awal = Number(node.saldo_awal || 0)
     let mutasi_debet = Number(node.mutasi_debet || 0)
     let mutasi_kredit = Number(node.mutasi_kredit || 0)
 
-    for (const child of node.children) {
-        const c = calcAkunTree(child)
-        saldo_awal += c.saldo_awal
-        mutasi_debet += c.mutasi_debet
-        mutasi_kredit += c.mutasi_kredit
+    const validChildren = []
+    for (const child of node.children || []) {
+        if (!child?.kd_rek || child.kd_rek === node.kd_rek || visiting.has(child.kd_rek)) continue
+        validChildren.push(child)
+        const c = calcAkunTree(child, visiting, visited)
+        saldo_awal += Number(c.saldo_awal || 0)
+        mutasi_debet += Number(c.mutasi_debet || 0)
+        mutasi_kredit += Number(c.mutasi_kredit || 0)
     }
+    node.children = validChildren
 
     node.saldo_awal = saldo_awal
     node.mutasi_debet = mutasi_debet
     node.mutasi_kredit = mutasi_kredit
 
-    // KD = Kredit - Debet, DK = Debet - Kredit
     let saldo_mutasi = 0
-    if ((node.tipe === 'R' && node.balance === 'K') || node.tipe === 'M' || (node.tipe === 'N' && node.balance === 'K')) { // KD
+    if ((node.tipe === 'R' && node.balance === 'K') || node.tipe === 'M' || (node.tipe === 'N' && node.balance === 'K')) {
         saldo_mutasi = mutasi_kredit - mutasi_debet
-    } else if ((node.tipe === 'R' && node.balance === 'D') || (node.tipe === 'N' && node.balance === 'D')) { // DK
+    } else if ((node.tipe === 'R' && node.balance === 'D') || (node.tipe === 'N' && node.balance === 'D')) {
         saldo_mutasi = mutasi_debet - mutasi_kredit
     }
     
     node.saldo_mutasi = saldo_mutasi
     node.saldo_akhir = saldo_awal + saldo_mutasi
+
+    visiting.delete(node.kd_rek)
+    visited.add(node.kd_rek)
 
     return node
 }
@@ -160,7 +172,8 @@ async function laporanKeuangan(tahun) {
 
     await applyMutasi(db, nodes, `${tahun}-01-01`, `${tahun}-12-31`)
     
-    roots.forEach(calcAkunTree)
+    const visited = new Set()
+    roots.forEach(root => calcAkunTree(root, new Set(), visited))
 
     const result = {
         pendapatan: [], biaya: [],
@@ -196,7 +209,8 @@ async function rekeningTahun(tahun) {
     }
 
     await applyMutasi(db, nodes, `${tahun}-01-01`, `${tahun}-12-31`)
-    roots.forEach(calcAkunTree)
+    const visited = new Set()
+    roots.forEach(root => calcAkunTree(root, new Set(), visited))
 
     return { filter: { tahun }, roots }
 }
