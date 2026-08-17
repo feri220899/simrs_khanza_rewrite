@@ -234,6 +234,10 @@ contextBridge.exposeInMainWorld('api', {
         rekeningTahun: {
             list: (tahun) => ipcRenderer.invoke('keuangan:rekeningTahun:list', tahun),
             save: (token, tahun, data) => ipcRenderer.invoke('keuangan:rekeningTahun:save', token, tahun, data),
+        },
+        pengaturanRekening: {
+            get: (token) => ipcRenderer.invoke('keuangan:pengaturanRekening:get', token),
+            save: (token, groupKey, data) => ipcRenderer.invoke('keuangan:pengaturanRekening:save', token, groupKey, data),
         }
     },
     // Satuan — SHARED lintas modul (bukan eksklusif Toko), lihat SatuanService.js.

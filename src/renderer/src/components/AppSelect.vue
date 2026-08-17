@@ -34,6 +34,7 @@ defineEmits(['update:modelValue', 'change'])
             :value-prop="valueProp"
             :label="label"
             :searchable="true"
+            :hide-selected="false"
             :disabled="disabled"
             :placeholder="placeholder"
             no-results-text="Tidak ditemukan"

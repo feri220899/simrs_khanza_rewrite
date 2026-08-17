@@ -50,6 +50,7 @@ import EEksekutifDapurMutasi   from '../views/eeksekutif/dapur/RingkasanMutasi.v
 import EEksekutifDapurVendor   from '../views/eeksekutif/dapur/VendorPerBulan.vue'
 import KeuanganRekening from '../views/keuangan/Rekening.vue'
 import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
+import KeuanganPengaturanRekening from '../views/keuangan/PengaturanRekening.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -88,6 +89,7 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
     { path: '/keuangan/rekening', component: KeuanganRekening },
     { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
+    { path: '/keuangan/pengaturan-rekening', component: KeuanganPengaturanRekening },
     { path: '/laporan/tempat-tidur', component: LaporanRl13 },
     { path: '/laporan/bor-alos', component: LaporanBorAlos },
     { path: '/laporan/rl', component: LaporanRl3 },
