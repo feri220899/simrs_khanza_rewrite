@@ -48,6 +48,8 @@ import EEksekutifNonMedisVendor  from '../views/eeksekutif/non-medis/VendorPerBu
 import EEksekutifDapurSisaStok from '../views/eeksekutif/dapur/SisaStok.vue'
 import EEksekutifDapurMutasi   from '../views/eeksekutif/dapur/RingkasanMutasi.vue'
 import EEksekutifDapurVendor   from '../views/eeksekutif/dapur/VendorPerBulan.vue'
+import KeuanganRekening from '../views/keuangan/Rekening.vue'
+import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
 import Placeholder   from '../views/base/Placeholder.vue'
 
@@ -84,6 +86,8 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/surat-pemesanan', component: IpsrsSuratPemesanan },
     { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
+    { path: '/keuangan/rekening', component: KeuanganRekening },
+    { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
     { path: '/laporan/tempat-tidur', component: LaporanRl13 },
     { path: '/laporan/bor-alos', component: LaporanBorAlos },
     { path: '/laporan/rl', component: LaporanRl3 },
@@ -164,7 +168,8 @@ const PLACEHOLDER_PATHS = [
     '/rekam-medis/sirkulasi', '/rekam-medis/mutasi', '/rekam-medis/retensi', '/rekam-medis/status',
     '/mcu/perusahaan', '/mcu/booking', '/mcu/kesimpulan',
     '/kasir/rawat-jalan', '/kasir/rawat-inap', '/kasir/closing', '/kasir/deposit', '/kasir/piutang', '/kasir/virtual-account',
-    '/keuangan/jurnal', '/keuangan/laba-rugi', '/keuangan/rekening',
+    // '/keuangan/jurnal', '/keuangan/laba-rugi', '/keuangan/rekening',
+    '/keuangan/jurnal', '/keuangan/laba-rugi',
     '/kepegawaian/kehadiran', '/kepegawaian/jadwal', '/kepegawaian/penggajian', '/kepegawaian/riwayat',
     '/inventaris/barang', '/inventaris/mutasi', '/inventaris/kadaluarsa',
     '/ppi/audit-bundle', '/ppi/kepatuhan', '/ppi/hais-bangsal',

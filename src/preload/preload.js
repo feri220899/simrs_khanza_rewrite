@@ -224,6 +224,18 @@ contextBridge.exposeInMainWorld('api', {
             ringkasanPemesanan: (params) => ipcRenderer.invoke('ipsrs:laporan:ringkasanPemesanan', params),
         },
     },
+    keuangan: {
+        rekening: {
+            list: () => ipcRenderer.invoke('keuangan:rekening:list'),
+            create: (token, data) => ipcRenderer.invoke('keuangan:rekening:create', token, data),
+            update: (token, oldKode, data) => ipcRenderer.invoke('keuangan:rekening:update', token, oldKode, data),
+            delete: (token, kode) => ipcRenderer.invoke('keuangan:rekening:delete', token, kode),
+        },
+        rekeningTahun: {
+            list: (tahun) => ipcRenderer.invoke('keuangan:rekeningTahun:list', tahun),
+            save: (token, tahun, data) => ipcRenderer.invoke('keuangan:rekeningTahun:save', token, tahun, data),
+        }
+    },
     // Satuan — SHARED lintas modul (bukan eksklusif Toko), lihat SatuanService.js.
     satuan: {
         list:     (params)             => ipcRenderer.invoke('satuan:list', params),

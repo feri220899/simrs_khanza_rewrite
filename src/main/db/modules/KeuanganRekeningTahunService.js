@@ -1,0 +1,47 @@
+import DatabaseService from '../DatabaseService.js'
+
+async function list(tahun) {
+    const db = await DatabaseService.get()
+    const res = await db.query(`
+        SELECT r.kd_rek, r.nm_rek, r.tipe, r.balance, COALESCE(rt.saldo_awal, 0) AS saldo_awal
+        FROM rekening r 
+        LEFT JOIN rekeningtahun rt ON r.kd_rek = rt.kd_rek AND rt.thn = ?
+        ORDER BY r.kd_rek ASC
+    `, [tahun])
+    return res.rows
+}
+
+async function save(tahun, data) {
+    const db = await DatabaseService.get()
+    const client = await db.connect()
+    
+    try {
+        await client.query('START TRANSACTION')
+        
+        // Hapus semua saldo di tahun tersebut
+        await client.query('DELETE FROM rekeningtahun WHERE thn = ?', [tahun])
+        
+        // Insert data baru batch
+        if (data && data.length > 0) {
+            for (const item of data) {
+                if (!item.kd_rek || item.saldo_awal === undefined || item.saldo_awal === null) continue;
+                
+                await client.query(
+                    'INSERT INTO rekeningtahun (thn, kd_rek, saldo_awal) VALUES (?, ?, ?)',
+                    [tahun, item.kd_rek, item.saldo_awal]
+                )
+            }
+        }
+        
+        await client.query('COMMIT')
+        return { success: true }
+    } catch (error) {
+        await client.query('ROLLBACK')
+        console.error('[KeuanganRekeningTahunService] Error save:', error)
+        return { success: false, message: error.message }
+    } finally {
+        client.release()
+    }
+}
+
+export default { list, save }

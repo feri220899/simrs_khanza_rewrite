@@ -165,7 +165,8 @@ export const allMenu = [
           // fallback ke 'keuangan' (flag generik modul keuangan), cek ulang ke
           // DlgLabaRugi.java (kelas mana yang beneran gate akses-nya) sebelum final.
           { to: '/keuangan/laba-rugi',  label: 'Laba Rugi',       icon: TrendingUp, permission: 'keuangan' },
-          { to: '/keuangan/rekening',   label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
+          { to: '/keuangan/rekening',       label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
+          { to: '/keuangan/rekening-tahun', label: 'Rekening Tahun',   icon: FolderOpen, permission: 'rekening_tahun' },
         ],
       },
       // 14. Toko — SISTEM RETAIL LENGKAP (33 file di src/toko/), investigasi
