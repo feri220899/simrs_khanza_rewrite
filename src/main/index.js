@@ -49,6 +49,7 @@ import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
+import KeuanganMasterAkunService from './db/modules/KeuanganMasterAkunService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -769,6 +770,67 @@ app.whenReady().then(async () => {
     handle('keuangan:pengaturanRekening:save', (_, token, groupKey, data) => {
         const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
         return auth.ok ? KeuanganPengaturanRekeningService.saveMappingDefault(groupKey, data) : { success: false, message: auth.message }
+    })
+
+    // Keuangan — Master Akun & Kategori Spasifik (Akun Bayar, Akun Piutang, Kategori Pemasukan/Pengeluaran)
+    handle('keuangan:masterAkun:listBayar', () => KeuanganMasterAkunService.listAkunBayar())
+    handle('keuangan:masterAkun:createBayar', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar')
+        return auth.ok ? KeuanganMasterAkunService.createAkunBayar(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deleteBayar', (_, token, nama) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar')
+        return auth.ok ? KeuanganMasterAkunService.deleteAkunBayar(nama) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listPiutang', () => KeuanganMasterAkunService.listAkunPiutang())
+    handle('keuangan:masterAkun:createPiutang', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_piutang')
+        return auth.ok ? KeuanganMasterAkunService.createAkunPiutang(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deletePiutang', (_, token, nama) => {
+        const auth = AuthService.requirePermission(token, 'akun_piutang')
+        return auth.ok ? KeuanganMasterAkunService.deleteAkunPiutang(nama) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listBayarHutang', () => KeuanganMasterAkunService.listAkunBayarHutang())
+    handle('keuangan:masterAkun:createBayarHutang', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar_hutang')
+        return auth.ok ? KeuanganMasterAkunService.createAkunBayarHutang(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deleteBayarHutang', (_, token, nama) => {
+        const auth = AuthService.requirePermission(token, 'akun_bayar_hutang')
+        return auth.ok ? KeuanganMasterAkunService.deleteAkunBayarHutang(nama) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listAset', () => KeuanganMasterAkunService.listAkunAset())
+    handle('keuangan:masterAkun:createAset', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        return auth.ok ? KeuanganMasterAkunService.createAkunAset(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deleteAset', (_, token, nama) => {
+        const auth = AuthService.requirePermission(token, 'akun_rekening')
+        return auth.ok ? KeuanganMasterAkunService.deleteAkunAset(nama) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listKategoriPemasukan', () => KeuanganMasterAkunService.listKategoriPemasukan())
+    handle('keuangan:masterAkun:createKategoriPemasukan', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pemasukan_lain')
+        return auth.ok ? KeuanganMasterAkunService.createKategoriPemasukan(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deleteKategoriPemasukan', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pemasukan_lain')
+        return auth.ok ? KeuanganMasterAkunService.deleteKategoriPemasukan(kode) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:masterAkun:listKategoriPengeluaran', () => KeuanganMasterAkunService.listKategoriPengeluaran())
+    handle('keuangan:masterAkun:createKategoriPengeluaran', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganMasterAkunService.createKategoriPengeluaran(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:masterAkun:deleteKategoriPengeluaran', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganMasterAkunService.deleteKategoriPengeluaran(kode) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java

@@ -10,7 +10,7 @@ import {
   CarFront, Tag, Users, CalendarCheck, CalendarDays, History, Boxes, Package,
   AlertTriangle, Wrench, BookOpen, Mail, ShieldCheck, ClipboardCheck, HardHat,
   Building2, FileBarChart, Activity, HandHeart, LineChart, MessageSquare,
-  Link2, IdCard, FileCheck2, ListTree, Settings,
+  Link2, IdCard, FileCheck2, ListTree, Settings, Bookmark,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
   Tags, UserCircle, Repeat, Coins, SlidersHorizontal,
 } from 'lucide-vue-next'
@@ -168,6 +168,7 @@ export const allMenu = [
           { to: '/keuangan/rekening',       label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
           { to: '/keuangan/rekening-tahun', label: 'Rekening Tahun',   icon: FolderOpen, permission: 'rekening_tahun' },
           { to: '/keuangan/pengaturan-rekening', label: 'Pengaturan Rekening', icon: Settings, permission: 'pengaturan_rekening' },
+          { to: '/keuangan/master-akun', label: 'Master Akun Spesifik & Kategori', icon: Bookmark, permission: 'akun_bayar' },
         ],
       },
       // 14. Toko — SISTEM RETAIL LENGKAP (33 file di src/toko/), investigasi

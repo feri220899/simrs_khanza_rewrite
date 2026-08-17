@@ -238,6 +238,26 @@ contextBridge.exposeInMainWorld('api', {
         pengaturanRekening: {
             get: (token) => ipcRenderer.invoke('keuangan:pengaturanRekening:get', token),
             save: (token, groupKey, data) => ipcRenderer.invoke('keuangan:pengaturanRekening:save', token, groupKey, data),
+        },
+        masterAkun: {
+            listBayar: () => ipcRenderer.invoke('keuangan:masterAkun:listBayar'),
+            createBayar: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createBayar', token, data),
+            deleteBayar: (token, nama) => ipcRenderer.invoke('keuangan:masterAkun:deleteBayar', token, nama),
+            listPiutang: () => ipcRenderer.invoke('keuangan:masterAkun:listPiutang'),
+            createPiutang: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createPiutang', token, data),
+            deletePiutang: (token, nama) => ipcRenderer.invoke('keuangan:masterAkun:deletePiutang', token, nama),
+            listBayarHutang: () => ipcRenderer.invoke('keuangan:masterAkun:listBayarHutang'),
+            createBayarHutang: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createBayarHutang', token, data),
+            deleteBayarHutang: (token, nama) => ipcRenderer.invoke('keuangan:masterAkun:deleteBayarHutang', token, nama),
+            listAset: () => ipcRenderer.invoke('keuangan:masterAkun:listAset'),
+            createAset: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createAset', token, data),
+            deleteAset: (token, nama) => ipcRenderer.invoke('keuangan:masterAkun:deleteAset', token, nama),
+            listKategoriPemasukan: () => ipcRenderer.invoke('keuangan:masterAkun:listKategoriPemasukan'),
+            createKategoriPemasukan: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createKategoriPemasukan', token, data),
+            deleteKategoriPemasukan: (token, kode) => ipcRenderer.invoke('keuangan:masterAkun:deleteKategoriPemasukan', token, kode),
+            listKategoriPengeluaran: () => ipcRenderer.invoke('keuangan:masterAkun:listKategoriPengeluaran'),
+            createKategoriPengeluaran: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createKategoriPengeluaran', token, data),
+            deleteKategoriPengeluaran: (token, kode) => ipcRenderer.invoke('keuangan:masterAkun:deleteKategoriPengeluaran', token, kode),
         }
     },
     // Satuan — SHARED lintas modul (bukan eksklusif Toko), lihat SatuanService.js.
