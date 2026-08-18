@@ -14,6 +14,8 @@ const rows = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
+const isEdit = ref(false)
+const editingNoJurnal = ref('')
 const activeTab = ref('jurnal')
 const rekeningList = ref([])
 
@@ -130,6 +132,8 @@ function printList() {
 }
 
 function openNew() {
+    isEdit.value = false
+    editingNoJurnal.value = ''
     form.value = {
         tgl_jurnal: today,
         jam_jurnal: new Date().toTimeString().split(' ')[ 0 ],
@@ -140,6 +144,21 @@ function openNew() {
     }
     formDetail.value = { rekening: null, debet: 0, kredit: 0 }
     loadNextNo()
+    showModal.value = true
+}
+
+function openEdit(row) {
+    isEdit.value = true
+    editingNoJurnal.value = row.no_jurnal
+    form.value = {
+        tgl_jurnal: row.tgl_jurnal,
+        jam_jurnal: row.jam_jurnal,
+        no_bukti: row.no_bukti,
+        jenis: row.jenis,
+        keterangan: row.keterangan,
+        details: JSON.parse(JSON.stringify(row.details))
+    }
+    formDetail.value = { rekening: null, debet: 0, kredit: 0 }
     showModal.value = true
 }
 
@@ -187,7 +206,13 @@ async function save() {
     saving.value = true
     try {
         const payload = JSON.parse(JSON.stringify(form.value))
-        const result = await window.api.keuangan.jurnal.create(authStore.token, payload)
+        let result
+        if (isEdit.value) {
+            result = await window.api.keuangan.jurnal.update(authStore.token, editingNoJurnal.value, payload)
+        } else {
+            result = await window.api.keuangan.jurnal.create(authStore.token, payload)
+        }
+
         if (!result.success) return showToast(result.message || 'Gagal menyimpan jurnal', 'error')
 
         showToast('Jurnal berhasil disimpan')
@@ -216,7 +241,7 @@ onMounted(() => {
 
 <template>
     <div class="flex flex-col h-full min-h-0">
-        <div class="mb-3 shrink-0">
+        <div class="mb-0 shrink-0">
             <h1 class="text-xl font-bold flex items-center gap-1 mb-1">
                 <BookText class="size-6 text-primary" /> Jurnal & Riwayat
             </h1>
@@ -295,6 +320,10 @@ onMounted(() => {
                                             title="Cetak Jurnal">
                                             <Printer class="size-4" />
                                         </button>
+                                        <button class="btn btn-ghost btn-xs text-primary" @click="openEdit(row)"
+                                            title="Edit Jurnal">
+                                            <Pencil class="size-4" />
+                                        </button>
                                         <button class="btn btn-ghost btn-xs text-error" @click="remove(row)"
                                             title="Hapus Jurnal">
                                             <Trash2 class="size-4" />
@@ -331,7 +360,7 @@ onMounted(() => {
                     <div
                         class="bg-base-200/60 px-6 py-4 flex items-center justify-between border-b border-base-200 shrink-0">
                         <h3 class="font-bold text-lg flex items-center gap-2">
-                            <Plus class="size-5" /> Tambah Jurnal
+                            <component :is="isEdit ? Pencil : Plus" class="size-5" /> {{ isEdit ? 'Edit Jurnal' : 'Tambah Jurnal' }}
                         </h3>
                         <button class="btn btn-sm btn-circle btn-ghost" type="button" @click="closeModal">
                             <X class="size-4" />
@@ -343,7 +372,7 @@ onMounted(() => {
                             <div class="flex flex-col gap-1.5">
                                 <label class="block text-sm font-medium px-1">No. Jurnal <span
                                         class="text-error">*</span></label>
-                                <input type="text" v-model="nextNoJurnal"
+                                <input type="text" :value="isEdit ? editingNoJurnal : nextNoJurnal"
                                     class="input input-bordered input-sm w-full bg-base-200" readonly />
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -474,7 +503,7 @@ onMounted(() => {
                             :disabled="saving || !formBalance || form.details.length === 0">
                             <span v-if="saving" class="loading loading-spinner loading-xs"></span>
                             <Save v-else class="size-4" />
-                            Simpan Jurnal
+                            {{ isEdit ? 'Update Jurnal' : 'Simpan Jurnal' }}
                         </button>
                     </div>
                 </div>

@@ -51,6 +51,7 @@ import EEksekutifDapurVendor   from '../views/eeksekutif/dapur/VendorPerBulan.vu
 import KeuanganJurnal from '../views/keuangan/Jurnal.vue'
 import KeuanganRekening from '../views/keuangan/Rekening.vue'
 import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
+import KeuanganBukuBesar from '../views/keuangan/BukuBesar.vue'
 import KeuanganPengaturanRekening from '../views/keuangan/PengaturanRekening.vue'
 import KeuanganMasterAkun from '../views/keuangan/MasterAkun.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
@@ -94,6 +95,7 @@ const FASE_1_ROUTES = [
     { path: '/keuangan/rekening', component: KeuanganRekening },
     { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
     { path: '/keuangan/pengaturan-rekening', component: KeuanganPengaturanRekening },
+    { path: '/keuangan/buku-besar', component: KeuanganBukuBesar },
     { path: '/keuangan/master-akun', component: KeuanganMasterAkun },
     { path: '/laporan/tempat-tidur', component: LaporanRl13 },
     { path: '/laporan/bor-alos', component: LaporanBorAlos },

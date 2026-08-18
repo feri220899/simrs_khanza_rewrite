@@ -1,5 +1,7 @@
 # Khanza Desktop
 
+<!-- java -jar -Xss2m -Xms32m -Xmx1024m -XX:PermSize=32m -XX:MaxPermSize=512m khanza.jar -->
+
 **Khanza Desktop** adalah eksperimen/riset pribadi untuk menjawab satu
 pertanyaan: **seberapa jauh AI (dalam hal ini Claude/Claude Code) bisa
 menulis ulang (rewrite) aplikasi lama berbasis Java Swing — SIMRS Khanza —
