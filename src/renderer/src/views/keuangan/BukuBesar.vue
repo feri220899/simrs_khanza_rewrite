@@ -2,8 +2,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { Printer, Search } from 'lucide-vue-next'
 import AppSelect from '../../components/AppSelect.vue'
+import { useAuthStore } from '../../stores/auth.js'
 import { useToast } from '../../composables/useToast.js'
 
+const authStore = useAuthStore()
 const { showToast } = useToast()
 const today = new Date().toISOString().slice(0, 10)
 const filter = ref({ tgl_awal: today, tgl_akhir: today, kd_rek: '' })
@@ -74,12 +76,13 @@ async function load() {
     
     loading.value = true
     try {
-        const result = await window.api.keuangan.bukuBesar.list({ ...filter.value })
+        const result = await window.api.keuangan.bukuBesar.list(authStore.token, { ...filter.value })
         rows.value = result.rows
         totalDebet.value = result.mutasi_debet
         totalKredit.value = result.mutasi_kredit
         mutasiSebelumDebet.value = result.mutasi_sebelum_debet
         mutasiSebelumKredit.value = result.mutasi_sebelum_kredit
+        if (result.message) showToast(result.message, 'error')
     } catch (err) {
         showToast(err?.message || 'Gagal memuat buku besar', 'error')
     } finally {
@@ -90,7 +93,7 @@ async function load() {
 async function loadAccounts() {
     try {
         const thn = filter.value.tgl_awal.substring(0, 4)
-        accounts.value = await window.api.keuangan.bukuBesar.accounts(thn)
+        accounts.value = await window.api.keuangan.bukuBesar.accounts(authStore.token, thn)
     } catch(err) {
         console.error(err)
     }
