@@ -52,6 +52,7 @@ import KeuanganJurnal from '../views/keuangan/Jurnal.vue'
 import KeuanganRekening from '../views/keuangan/Rekening.vue'
 import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
 import KeuanganBukuBesar from '../views/keuangan/BukuBesar.vue'
+import KeuanganLabaRugi from '../views/keuangan/LabaRugi.vue'
 import KeuanganPengaturanRekening from '../views/keuangan/PengaturanRekening.vue'
 import KeuanganMasterAkun from '../views/keuangan/MasterAkun.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
@@ -96,6 +97,7 @@ const FASE_1_ROUTES = [
     { path: '/keuangan/rekening-tahun', component: KeuanganRekeningTahun },
     { path: '/keuangan/pengaturan-rekening', component: KeuanganPengaturanRekening },
     { path: '/keuangan/buku-besar', component: KeuanganBukuBesar },
+    { path: '/keuangan/laba-rugi', component: KeuanganLabaRugi },
     { path: '/keuangan/master-akun', component: KeuanganMasterAkun },
     { path: '/laporan/tempat-tidur', component: LaporanRl13 },
     { path: '/laporan/bor-alos', component: LaporanBorAlos },
@@ -178,7 +180,6 @@ const PLACEHOLDER_PATHS = [
     '/mcu/perusahaan', '/mcu/booking', '/mcu/kesimpulan',
     '/kasir/rawat-jalan', '/kasir/rawat-inap', '/kasir/closing', '/kasir/deposit', '/kasir/piutang', '/kasir/virtual-account',
     // '/keuangan/jurnal', '/keuangan/laba-rugi', '/keuangan/rekening',
-    '/keuangan/laba-rugi',
     '/kepegawaian/kehadiran', '/kepegawaian/jadwal', '/kepegawaian/penggajian', '/kepegawaian/riwayat',
     '/inventaris/barang', '/inventaris/mutasi', '/inventaris/kadaluarsa',
     '/ppi/audit-bundle', '/ppi/kepatuhan', '/ppi/hais-bangsal',

@@ -238,6 +238,9 @@ contextBridge.exposeInMainWorld('api', {
             list: (token, params) => ipcRenderer.invoke('keuangan:bukuBesar:list', token, params),
             accounts: (token, tahun) => ipcRenderer.invoke('keuangan:bukuBesar:accounts', token, tahun),
         },
+        labaRugi: {
+            get: (token, params) => ipcRenderer.invoke('keuangan:labaRugi:get', token, params),
+        },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),
             create: (token, data) => ipcRenderer.invoke('keuangan:rekening:create', token, data),
