@@ -879,14 +879,6 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'posting_jurnal')
         return auth.ok ? KeuanganJurnalService.create(data) : { success: false, message: auth.message }
     })
-    handle('keuangan:jurnal:update', (_, token, noJurnal, data) => {
-        const auth = AuthService.requirePermission(token, 'posting_jurnal')
-        return auth.ok ? KeuanganJurnalService.update(noJurnal, data) : { success: false, message: auth.message }
-    })
-    handle('keuangan:jurnal:delete', (_, token, noJurnal) => {
-        const auth = AuthService.requirePermission(token, 'posting_jurnal')
-        return auth.ok ? KeuanganJurnalService.deleteOne(noJurnal) : { success: false, message: auth.message }
-    })
     handle('keuangan:jurnal:nextNo', (_, tanggal) => KeuanganJurnalService.getNextNoJurnal(tanggal))
 
     handle('keuangan:jurnalHarian:list', (_, params) => KeuanganJurnalHarianService.list(params))

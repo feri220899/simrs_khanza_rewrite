@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { Plus, Pencil, Trash2, RotateCcw, Save, X, Search, BookText, Calendar, Trash, Printer } from 'lucide-vue-next'
+import { Plus, Save, X, Search, BookText, Trash, Printer } from 'lucide-vue-next'
 import AppPagination from '../../components/AppPagination.vue'
 import AppSelect from '../../components/AppSelect.vue'
 import JurnalHarian from './JurnalHarian.vue'
@@ -14,8 +14,6 @@ const rows = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
-const isEdit = ref(false)
-const editingNoJurnal = ref('')
 const activeTab = ref('jurnal')
 const rekeningList = ref([])
 
@@ -132,8 +130,6 @@ function printList() {
 }
 
 function openNew() {
-    isEdit.value = false
-    editingNoJurnal.value = ''
     form.value = {
         tgl_jurnal: today,
         jam_jurnal: new Date().toTimeString().split(' ')[ 0 ],
@@ -144,21 +140,6 @@ function openNew() {
     }
     formDetail.value = { rekening: null, debet: 0, kredit: 0 }
     loadNextNo()
-    showModal.value = true
-}
-
-function openEdit(row) {
-    isEdit.value = true
-    editingNoJurnal.value = row.no_jurnal
-    form.value = {
-        tgl_jurnal: row.tgl_jurnal,
-        jam_jurnal: row.jam_jurnal,
-        no_bukti: row.no_bukti,
-        jenis: row.jenis,
-        keterangan: row.keterangan,
-        details: JSON.parse(JSON.stringify(row.details))
-    }
-    formDetail.value = { rekening: null, debet: 0, kredit: 0 }
     showModal.value = true
 }
 
@@ -206,12 +187,7 @@ async function save() {
     saving.value = true
     try {
         const payload = JSON.parse(JSON.stringify(form.value))
-        let result
-        if (isEdit.value) {
-            result = await window.api.keuangan.jurnal.update(authStore.token, editingNoJurnal.value, payload)
-        } else {
-            result = await window.api.keuangan.jurnal.create(authStore.token, payload)
-        }
+        const result = await window.api.keuangan.jurnal.create(authStore.token, payload)
 
         if (!result.success) return showToast(result.message || 'Gagal menyimpan jurnal', 'error')
 
@@ -223,14 +199,6 @@ async function save() {
     } finally {
         saving.value = false
     }
-}
-
-async function remove(row) {
-    if (!confirm(`Hapus jurnal ${row.no_jurnal}?`)) return
-    const result = await window.api.keuangan.jurnal.delete(authStore.token, row.no_jurnal)
-    if (!result.success) return showToast(result.message || 'Gagal menghapus jurnal', 'error')
-    showToast('Jurnal berhasil dihapus')
-    await load()
 }
 
 onMounted(() => {
@@ -320,14 +288,6 @@ onMounted(() => {
                                             title="Cetak Jurnal">
                                             <Printer class="size-4" />
                                         </button>
-                                        <button class="btn btn-ghost btn-xs text-primary" @click="openEdit(row)"
-                                            title="Edit Jurnal">
-                                            <Pencil class="size-4" />
-                                        </button>
-                                        <button class="btn btn-ghost btn-xs text-error" @click="remove(row)"
-                                            title="Hapus Jurnal">
-                                            <Trash2 class="size-4" />
-                                        </button>
                                     </td>
                                 </tr>
                                 <tr v-for="(detail, i) in row.details" :key="`${row.no_jurnal}-d${i}`" class="hover">
@@ -360,7 +320,7 @@ onMounted(() => {
                     <div
                         class="bg-base-200/60 px-6 py-4 flex items-center justify-between border-b border-base-200 shrink-0">
                         <h3 class="font-bold text-lg flex items-center gap-2">
-                            <component :is="isEdit ? Pencil : Plus" class="size-5" /> {{ isEdit ? 'Edit Jurnal' : 'Tambah Jurnal' }}
+                            <Plus class="size-5" /> Tambah Jurnal
                         </h3>
                         <button class="btn btn-sm btn-circle btn-ghost" type="button" @click="closeModal">
                             <X class="size-4" />
@@ -372,7 +332,7 @@ onMounted(() => {
                             <div class="flex flex-col gap-1.5">
                                 <label class="block text-sm font-medium px-1">No. Jurnal <span
                                         class="text-error">*</span></label>
-                                <input type="text" :value="isEdit ? editingNoJurnal : nextNoJurnal"
+                                <input type="text" :value="nextNoJurnal"
                                     class="input input-bordered input-sm w-full bg-base-200" readonly />
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -503,7 +463,7 @@ onMounted(() => {
                             :disabled="saving || !formBalance || form.details.length === 0">
                             <span v-if="saving" class="loading loading-spinner loading-xs"></span>
                             <Save v-else class="size-4" />
-                            {{ isEdit ? 'Update Jurnal' : 'Simpan Jurnal' }}
+                            Simpan Jurnal
                         </button>
                     </div>
                 </div>
