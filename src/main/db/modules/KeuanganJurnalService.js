@@ -41,6 +41,16 @@ async function list(params = {}) {
         args.push(params.tgl_akhir)
     }
 
+    if (params.jenis) {
+        query += " AND j.jenis = ?"
+        args.push(params.jenis)
+    }
+
+    if (params.kd_rek) {
+        query += " AND j.no_jurnal IN (SELECT no_jurnal FROM detailjurnal WHERE kd_rek = ?)"
+        args.push(params.kd_rek)
+    }
+
     if (params.keyword) {
         query += ` AND (j.no_jurnal LIKE ? OR j.no_bukti LIKE ? OR j.keterangan LIKE ? OR r.nm_rek LIKE ? OR d.kd_rek LIKE ?)`
         const search = `%${params.keyword}%`
@@ -112,11 +122,36 @@ function validateDetails(details) {
     return { totalDebet, totalKredit }
 }
 
+// Replika validasi arah saldo di DlgJurnal.java BtnTambahActionPerformed: untuk jurnal
+// jenis Umum, rekening Rugi-Laba (tipe R) tidak boleh diisi berlawanan arah dari saldo
+// normalnya (balance). Jenis Penyesuaian dikecualikan karena memang dipakai buat koreksi.
+async function validateArahSaldo(details, jenis, db) {
+    if (jenis === 'P') return null
+    const kodeList = [...new Set(details.map(d => d.kd_rek))]
+    if (kodeList.length === 0) return null
+    const placeholders = kodeList.map(() => '?').join(',')
+    const res = await db.query(`SELECT kd_rek, tipe, balance FROM rekening WHERE kd_rek IN (${placeholders})`, kodeList)
+    const map = new Map(res.rows.map(r => [r.kd_rek, r]))
+    for (const d of details) {
+        const rek = map.get(d.kd_rek)
+        if (!rek || rek.tipe !== 'R') continue
+        if (rek.balance === 'K' && Number(d.debet || 0) > 0) {
+            return `Rekening ${d.kd_rek} bertipe Rugi Laba dengan balance Kredit — Debet harus 0 untuk jurnal Umum`
+        }
+        if (rek.balance === 'D' && Number(d.kredit || 0) > 0) {
+            return `Rekening ${d.kd_rek} bertipe Rugi Laba dengan balance Debet — Kredit harus 0 untuk jurnal Umum`
+        }
+    }
+    return null
+}
+
 // Jurnal yang sudah tersimpan bersifat final (selaras dengan DlgCariJurnal.java yang
 // hanya punya Cari/Print, tanpa Hapus/Edit) — koreksi wajib lewat jurnal baru jenis
 // Penyesuaian ('P'), bukan mengubah/menghapus baris yang sudah diposting.
-async function create(data) {
+async function create(data, username) {
     if (!data.tgl_jurnal) return { success: false, message: 'Tanggal jurnal tidak boleh kosong' }
+    if (!data.no_bukti?.trim()) return { success: false, message: 'No. Bukti tidak boleh kosong' }
+    if (!data.keterangan?.trim()) return { success: false, message: 'Keterangan tidak boleh kosong' }
     if (!data.details || !Array.isArray(data.details) || data.details.length === 0) {
         return { success: false, message: 'Detail jurnal tidak boleh kosong' }
     }
@@ -124,10 +159,16 @@ async function create(data) {
     const validated = validateDetails(data.details)
     if (validated.error) return { success: false, message: validated.error }
 
+    const jenis = data.jenis || 'U'
     const tgl = data.tgl_jurnal
     const jam = data.jam_jurnal || new Date().toTimeString().split(' ')[0]
+    const keterangan = `${data.keterangan.trim()}, OLEH ${username || '-'}`
 
     const db = await DatabaseService.get()
+
+    const arahError = await validateArahSaldo(data.details, jenis, db)
+    if (arahError) return { success: false, message: arahError }
+
     const MAX_RETRY = 5
 
     for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
@@ -144,7 +185,7 @@ async function create(data) {
 
             await client.query(
                 "INSERT INTO jurnal (no_jurnal, no_bukti, tgl_jurnal, jam_jurnal, jenis, keterangan) VALUES (?, ?, ?, ?, ?, ?)",
-                [no_jurnal, data.no_bukti || '', tgl, jam, data.jenis || 'U', data.keterangan || '']
+                [no_jurnal, data.no_bukti.trim(), tgl, jam, jenis, keterangan]
             )
 
             for (const d of data.details) {
