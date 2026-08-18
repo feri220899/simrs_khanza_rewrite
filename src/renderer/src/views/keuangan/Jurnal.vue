@@ -21,7 +21,9 @@ const today = new Date().toISOString().split('T')[ 0 ]
 const filter = ref({
     tgl_awal: today,
     tgl_akhir: today,
-    keyword: ''
+    keyword: '',
+    jenis: '',
+    kd_rek: ''
 })
 const search = ref('')
 const page = ref(1)
@@ -69,7 +71,9 @@ async function load() {
         const params = {
             tgl_awal: filter.value.tgl_awal,
             tgl_akhir: filter.value.tgl_akhir,
-            keyword: search.value.trim()
+            keyword: search.value.trim(),
+            jenis: filter.value.jenis,
+            kd_rek: filter.value.kd_rek
         }
         rows.value = await window.api.keuangan.jurnal.list(params)
     } catch (err) {
@@ -181,6 +185,8 @@ function removeDetail(index) {
 }
 
 async function save() {
+    if (!form.value.no_bukti.trim()) return showToast('No. Bukti tidak boleh kosong', 'warning')
+    if (!form.value.keterangan.trim()) return showToast('Keterangan tidak boleh kosong', 'warning')
     if (form.value.details.length === 0) return showToast('Detail jurnal tidak boleh kosong', 'warning')
     if (!formBalance.value) return showToast('Total Debet dan Kredit tidak balance', 'warning')
 
@@ -240,6 +246,19 @@ onMounted(() => {
                     <div class="form-control w-full max-w-[150px]">
                         <label class="label"><span class="label-text font-medium">Tanggal Akhir</span></label>
                         <input type="date" v-model="filter.tgl_akhir" class="input input-bordered input-sm" />
+                    </div>
+                    <div class="form-control w-full max-w-[140px]">
+                        <label class="label"><span class="label-text font-medium">Jenis</span></label>
+                        <select v-model="filter.jenis" class="select select-bordered select-sm w-full" @change="load">
+                            <option value="">Semua</option>
+                            <option value="U">Umum</option>
+                            <option value="P">Penyesuaian</option>
+                        </select>
+                    </div>
+                    <div class="form-control w-full max-w-[220px]">
+                        <label class="label"><span class="label-text font-medium">Rekening</span></label>
+                        <AppSelect v-model="filter.kd_rek" :options="rekeningOptions" value-prop="kd_rek"
+                            label="display" placeholder="Semua rekening..." @change="load" />
                     </div>
                     <div class="form-control w-full max-w-xs">
                         <label class="label"><span class="label-text font-medium">Pencarian</span></label>
@@ -336,7 +355,8 @@ onMounted(() => {
                                     class="input input-bordered input-sm w-full bg-base-200" readonly />
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label class="block text-sm font-medium px-1">No. Bukti</label>
+                                <label class="block text-sm font-medium px-1">No. Bukti <span
+                                        class="text-error">*</span></label>
                                 <input type="text" v-model="form.no_bukti"
                                     class="input input-bordered input-sm w-full uppercase" maxlength="30" />
                             </div>
@@ -362,7 +382,8 @@ onMounted(() => {
                                 </select>
                             </div>
                             <div class="flex flex-col gap-1.5 md:col-span-2">
-                                <label class="block text-sm font-medium px-1">Keterangan</label>
+                                <label class="block text-sm font-medium px-1">Keterangan <span
+                                        class="text-error">*</span></label>
                                 <input type="text" v-model="form.keterangan"
                                     class="input input-bordered input-sm w-full uppercase" maxlength="350" />
                             </div>
@@ -460,7 +481,7 @@ onMounted(() => {
                     <div class="bg-base-100 px-6 py-4 border-t border-base-200 flex justify-end gap-2 shrink-0">
                         <button class="btn btn-ghost btn-sm" @click="closeModal">Batal</button>
                         <button class="btn btn-primary btn-sm gap-2 min-w-32" @click="save"
-                            :disabled="saving || !formBalance || form.details.length === 0">
+                            :disabled="saving || !formBalance || form.details.length === 0 || !form.no_bukti.trim() || !form.keterangan.trim()">
                             <span v-if="saving" class="loading loading-spinner loading-xs"></span>
                             <Save v-else class="size-4" />
                             Simpan Jurnal

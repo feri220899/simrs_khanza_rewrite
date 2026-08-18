@@ -877,7 +877,7 @@ app.whenReady().then(async () => {
     handle('keuangan:jurnal:list', (_, params) => KeuanganJurnalService.list(params))
     handle('keuangan:jurnal:create', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'posting_jurnal')
-        return auth.ok ? KeuanganJurnalService.create(data) : { success: false, message: auth.message }
+        return auth.ok ? KeuanganJurnalService.create(data, auth.user.username) : { success: false, message: auth.message }
     })
     handle('keuangan:jurnal:nextNo', (_, tanggal) => KeuanganJurnalService.getNextNoJurnal(tanggal))
 
