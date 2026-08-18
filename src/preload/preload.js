@@ -228,8 +228,6 @@ contextBridge.exposeInMainWorld('api', {
         jurnal: {
             list: (params) => ipcRenderer.invoke('keuangan:jurnal:list', params),
             create: (token, data) => ipcRenderer.invoke('keuangan:jurnal:create', token, data),
-            update: (token, noJurnal, data) => ipcRenderer.invoke('keuangan:jurnal:update', token, noJurnal, data),
-            delete: (token, noJurnal) => ipcRenderer.invoke('keuangan:jurnal:delete', token, noJurnal),
             nextNo: (tanggal) => ipcRenderer.invoke('keuangan:jurnal:nextNo', tanggal),
         },
         jurnalHarian: {
