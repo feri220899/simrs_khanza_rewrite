@@ -1,40 +1,36 @@
 import DatabaseService from '../DatabaseService.js'
 
+// `row.parent` = induk (subrekening.kd_rek), kd_rek row itu sendiri = anak
+// (subrekening.kd_rek2 — PK, satu anak cuma py 1 induk). Dua tahap: bikin
+// semua node dulu (query rekening LEFT JOIN => 1 baris pasti ada per akun,
+// tidak seperti versi lama yang 1 akun bisa muncul berkali-kali per anak),
+// baru sambungkan ke induknya — supaya urutan baris tidak berpengaruh.
 function buildAkunTree(rows) {
     const nodes = {}
     const roots = []
 
     for (const row of rows) {
-        const kd_rek = row.kd_rek
-        if (!nodes[kd_rek]) {
-            nodes[kd_rek] = { 
-                kd_rek, 
-                nm_rek: row.nm_rek, 
-                tipe: row.tipe,
-                balance: row.balance,
-                level: Number(row.level || 0),
-                saldo_awal: 0, 
-                mutasi_debet: 0, 
-                mutasi_kredit: 0,
-                saldo_mutasi: 0,
-                saldo_akhir: 0,
-                children: [] 
-            }
-        } else {
-            nodes[kd_rek].nm_rek = row.nm_rek
-            nodes[kd_rek].tipe = row.tipe
-            nodes[kd_rek].balance = row.balance
-            nodes[kd_rek].level = Number(row.level || 0)
+        nodes[row.kd_rek] = {
+            kd_rek: row.kd_rek,
+            nm_rek: row.nm_rek,
+            tipe: row.tipe,
+            balance: row.balance,
+            level: Number(row.level || 0),
+            saldo_awal: 0,
+            mutasi_debet: 0,
+            mutasi_kredit: 0,
+            saldo_mutasi: 0,
+            saldo_akhir: 0,
+            children: []
         }
+    }
 
-        const parent = row.kd_rek2
-        if (parent) {
-            if (!nodes[parent]) {
-                nodes[parent] = { children: [] }
-            }
-            nodes[parent].children.push(nodes[kd_rek])
+    for (const row of rows) {
+        const node = nodes[row.kd_rek]
+        if (row.parent && nodes[row.parent]) {
+            nodes[row.parent].children.push(node)
         } else {
-            roots.push(nodes[kd_rek])
+            roots.push(node)
         }
     }
 
@@ -84,7 +80,7 @@ function calcAkunTree(node, visiting = new Set(), visited = new Set()) {
 }
 
 async function getAkunNodes(db) {
-    const res = await db.query(`SELECT r.kd_rek, r.nm_rek, r.tipe, r.balance, r.level, s.kd_rek2 FROM rekening r LEFT JOIN subrekening s ON r.kd_rek = s.kd_rek ORDER BY r.kd_rek`)
+    const res = await db.query(`SELECT r.kd_rek, r.nm_rek, r.tipe, r.balance, r.level, s.kd_rek AS parent FROM rekening r LEFT JOIN subrekening s ON r.kd_rek = s.kd_rek2 ORDER BY r.kd_rek`)
     return buildAkunTree(res.rows)
 }
 
@@ -123,9 +119,9 @@ async function hutang(jenis) {
             LEFT JOIN (SELECT no_faktur, SUM(besar_bayar) AS total FROM bayar_pemesanan_inventaris GROUP BY no_faktur) bp ON p.no_faktur = bp.no_faktur
             WHERE p.status IN ('Belum Dibayar', 'Belum Lunas') GROUP BY p.kode_suplier`)
     } else if (jenis === 'lain') {
-        query = await db.query(`SELECT p.id, p.nama, SUM(b.sisahutang) AS sisa
-            FROM beban_hutang_lain b JOIN pemberi_hutang_lain p ON b.id_pemberi_hutang = p.id
-            WHERE b.status = 'Belum Lunas' GROUP BY p.id`)
+        query = await db.query(`SELECT p.kode_pemberi_hutang AS id, p.nama_pemberi_hutang AS nama, SUM(b.sisahutang) AS sisa
+            FROM beban_hutang_lain b JOIN pemberi_hutang_lain p ON b.kode_pemberi_hutang = p.kode_pemberi_hutang
+            WHERE b.status = 'Belum Lunas' GROUP BY p.kode_pemberi_hutang`)
     } else {
         throw new Error(`Jenis hutang tidak valid: ${jenis}`)
     }
@@ -146,10 +142,24 @@ async function piutangBelumLunas(jenis) {
             FROM detail_piutang_pasien dpp JOIN piutang_pasien pp ON dpp.no_rawat = pp.no_rawat JOIN reg_periksa rp ON pp.no_rawat = rp.no_rawat JOIN penjab p ON rp.kd_pj = p.kd_pj
             WHERE dpp.sisapiutang >= 1 GROUP BY p.png_jawab`)
     } else if (jenis === 'obat') {
-        query = await db.query(`SELECT p.no_rkm_medis, pas.nm_pasien AS nama, SUM(p.sisapiutang - COALESCE(bp.total, 0)) AS sisa
-            FROM piutang p JOIN pasien pas ON p.no_rkm_medis = pas.no_rkm_medis
-            LEFT JOIN (SELECT nota_piutang, SUM(besar_cicilan + diskon_piutang + tidak_terbayar) AS total FROM bayar_piutang GROUP BY nota_piutang) bp ON p.nota_piutang = bp.nota_piutang
-            GROUP BY p.no_rkm_medis HAVING sisa > 0`)
+        // Replika listringkasanpiutangobatbelumlunas.php: bayar_piutang TIDAK
+        // punya kolom nota_piutang (cuma KEY yang namanya kebetulan sama tapi
+        // isinya kolom no_rawat) — join sebenarnya no_rawat=nota_piutang, dan
+        // nama pasien diambil dari piutang.nm_pasien langsung (bukan join ke
+        // tabel pasien, karena no_rkm_medis kadang "-"/tidak valid).
+        // sisa_bersih dihitung PER NOTA dulu (subquery), baru difilter >0
+        // SEBELUM di-group per pasien — bukan sum dulu baru filter.
+        query = await db.query(`SELECT t.no_rkm_medis, t.nm_pasien AS nama, SUM(t.sisa_bersih) AS sisa
+            FROM (
+                SELECT piutang.no_rkm_medis, piutang.nm_pasien,
+                    (piutang.sisapiutang - (
+                        SELECT IFNULL(SUM(bp.besar_cicilan) + SUM(bp.diskon_piutang) + SUM(bp.tidak_terbayar), 0)
+                        FROM bayar_piutang bp WHERE bp.no_rawat = piutang.nota_piutang
+                    )) AS sisa_bersih
+                FROM piutang
+            ) AS t
+            WHERE t.sisa_bersih > 0
+            GROUP BY t.no_rkm_medis, t.nm_pasien`)
     } else {
         throw new Error(`Jenis piutang tidak valid: ${jenis}`)
     }
