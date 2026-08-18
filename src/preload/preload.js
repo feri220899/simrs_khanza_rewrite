@@ -228,12 +228,17 @@ contextBridge.exposeInMainWorld('api', {
         jurnal: {
             list: (params) => ipcRenderer.invoke('keuangan:jurnal:list', params),
             create: (token, data) => ipcRenderer.invoke('keuangan:jurnal:create', token, data),
+            update: (token, noJurnal, data) => ipcRenderer.invoke('keuangan:jurnal:update', token, noJurnal, data),
             delete: (token, noJurnal) => ipcRenderer.invoke('keuangan:jurnal:delete', token, noJurnal),
             nextNo: (tanggal) => ipcRenderer.invoke('keuangan:jurnal:nextNo', tanggal),
         },
         jurnalHarian: {
             list: (params) => ipcRenderer.invoke('keuangan:jurnalHarian:list', params),
             accounts: (tahun) => ipcRenderer.invoke('keuangan:jurnalHarian:accounts', tahun),
+        },
+        bukuBesar: {
+            list: (params) => ipcRenderer.invoke('keuangan:bukuBesar:list', params),
+            accounts: (tahun) => ipcRenderer.invoke('keuangan:bukuBesar:accounts', tahun),
         },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),

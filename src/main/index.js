@@ -52,6 +52,7 @@ import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRe
 import KeuanganMasterAkunService from './db/modules/KeuanganMasterAkunService.js'
 import KeuanganJurnalService from './db/modules/KeuanganJurnalService.js'
 import KeuanganJurnalHarianService from './db/modules/KeuanganJurnalHarianService.js'
+import KeuanganBukuBesarService from './db/modules/KeuanganBukuBesarService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -878,6 +879,10 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'posting_jurnal')
         return auth.ok ? KeuanganJurnalService.create(data) : { success: false, message: auth.message }
     })
+    handle('keuangan:jurnal:update', (_, token, noJurnal, data) => {
+        const auth = AuthService.requirePermission(token, 'posting_jurnal')
+        return auth.ok ? KeuanganJurnalService.update(noJurnal, data) : { success: false, message: auth.message }
+    })
     handle('keuangan:jurnal:delete', (_, token, noJurnal) => {
         const auth = AuthService.requirePermission(token, 'posting_jurnal')
         return auth.ok ? KeuanganJurnalService.deleteOne(noJurnal) : { success: false, message: auth.message }
@@ -886,6 +891,8 @@ app.whenReady().then(async () => {
 
     handle('keuangan:jurnalHarian:list', (_, params) => KeuanganJurnalHarianService.list(params))
     handle('keuangan:jurnalHarian:accounts', (_, tahun) => KeuanganJurnalHarianService.accounts(tahun))
+    handle('keuangan:bukuBesar:list', (_, params) => KeuanganBukuBesarService.list(params))
+    handle('keuangan:bukuBesar:accounts', (_, tahun) => KeuanganBukuBesarService.accounts(tahun))
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di

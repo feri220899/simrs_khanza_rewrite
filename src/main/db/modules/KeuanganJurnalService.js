@@ -141,6 +141,68 @@ async function create(data) {
     }
 }
 
+async function update(no_jurnal, data) {
+    if (!no_jurnal) return { success: false, message: 'Nomor jurnal tidak valid' }
+    if (!data.tgl_jurnal) return { success: false, message: 'Tanggal jurnal tidak boleh kosong' }
+    if (!data.details || !Array.isArray(data.details) || data.details.length === 0) {
+        return { success: false, message: 'Detail jurnal tidak boleh kosong' }
+    }
+
+    const tgl = data.tgl_jurnal
+    const jam = data.jam_jurnal || new Date().toTimeString().split(' ')[0]
+
+    let totalDebet = 0
+    let totalKredit = 0
+    for (const d of data.details) {
+        if (!d.kd_rek) return { success: false, message: 'Ada detail jurnal tanpa kode rekening' }
+        totalDebet += Number(d.debet || 0)
+        totalKredit += Number(d.kredit || 0)
+    }
+
+    if (Math.abs(totalDebet - totalKredit) > 0.01) {
+        return { success: false, message: 'Total debet dan kredit tidak seimbang (balance)' }
+    }
+    if (totalDebet <= 0 && totalKredit <= 0) {
+        return { success: false, message: 'Total jurnal tidak boleh nol' }
+    }
+
+    const db = await DatabaseService.get()
+    const client = await db.connect()
+
+    try {
+        await client.query('START TRANSACTION')
+
+        const resCheck = await client.query("SELECT no_jurnal FROM jurnal WHERE no_jurnal = ?", [no_jurnal])
+        if (resCheck.rows.length === 0) {
+            await client.query('ROLLBACK')
+            return { success: false, message: 'Jurnal tidak ditemukan' }
+        }
+
+        await client.query(
+            "UPDATE jurnal SET no_bukti = ?, tgl_jurnal = ?, jam_jurnal = ?, jenis = ?, keterangan = ? WHERE no_jurnal = ?",
+            [data.no_bukti || '', tgl, jam, data.jenis || 'U', data.keterangan || '', no_jurnal]
+        )
+
+        await client.query("DELETE FROM detailjurnal WHERE no_jurnal = ?", [no_jurnal])
+
+        for (const d of data.details) {
+            await client.query(
+                "INSERT INTO detailjurnal (no_jurnal, kd_rek, debet, kredit) VALUES (?, ?, ?, ?)",
+                [no_jurnal, d.kd_rek, Number(d.debet || 0), Number(d.kredit || 0)]
+            )
+        }
+
+        await client.query('COMMIT')
+        return { success: true, no_jurnal }
+    } catch (err) {
+        await client.query('ROLLBACK')
+        console.error('[KeuanganJurnalService] Error update:', err)
+        return { success: false, message: err.message }
+    } finally {
+        client.release()
+    }
+}
+
 async function deleteOne(no_jurnal) {
     const db = await DatabaseService.get()
     try {
@@ -152,4 +214,4 @@ async function deleteOne(no_jurnal) {
     }
 }
 
-export default { list, create, deleteOne, getNextNoJurnal }
+export default { list, create, update, deleteOne, getNextNoJurnal }
