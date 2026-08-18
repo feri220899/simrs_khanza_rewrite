@@ -241,6 +241,9 @@ contextBridge.exposeInMainWorld('api', {
         labaRugi: {
             get: (token, params) => ipcRenderer.invoke('keuangan:labaRugi:get', token, params),
         },
+        cashflow: {
+            get: (token, params) => ipcRenderer.invoke('keuangan:cashflow:get', token, params),
+        },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),
             create: (token, data) => ipcRenderer.invoke('keuangan:rekening:create', token, data),

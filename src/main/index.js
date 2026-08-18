@@ -54,6 +54,7 @@ import KeuanganJurnalService from './db/modules/KeuanganJurnalService.js'
 import KeuanganJurnalHarianService from './db/modules/KeuanganJurnalHarianService.js'
 import KeuanganBukuBesarService from './db/modules/KeuanganBukuBesarService.js'
 import KeuanganLabaRugiService from './db/modules/KeuanganLabaRugiService.js'
+import KeuanganCashflowService from './db/modules/KeuanganCashflowService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -902,6 +903,11 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'keuangan')
         const kosong = { pendapatan: { rows: [], total: 0 }, biaya: { rows: [], total: 0 }, labaBersih: 0, modal: { rows: [], total: 0 }, modalAkhir: 0, aktiva: { rows: [], total: 0 }, pasiva: { rows: [], total: 0 }, totalPasiva: 0 }
         return auth.ok ? KeuanganLabaRugiService.get(params) : { ...kosong, message: auth.message }
+    })
+    handle('keuangan:cashflow:get', (_, token, params) => {
+        const auth = AuthService.requirePermission(token, 'cashflow')
+        const kosong = { kasAwal: { rows: [], total: 0 }, kasMasuk: { rows: [], total: 0 }, kasKeluar: { rows: [], total: 0 }, totalKas: 0 }
+        return auth.ok ? KeuanganCashflowService.get(params) : { ...kosong, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
