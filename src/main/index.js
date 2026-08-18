@@ -881,8 +881,14 @@ app.whenReady().then(async () => {
     })
     handle('keuangan:jurnal:nextNo', (_, tanggal) => KeuanganJurnalService.getNextNoJurnal(tanggal))
 
-    handle('keuangan:jurnalHarian:list', (_, params) => KeuanganJurnalHarianService.list(params))
-    handle('keuangan:jurnalHarian:accounts', (_, tahun) => KeuanganJurnalHarianService.accounts(tahun))
+    handle('keuangan:jurnalHarian:list', (_, token, params) => {
+        const auth = AuthService.requirePermission(token, 'jurnal_harian')
+        return auth.ok ? KeuanganJurnalHarianService.list(params) : { rows: [], total_debet: 0, total_kredit: 0, message: auth.message }
+    })
+    handle('keuangan:jurnalHarian:accounts', (_, token, tahun) => {
+        const auth = AuthService.requirePermission(token, 'jurnal_harian')
+        return auth.ok ? KeuanganJurnalHarianService.accounts(tahun) : []
+    })
     handle('keuangan:bukuBesar:list', (_, params) => KeuanganBukuBesarService.list(params))
     handle('keuangan:bukuBesar:accounts', (_, tahun) => KeuanganBukuBesarService.accounts(tahun))
 

@@ -223,7 +223,7 @@ onMounted(() => {
             
             <div class="flex bg-base-200 rounded-xl p-1 w-fit gap-0.5">
                 <button :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer', activeTab === 'jurnal' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']" @click="activeTab = 'jurnal'">Jurnal Umum</button>
-                <button :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer', activeTab === 'harian' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']" @click="activeTab = 'harian'">Jurnal Harian</button>
+                <button v-if="authStore.can('jurnal_harian')" :class="['px-5 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer', activeTab === 'harian' ? 'bg-base-100 shadow-sm text-base-content' : 'text-base-content/50 hover:text-base-content']" @click="activeTab = 'harian'">Jurnal Harian</button>
             </div>
         </div>
 
