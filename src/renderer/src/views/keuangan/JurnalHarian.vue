@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { BookOpen, Printer, RotateCcw, Search } from 'lucide-vue-next'
 import AppSelect from '../../components/AppSelect.vue'
+import { useAuthStore } from '../../stores/auth.js'
 import { useToast } from '../../composables/useToast.js'
 
+const authStore = useAuthStore()
 const { showToast } = useToast()
 const today = new Date().toISOString().slice(0, 10)
 const filter = ref({ tgl_awal: today, tgl_akhir: today, no_jurnal: '', kd_rek: '', keyword: '' })
@@ -33,10 +35,11 @@ function esc(value) {
 async function load() {
     loading.value = true
     try {
-        const result = await window.api.keuangan.jurnalHarian.list({ ...filter.value })
+        const result = await window.api.keuangan.jurnalHarian.list(authStore.token, { ...filter.value })
         rows.value = result.rows
         totalDebet.value = result.total_debet
         totalKredit.value = result.total_kredit
+        if (result.message) showToast(result.message, 'error')
     } catch (err) {
         showToast(err?.message || 'Gagal memuat jurnal harian', 'error')
     } finally {
@@ -45,7 +48,7 @@ async function load() {
 }
 
 async function loadAccounts() {
-    accounts.value = await window.api.keuangan.jurnalHarian.accounts(filter.value.tgl_awal.substring(0, 4))
+    accounts.value = await window.api.keuangan.jurnalHarian.accounts(authStore.token, filter.value.tgl_awal.substring(0, 4))
 }
 
 function reset() {
@@ -93,7 +96,7 @@ onMounted(async () => {
         <div class="relative overflow-auto grow min-h-[300px] border border-base-200 rounded-lg bg-base-100">
             <div v-if="loading" class="absolute inset-0 z-20 bg-base-100/80 flex items-center justify-center"><span class="loading loading-spinner text-primary"></span></div>
             <table class="table table-sm"><thead class="sticky top-0 z-10 bg-base-200"><tr><th>Tanggal</th><th>Kode Akun</th><th>Nama Akun</th><th>Keterangan</th><th class="text-right">Debet</th><th class="text-right">Kredit</th></tr></thead>
-                <tbody><tr v-for="(row, index) in rows" :key="`${row.no_jurnal}-${row.kd_rek}-${index}`"><td class="whitespace-nowrap">{{ row.tgl_jurnal }} {{ row.jam_jurnal }}</td><td class="font-mono">{{ row.kd_rek }}</td><td>{{ row.nm_rek }}</td><td>No.Jur {{ row.no_jurnal }}, No.Buk {{ row.no_bukti }}, {{ row.keterangan }}</td><td class="text-right">{{ money(row.debet) }}</td><td class="text-right">{{ money(row.kredit) }}</td></tr><tr v-if="!rows.length"><td colspan="6" class="text-center py-10 text-base-content/50">Tidak ada data jurnal.</td></tr></tbody>
+                <tbody><tr v-for="(row, index) in rows" :key="`${row.no_jurnal}-${row.kd_rek}-${index}`"><td class="whitespace-nowrap">{{ row.tgl_jurnal }} {{ row.jam_jurnal }}</td><td class="font-mono">{{ row.kd_rek }}</td><td :class="{ 'pl-6': row.kredit > 0 }">{{ row.nm_rek }}</td><td>No.Jur {{ row.no_jurnal }}, No.Buk {{ row.no_bukti }}, {{ row.keterangan }}</td><td class="text-right">{{ money(row.debet) }}</td><td class="text-right">{{ money(row.kredit) }}</td></tr><tr v-if="!rows.length"><td colspan="6" class="text-center py-10 text-base-content/50">Tidak ada data jurnal.</td></tr></tbody>
                 <tfoot class="sticky bottom-0 bg-base-200 font-bold"><tr><td colspan="4" class="text-right">Jumlah Total</td><td class="text-right">{{ money(totalDebet) }}</td><td class="text-right">{{ money(totalKredit) }}</td></tr></tfoot>
             </table>
         </div>
