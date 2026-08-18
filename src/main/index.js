@@ -889,8 +889,14 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'jurnal_harian')
         return auth.ok ? KeuanganJurnalHarianService.accounts(tahun) : []
     })
-    handle('keuangan:bukuBesar:list', (_, params) => KeuanganBukuBesarService.list(params))
-    handle('keuangan:bukuBesar:accounts', (_, tahun) => KeuanganBukuBesarService.accounts(tahun))
+    handle('keuangan:bukuBesar:list', (_, token, params) => {
+        const auth = AuthService.requirePermission(token, 'buku_besar')
+        return auth.ok ? KeuanganBukuBesarService.list(params) : { rows: [], mutasi_debet: 0, mutasi_kredit: 0, mutasi_sebelum_debet: 0, mutasi_sebelum_kredit: 0, message: auth.message }
+    })
+    handle('keuangan:bukuBesar:accounts', (_, token, tahun) => {
+        const auth = AuthService.requirePermission(token, 'buku_besar')
+        return auth.ok ? KeuanganBukuBesarService.accounts(tahun) : []
+    })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java
     // asli), lihat SatuanService.js. Namespace 'satuan' sendiri (bukan di
