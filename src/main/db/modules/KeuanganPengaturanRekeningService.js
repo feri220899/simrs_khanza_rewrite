@@ -67,6 +67,7 @@ export const SET_AKUN_CONFIG = {
             { key: 'Retur_Ke_Suplayer', label: 'Retur Obat Ke Supplier' },
             { key: 'Pengadaan_Ipsrs', label: 'Hutang Pengadaan IPSRS' },
             { key: 'Stok_Keluar_Ipsrs', label: 'Beban Stok Keluar IPSRS' },
+            { key: 'Kontra_Stok_Keluar_Ipsrs', label: 'Kontra (Persediaan) Stok Keluar IPSRS' },
             { key: 'Bayar_Piutang_Pasien', label: 'Kas/Bank Penerimaan Piutang Pasien' },
             { key: 'Penerimaan_NonMedis', label: 'Penerimaan Logistik Non Medis' },
             { key: 'Kontra_Penerimaan_NonMedis', label: 'Hutang Penerimaan Logistik Non Medis' },
