@@ -251,10 +251,18 @@ contextBridge.exposeInMainWorld('api', {
             delete: (token, kode) => ipcRenderer.invoke('keuangan:kategoriPengeluaran:delete', token, kode),
         },
         pengeluaranHarian: {
+            listPetugas: () => ipcRenderer.invoke('keuangan:pengeluaranHarian:listPetugas'),
             list: (token, params) => ipcRenderer.invoke('keuangan:pengeluaranHarian:list', token, params),
             nextNo: (token, tanggal) => ipcRenderer.invoke('keuangan:pengeluaranHarian:nextNo', token, tanggal),
             create: (token, data) => ipcRenderer.invoke('keuangan:pengeluaranHarian:create', token, data),
             delete: (token, noKeluar) => ipcRenderer.invoke('keuangan:pengeluaranHarian:delete', token, noKeluar),
+        },
+        pemasukanLain: {
+            listPetugas: () => ipcRenderer.invoke('keuangan:pemasukanLain:listPetugas'),
+            list: (token, params) => ipcRenderer.invoke('keuangan:pemasukanLain:list', token, params),
+            nextNo: (token, tanggal) => ipcRenderer.invoke('keuangan:pemasukanLain:nextNo', token, tanggal),
+            create: (token, data) => ipcRenderer.invoke('keuangan:pemasukanLain:create', token, data),
+            delete: (token, noMasuk) => ipcRenderer.invoke('keuangan:pemasukanLain:delete', token, noMasuk),
         },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),

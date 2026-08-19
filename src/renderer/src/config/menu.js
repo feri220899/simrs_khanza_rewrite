@@ -169,7 +169,7 @@ export const allMenu = [
           { to: '/keuangan/laba-rugi',  label: 'Laba Rugi',       icon: TrendingUp, permission: 'keuangan' },
           { to: '/keuangan/cashflow',   label: 'Cash Flow',       icon: Wallet,     permission: 'cashflow' },
           { to: '/keuangan/pengeluaran-harian', label: 'Pengeluaran Harian', icon: WalletCards, permission: 'pengeluaran' },
-          { to: '/keuangan/kategori-pengeluaran', label: 'Kategori Pengeluaran', icon: Bookmark, permission: 'kategori_pengeluaran_harian' },
+          { to: '/keuangan/pemasukan-lain', label: 'Pemasukan Lain-lain', icon: PiggyBank, permission: 'pemasukan_lain' },
           { to: '/keuangan/rekening',       label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
           { to: '/keuangan/rekening-tahun', label: 'Rekening Tahun',   icon: FolderOpen, permission: 'rekening_tahun' },
           { to: '/keuangan/pengaturan-rekening', label: 'Pengaturan Rekening', icon: Settings, permission: 'pengaturan_rekening' },
