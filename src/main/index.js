@@ -57,6 +57,7 @@ import KeuanganLabaRugiService from './db/modules/KeuanganLabaRugiService.js'
 import KeuanganCashflowService from './db/modules/KeuanganCashflowService.js'
 import KeuanganKategoriPengeluaranService from './db/modules/KeuanganKategoriPengeluaranService.js'
 import KeuanganPengeluaranHarianService from './db/modules/KeuanganPengeluaranHarianService.js'
+import KeuanganPemasukanLainService from './db/modules/KeuanganPemasukanLainService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -915,6 +916,11 @@ app.whenReady().then(async () => {
         return auth.ok ? KeuanganKategoriPengeluaranService.deleteOne(kode) : { success: false, message: auth.message }
     })
 
+    // `nip` (petugas) WAJIB dipilih eksplisit dari dropdown (listPetugas) —
+    // TIDAK auto-diambil dari sesi login (koreksi: itu salah, pola sama dgn
+    // PerpustakaanSirkulasiService — username login Admin Utama bukan nip
+    // asli di tabel `petugas`).
+    handle('keuangan:pengeluaranHarian:listPetugas', () => KeuanganPengeluaranHarianService.listPetugas())
     handle('keuangan:pengeluaranHarian:list', (_, token, params) => {
         const auth = AuthService.requirePermission(token, 'pengeluaran')
         return auth.ok ? KeuanganPengeluaranHarianService.list(params) : { rows: [], total: 0, message: auth.message }
@@ -930,6 +936,24 @@ app.whenReady().then(async () => {
     handle('keuangan:pengeluaranHarian:delete', (_, token, noKeluar) => {
         const auth = AuthService.requirePermission(token, 'pengeluaran')
         return auth.ok ? KeuanganPengeluaranHarianService.deleteOne(noKeluar, auth.user.username) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:pemasukanLain:listPetugas', () => KeuanganPemasukanLainService.listPetugas())
+    handle('keuangan:pemasukanLain:list', (_, token, params) => {
+        const auth = AuthService.requirePermission(token, 'pemasukan_lain')
+        return auth.ok ? KeuanganPemasukanLainService.list(params) : { rows: [], total: 0, message: auth.message }
+    })
+    handle('keuangan:pemasukanLain:nextNo', (_, token, tanggal) => {
+        const auth = AuthService.requirePermission(token, 'pemasukan_lain')
+        return auth.ok ? KeuanganPemasukanLainService.getNextNoMasuk(tanggal) : ''
+    })
+    handle('keuangan:pemasukanLain:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'pemasukan_lain')
+        return auth.ok ? KeuanganPemasukanLainService.create(data, auth.user.username) : { success: false, message: auth.message }
+    })
+    handle('keuangan:pemasukanLain:delete', (_, token, noMasuk) => {
+        const auth = AuthService.requirePermission(token, 'pemasukan_lain')
+        return auth.ok ? KeuanganPemasukanLainService.deleteOne(noMasuk, auth.user.username) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java

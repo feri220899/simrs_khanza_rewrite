@@ -18,6 +18,23 @@ function generateNoKeluar(lastNo, tgl) {
     return prefix + nextUrut
 }
 
+// "Petugas" (nip) — replika src/kepegawaian/DlgCariPetugas.java: dipilih
+// eksplisit dari daftar petugas AKTIF, BUKAN otomatis dari akun yang login
+// (pola sama dgn koreksi di PerpustakaanSirkulasiService.listPetugas() —
+// Admin Utama login pakai username bebas yang bukan nip asli di tabel
+// `petugas`, jadi auto-isi dari sesi login gagal FK).
+async function listPetugas() {
+    try {
+        const db = await DatabaseService.get()
+        const { rows } = await db.query(`SELECT nip, nama FROM petugas WHERE status='1' ORDER BY nip`)
+        return rows
+    } catch (err) {
+        LogService.error('[KeuanganPengeluaranHarianService] Error listPetugas', { message: err.message, stack: err.stack })
+        console.error('[KeuanganPengeluaranHarianService] Error listPetugas:', err)
+        throw err
+    }
+}
+
 async function getNextNoKeluar(tanggal) {
     try {
         const db = await DatabaseService.get()
@@ -205,4 +222,4 @@ async function deleteOne(no_keluar, username) {
     }
 }
 
-export default { list, create, deleteOne, getNextNoKeluar }
+export default { list, create, deleteOne, getNextNoKeluar, listPetugas }

@@ -54,8 +54,8 @@ import KeuanganRekeningTahun from '../views/keuangan/RekeningTahun.vue'
 import KeuanganBukuBesar from '../views/keuangan/BukuBesar.vue'
 import KeuanganLabaRugi from '../views/keuangan/LabaRugi.vue'
 import KeuanganCashflow from '../views/keuangan/CashFlow.vue'
-import KeuanganKategoriPengeluaran from '../views/keuangan/KategoriPengeluaran.vue'
 import KeuanganPengeluaranHarian from '../views/keuangan/PengeluaranHarian.vue'
+import KeuanganPemasukanLain from '../views/keuangan/PemasukanLain.vue'
 import KeuanganPengaturanRekening from '../views/keuangan/PengaturanRekening.vue'
 import KeuanganMasterAkun from '../views/keuangan/MasterAkun.vue'
 import Pengaturan    from '../views/base/Pengaturan.vue'
@@ -103,7 +103,7 @@ const FASE_1_ROUTES = [
     { path: '/keuangan/laba-rugi', component: KeuanganLabaRugi },
     { path: '/keuangan/cashflow', component: KeuanganCashflow },
     { path: '/keuangan/pengeluaran-harian', component: KeuanganPengeluaranHarian },
-    { path: '/keuangan/kategori-pengeluaran', component: KeuanganKategoriPengeluaran },
+    { path: '/keuangan/pemasukan-lain', component: KeuanganPemasukanLain },
     { path: '/keuangan/master-akun', component: KeuanganMasterAkun },
     { path: '/laporan/tempat-tidur', component: LaporanRl13 },
     { path: '/laporan/bor-alos', component: LaporanBorAlos },

@@ -392,9 +392,10 @@ async function deleteKategoriPemasukan(kode_kategori) {
 }
 
 // KELOMPOK KATEGORI PENGELUARAN HARIAN dipindah ke KeuanganKategoriPengeluaranService.js
-// (halaman dedicated /keuangan/kategori-pengeluaran, prasyarat Tahap D Pengeluaran
-// Harian) — dihapus dari sini 2026-08-19 supaya tidak ada 2 implementasi CRUD
-// untuk tabel kategori_pengeluaran_harian yang sama.
+// (dipakai lewat IPC `keuangan:kategoriPengeluaran:*`, dikonsumsi oleh tab
+// "Kategori Pengeluaran" di MasterAkun.vue DAN dropdown kategori di
+// PengeluaranHarian.vue) — dihapus dari sini 2026-08-19 supaya tidak ada 2
+// implementasi CRUD untuk tabel kategori_pengeluaran_harian yang sama.
 
 // --- KELOMPOK AKUN PENAGIHAN PIUTANG ---
 // Replika DlgAkunPenagihanPiutang.java — PENTING: Java mewajibkan SEMUA 4

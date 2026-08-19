@@ -14,6 +14,7 @@ const tabs = [
     { key: 'piutang', label: 'Akun Piutang Penjamin', permission: 'akun_piutang' },
     { key: 'bayarHutang', label: 'Akun Bayar Hutang', permission: 'akun_bayar_hutang' },
     { key: 'aset', label: 'Akun Aset Inventaris', permission: 'akun_aset_inventaris' },
+    { key: 'pengeluaran', label: 'Kategori Pengeluaran', permission: 'kategori_pengeluaran_harian' },
     { key: 'pemasukan', label: 'Kategori Pemasukan', permission: 'kategori_pemasukan_lain' },
     { key: 'penagihanPiutang', label: 'Akun Penagihan Piutang', permission: 'akun_penagihan_piutang' }
 ]
@@ -98,6 +99,7 @@ async function load() {
         }
         else if (activeTab.value === 'bayarHutang') rows.value = await window.api.keuangan.masterAkun.listBayarHutang()
         else if (activeTab.value === 'aset') rows.value = await window.api.keuangan.masterAkun.listAset()
+        else if (activeTab.value === 'pengeluaran') rows.value = await window.api.keuangan.kategoriPengeluaran.list(authStore.token)
         else if (activeTab.value === 'pemasukan') rows.value = await window.api.keuangan.masterAkun.listKategoriPemasukan()
         else if (activeTab.value === 'penagihanPiutang') rows.value = await window.api.keuangan.masterAkun.listPenagihanPiutang()
  
@@ -119,6 +121,7 @@ async function save() {
         else if (activeTab.value === 'piutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePiutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createPiutang(token, d)
         else if (activeTab.value === 'bayarHutang') result = editing.value ? await window.api.keuangan.masterAkun.updateBayarHutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createBayarHutang(token, d)
         else if (activeTab.value === 'aset') result = editing.value ? await window.api.keuangan.masterAkun.updateAset(token, editing.value.id_jenis, d) : await window.api.keuangan.masterAkun.createAset(token, d)
+        else if (activeTab.value === 'pengeluaran') result = editing.value ? await window.api.keuangan.kategoriPengeluaran.update(token, editing.value.kode_kategori, d) : await window.api.keuangan.kategoriPengeluaran.create(token, d)
         else if (activeTab.value === 'pemasukan') result = editing.value ? await window.api.keuangan.masterAkun.updateKategoriPemasukan(token, editing.value.kode_kategori, d) : await window.api.keuangan.masterAkun.createKategoriPemasukan(token, d)
         else if (activeTab.value === 'penagihanPiutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePenagihanPiutang(token, editing.value.kd_rek, d) : await window.api.keuangan.masterAkun.createPenagihanPiutang(token, d)
 
@@ -143,6 +146,7 @@ async function remove(row) {
         else if (activeTab.value === 'piutang') result = await window.api.keuangan.masterAkun.deletePiutang(token, row.nama_bayar)
         else if (activeTab.value === 'bayarHutang') result = await window.api.keuangan.masterAkun.deleteBayarHutang(token, row.nama_bayar)
         else if (activeTab.value === 'aset') result = await window.api.keuangan.masterAkun.deleteAset(token, row.id_jenis)
+        else if (activeTab.value === 'pengeluaran') result = await window.api.keuangan.kategoriPengeluaran.delete(token, row.kode_kategori)
         else if (activeTab.value === 'pemasukan') result = await window.api.keuangan.masterAkun.deleteKategoriPemasukan(token, row.kode_kategori)
         else if (activeTab.value === 'penagihanPiutang') result = await window.api.keuangan.masterAkun.deletePenagihanPiutang(token, row.kd_rek)
 
@@ -168,7 +172,7 @@ onMounted(load)
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0">
             <div>
                 <h1 class="text-xl font-bold flex items-center gap-2"><Bookmark class="size-6 text-primary" /> Master Akun & Kategori</h1>
-                <p class="text-sm text-base-content/60">Pengaturan akun bayar, piutang, aset, dan kategori pemasukan lain</p>
+                <p class="text-sm text-base-content/60">Pengaturan akun bayar, piutang, aset, dan kategori pemasukan/pengeluaran</p>
             </div>
             <div class="flex items-center gap-2">
                 <button class="btn btn-ghost btn-sm gap-2" :disabled="loading" @click="load"><RotateCcw class="size-4" /> Refresh</button>
@@ -211,11 +215,18 @@ onMounted(load)
                             <th class="bg-base-200">No Rekening</th>
                             <th class="w-24 text-right bg-base-200">Aksi</th>
                         </tr>
+                        <tr v-else-if="activeTab === 'pengeluaran'">
+                            <th class="w-24 bg-base-200">Kode Kategori</th>
+                            <th class="w-1/3 bg-base-200">Nama Kategori</th>
+                            <th class="bg-base-200">Akun Beban (Debet)</th>
+                            <th class="bg-base-200">Kontra Akun Kas/Bank (Kredit)</th>
+                            <th class="w-24 text-right bg-base-200">Aksi</th>
+                        </tr>
                         <tr v-else>
                             <th class="w-24 bg-base-200">Kode Kategori</th>
                             <th class="w-1/3 bg-base-200">Nama Kategori</th>
-                            <th class="bg-base-200">Rekening Debet</th>
-                            <th class="bg-base-200">Rekening Kredit (Kontra)</th>
+                            <th class="bg-base-200">Rekening Pendapatan (Kredit)</th>
+                            <th class="bg-base-200">Rekening Kas/Bank (Kontra, Debet)</th>
                             <th class="w-24 text-right bg-base-200">Aksi</th>
                         </tr>
                     </thead>
@@ -243,6 +254,12 @@ onMounted(load)
                                 <td>{{ row.nama_bank }}</td>
                                 <td>{{ row.atas_nama }}</td>
                                 <td class="font-mono">{{ row.no_rek }}</td>
+                            </template>
+                            <template v-else-if="activeTab === 'pengeluaran'">
+                                <td class="font-mono font-semibold">{{ row.kode_kategori }}</td>
+                                <td>{{ row.nama_kategori }}</td>
+                                <td><span class="font-mono text-primary">{{ row.kd_rek }}</span><br><span class="text-xs">{{ row.nm_rek_akun }}</span></td>
+                                <td><span class="font-mono text-primary">{{ row.kd_rek2 }}</span><br><span class="text-xs">{{ row.nm_rek_kontra }}</span></td>
                             </template>
                             <template v-else>
                                 <td class="font-mono font-semibold">{{ row.kode_kategori }}</td>
@@ -304,22 +321,22 @@ onMounted(load)
                         <template v-else>
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-sm font-medium px-1">Kode Kategori</label>
-                                <input v-model="form.kode_kategori" type="text" class="input input-sm input-bordered font-mono w-full" required />
+                                <input v-model="form.kode_kategori" type="text" maxlength="5" class="input input-sm input-bordered font-mono w-full uppercase" required />
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-sm font-medium px-1">Nama Kategori</label>
-                                <input v-model="form.nama_kategori" type="text" class="input input-sm input-bordered w-full" required />
+                                <input v-model="form.nama_kategori" type="text" maxlength="40" class="input input-sm input-bordered w-full uppercase" required />
                             </div>
                         </template>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-sm font-medium px-1">Rekening {{ activeTab === 'pemasukan' ? 'Debet' : '' }}</label>
+                            <label class="text-sm font-medium px-1">Rekening {{ activeTab === 'pemasukan' ? 'Pendapatan (Kredit)' : activeTab === 'pengeluaran' ? 'Beban (Debet)' : '' }}</label>
                             <AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." />
                         </div>
 
-                        <template v-if="activeTab === 'pemasukan'">
+                        <template v-if="activeTab === 'pemasukan' || activeTab === 'pengeluaran'">
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-sm font-medium px-1">Rekening Kredit (Kontra)</label>
+                                <label class="text-sm font-medium px-1">{{ activeTab === 'pemasukan' ? 'Rekening Kas/Bank (Kontra, Debet)' : 'Kontra Akun Kas/Bank (Kredit)' }}</label>
                                 <AppSelect v-model="form.kd_rek2" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening kontra COA..." />
                             </div>
                         </template>

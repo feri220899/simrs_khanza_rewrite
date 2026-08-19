@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { Plus, Printer, Save, Search, Trash2, WalletCards, X } from 'lucide-vue-next'
+import { Plus, PiggyBank, Printer, Save, Search, Trash2, X } from 'lucide-vue-next'
 import AppPagination from '../../components/AppPagination.vue'
 import AppSelect from '../../components/AppSelect.vue'
 import { useAuthStore } from '../../stores/auth.js'
@@ -23,8 +23,8 @@ const search = ref('')
 const page = ref(1)
 const pageSize = ref(20)
 
-const form = ref({ tanggal: today, kode_kategori: '', keterangan: '', biaya: 0, nip: '' })
-const nextNoKeluar = ref('')
+const form = ref({ tanggal: today, kode_kategori: '', keterangan: '', keperluan: '', besar: 0, nip: '' })
+const nextNoMasuk = ref('')
 
 const kategoriOptions = computed(() => kategoriList.value.map(k => ({ ...k, display: `${k.kode_kategori} — ${k.nama_kategori}` })))
 
@@ -45,12 +45,12 @@ async function load() {
     loading.value = true
     try {
         const params = { tgl_awal: filter.value.tgl_awal, tgl_akhir: filter.value.tgl_akhir, keyword: search.value.trim() }
-        const result = await window.api.keuangan.pengeluaranHarian.list(authStore.token, params)
+        const result = await window.api.keuangan.pemasukanLain.list(authStore.token, params)
         rows.value = result.rows
         total.value = result.total
         if (result.message) showToast(result.message, 'error')
     } catch (err) {
-        showToast(err?.message || 'Gagal memuat pengeluaran harian', 'error')
+        showToast(err?.message || 'Gagal memuat pemasukan lain', 'error')
     } finally {
         loading.value = false
     }
@@ -58,15 +58,15 @@ async function load() {
 
 async function loadKategori() {
     try {
-        kategoriList.value = await window.api.keuangan.kategoriPengeluaran.list(authStore.token)
+        kategoriList.value = await window.api.keuangan.masterAkun.listKategoriPemasukan()
     } catch (err) {
-        console.error('Gagal memuat kategori pengeluaran', err)
+        console.error('Gagal memuat kategori pemasukan', err)
     }
 }
 
 async function loadPetugas() {
     try {
-        petugasList.value = await window.api.keuangan.pengeluaranHarian.listPetugas()
+        petugasList.value = await window.api.keuangan.pemasukanLain.listPetugas()
     } catch (err) {
         console.error('Gagal memuat daftar petugas', err)
     }
@@ -74,7 +74,7 @@ async function loadPetugas() {
 
 async function loadNextNo() {
     try {
-        nextNoKeluar.value = await window.api.keuangan.pengeluaranHarian.nextNo(authStore.token, form.value.tanggal)
+        nextNoMasuk.value = await window.api.keuangan.pemasukanLain.nextNo(authStore.token, form.value.tanggal)
     } catch (err) {
         console.error('Gagal generate nomor', err)
     }
@@ -85,7 +85,7 @@ watch(() => form.value.tanggal, () => {
 })
 
 function openNew() {
-    form.value = { tanggal: today, kode_kategori: '', keterangan: '', biaya: 0, nip: '' }
+    form.value = { tanggal: today, kode_kategori: '', keterangan: '', keperluan: '', besar: 0, nip: '' }
     loadNextNo()
     showModal.value = true
 }
@@ -98,29 +98,30 @@ async function save() {
     if (!form.value.kode_kategori) return showToast('Pilih kategori terlebih dahulu', 'warning')
     if (!form.value.nip) return showToast('Pilih petugas terlebih dahulu', 'warning')
     if (!form.value.keterangan.trim()) return showToast('Keterangan tidak boleh kosong', 'warning')
-    if (!form.value.biaya || Number(form.value.biaya) <= 0) return showToast('Pengeluaran harus lebih dari 0', 'warning')
+    if (!form.value.keperluan.trim()) return showToast('Keperluan tidak boleh kosong', 'warning')
+    if (!form.value.besar || Number(form.value.besar) <= 0) return showToast('Pemasukan harus lebih dari 0', 'warning')
 
     saving.value = true
     try {
         const payload = { ...form.value }
-        const result = await window.api.keuangan.pengeluaranHarian.create(authStore.token, payload)
-        if (!result.success) return showToast(result.message || 'Gagal menyimpan pengeluaran', 'error')
+        const result = await window.api.keuangan.pemasukanLain.create(authStore.token, payload)
+        if (!result.success) return showToast(result.message || 'Gagal menyimpan pemasukan', 'error')
 
-        showToast('Pengeluaran berhasil disimpan')
+        showToast('Pemasukan berhasil disimpan')
         closeModal()
         await load()
     } catch (err) {
-        showToast(err?.message || 'Gagal menyimpan pengeluaran', 'error')
+        showToast(err?.message || 'Gagal menyimpan pemasukan', 'error')
     } finally {
         saving.value = false
     }
 }
 
 async function remove(row) {
-    if (!confirm(`Batalkan pengeluaran ${row.no_keluar} (${row.nama_kategori}, Rp ${money(row.biaya)})?\n\nJurnal asli TIDAK dihapus — koreksi diposting sebagai jurnal pembalik baru.`)) return
-    const result = await window.api.keuangan.pengeluaranHarian.delete(authStore.token, row.no_keluar)
-    if (!result.success) return showToast(result.message || 'Gagal membatalkan pengeluaran', 'error')
-    showToast('Pengeluaran berhasil dibatalkan (jurnal pembalik diposting)')
+    if (!confirm(`Batalkan pemasukan ${row.no_masuk} (${row.nama_kategori}, Rp ${money(row.besar)})?\n\nJurnal asli TIDAK dihapus — koreksi diposting sebagai jurnal pembalik baru.`)) return
+    const result = await window.api.keuangan.pemasukanLain.delete(authStore.token, row.no_masuk)
+    if (!result.success) return showToast(result.message || 'Gagal membatalkan pemasukan', 'error')
+    showToast('Pemasukan berhasil dibatalkan (jurnal pembalik diposting)')
     await load()
 }
 
@@ -128,8 +129,8 @@ function printList() {
     if (!rows.value.length) return showToast('Tidak ada data untuk dicetak', 'warning')
     const win = window.open('', '_blank', 'width=1100,height=800')
     if (!win) return showToast('Popup cetak diblokir', 'error')
-    const body = rows.value.map(r => `<tr><td>${esc(r.no_keluar)}</td><td>${esc(r.tanggal)}</td><td>${esc(r.kode_kategori)} ${esc(r.nama_kategori)}</td><td>${esc(r.nip)} ${esc(r.nama_petugas)}</td><td>${esc(r.keterangan)}</td><td class="right">${money(r.biaya)}</td></tr>`).join('')
-    win.document.write(`<html><head><title>Pengeluaran Harian</title><style>body{font:12px Arial;margin:20px;color:#111}h1,h2{text-align:center;margin:4px 0}h1{font-size:18px}h2{font-size:13px;font-weight:normal}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #777;padding:6px}th{background:#eee}.right{text-align:right}@media print{body{margin:10mm}}</style></head><body><h1>PENGELUARAN HARIAN</h1><h2>Periode ${esc(filter.value.tgl_awal)} s.d. ${esc(filter.value.tgl_akhir)}</h2><table><thead><tr><th>No. Transaksi</th><th>Tanggal</th><th>Kategori</th><th>Petugas</th><th>Keterangan</th><th>Pengeluaran</th></tr></thead><tbody>${body}</tbody><tfoot><tr><th colspan="5" class="right">Jumlah Total Pengeluaran</th><th class="right">${money(total.value)}</th></tr></tfoot></table></body></html>`)
+    const body = rows.value.map(r => `<tr><td>${esc(r.no_masuk)}</td><td>${esc(r.tanggal)}</td><td>${esc(r.kode_kategori)} ${esc(r.nama_kategori)}</td><td>${esc(r.nip)} ${esc(r.nama_petugas)}</td><td>${esc(r.keterangan)}</td><td>${esc(r.keperluan)}</td><td class="right">${money(r.besar)}</td></tr>`).join('')
+    win.document.write(`<html><head><title>Pemasukan Lain-lain</title><style>body{font:12px Arial;margin:20px;color:#111}h1,h2{text-align:center;margin:4px 0}h1{font-size:18px}h2{font-size:13px;font-weight:normal}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #777;padding:6px}th{background:#eee}.right{text-align:right}@media print{body{margin:10mm}}</style></head><body><h1>PEMASUKAN LAIN-LAIN</h1><h2>Periode ${esc(filter.value.tgl_awal)} s.d. ${esc(filter.value.tgl_akhir)}</h2><table><thead><tr><th>No. Transaksi</th><th>Tanggal</th><th>Kategori</th><th>Petugas</th><th>Keterangan</th><th>Keperluan</th><th>Pemasukan</th></tr></thead><tbody>${body}</tbody><tfoot><tr><th colspan="6" class="right">Jumlah Total Pemasukan</th><th class="right">${money(total.value)}</th></tr></tfoot></table></body></html>`)
     win.document.close()
     win.focus()
     win.print()
@@ -146,12 +147,12 @@ onMounted(() => {
     <div class="flex flex-col h-full min-h-0">
         <div class="mb-4 flex items-center justify-between shrink-0">
             <div>
-                <h1 class="text-xl font-bold flex items-center gap-2"><WalletCards class="size-6 text-primary" /> Pengeluaran Harian</h1>
-                <p class="text-sm text-base-content/60">Pencatatan kas keluar harian beserta posting jurnal otomatis</p>
+                <h1 class="text-xl font-bold flex items-center gap-2"><PiggyBank class="size-6 text-primary" /> Pemasukan Lain-lain</h1>
+                <p class="text-sm text-base-content/60">Pencatatan pemasukan di luar pelayanan/toko beserta posting jurnal otomatis</p>
             </div>
             <div class="flex gap-2">
                 <button class="btn btn-ghost btn-sm gap-2" @click="printList" :disabled="loading || !rows.length"><Printer class="size-4" /> Cetak</button>
-                <button class="btn btn-primary btn-sm gap-2" @click="openNew"><Plus class="size-4" /> Pengeluaran Baru</button>
+                <button class="btn btn-primary btn-sm gap-2" @click="openNew"><Plus class="size-4" /> Pemasukan Baru</button>
             </div>
         </div>
 
@@ -182,33 +183,35 @@ onMounted(() => {
                     <thead class="sticky top-0 z-20 bg-base-200 text-base-content font-semibold shadow-sm">
                         <tr>
                             <th class="w-32">No. Transaksi</th>
-                            <th class="w-32">Tanggal</th>
+                            <th class="w-28">Tanggal</th>
                             <th>Kategori</th>
                             <th>Petugas</th>
                             <th>Keterangan</th>
-                            <th class="w-32 text-right">Pengeluaran</th>
+                            <th>Keperluan</th>
+                            <th class="w-32 text-right">Pemasukan</th>
                             <th class="w-16 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody v-if="paginatedRows.length > 0">
-                        <tr v-for="row in paginatedRows" :key="row.no_keluar" class="hover">
-                            <td class="font-mono">{{ row.no_keluar }}</td>
+                        <tr v-for="row in paginatedRows" :key="row.no_masuk" class="hover">
+                            <td class="font-mono">{{ row.no_masuk }}</td>
                             <td>{{ row.tanggal }}</td>
                             <td><span class="font-mono text-xs text-base-content/60">{{ row.kode_kategori }}</span> {{ row.nama_kategori }}</td>
                             <td>{{ row.nama_petugas }}</td>
                             <td>{{ row.keterangan }}</td>
-                            <td class="text-right font-semibold">{{ money(row.biaya) }}</td>
+                            <td>{{ row.keperluan }}</td>
+                            <td class="text-right font-semibold">{{ money(row.besar) }}</td>
                             <td class="text-center">
                                 <button class="btn btn-ghost btn-xs text-error" @click="remove(row)" title="Batalkan"><Trash2 class="size-4" /></button>
                             </td>
                         </tr>
                     </tbody>
                     <tbody v-else>
-                        <tr><td colspan="7" class="text-center py-8 text-base-content/50">Tidak ada data pengeluaran.</td></tr>
+                        <tr><td colspan="8" class="text-center py-8 text-base-content/50">Tidak ada data pemasukan.</td></tr>
                     </tbody>
                     <tfoot v-if="rows.length" class="sticky bottom-0 bg-base-200/90 font-bold">
                         <tr>
-                            <td colspan="5" class="text-right">Jumlah Total Pengeluaran</td>
+                            <td colspan="6" class="text-right">Jumlah Total Pemasukan</td>
                             <td class="text-right">{{ money(total) }}</td>
                             <td></td>
                         </tr>
@@ -220,14 +223,14 @@ onMounted(() => {
         <dialog class="modal" :class="{ 'modal-open': showModal }">
             <div class="modal-box rounded-2xl border border-base-200 max-w-lg">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-lg flex items-center gap-2"><Plus class="size-5" /> Pengeluaran Baru</h3>
+                    <h3 class="font-bold text-lg flex items-center gap-2"><Plus class="size-5" /> Pemasukan Baru</h3>
                     <button class="btn btn-sm btn-circle btn-ghost" @click="closeModal"><X class="size-4" /></button>
                 </div>
                 <div class="flex flex-col gap-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex flex-col gap-1.5">
                             <label class="text-sm font-medium px-1">No. Transaksi</label>
-                            <input type="text" :value="nextNoKeluar" class="input input-bordered input-sm w-full bg-base-200" readonly />
+                            <input type="text" :value="nextNoMasuk" class="input input-bordered input-sm w-full bg-base-200" readonly />
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <label class="text-sm font-medium px-1">Tanggal <span class="text-error">*</span></label>
@@ -236,19 +239,23 @@ onMounted(() => {
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm font-medium px-1">Kategori <span class="text-error">*</span></label>
-                        <AppSelect v-model="form.kode_kategori" :options="kategoriOptions" value-prop="kode_kategori" label="display" placeholder="Pilih kategori pengeluaran..." />
+                        <AppSelect v-model="form.kode_kategori" :options="kategoriOptions" value-prop="kode_kategori" label="display" placeholder="Pilih kategori pemasukan..." />
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm font-medium px-1">Petugas <span class="text-error">*</span></label>
                         <AppSelect v-model="form.nip" :options="petugasList" value-prop="nip" label="nama" placeholder="Pilih petugas..." />
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-sm font-medium px-1">Pengeluaran (Rp) <span class="text-error">*</span></label>
-                        <input type="number" v-model.number="form.biaya" min="0" class="input input-bordered input-sm w-full text-right" @focus="$event.target.select()" />
+                        <label class="text-sm font-medium px-1">Pemasukan (Rp) <span class="text-error">*</span></label>
+                        <input type="number" v-model.number="form.besar" min="0" class="input input-bordered input-sm w-full text-right" @focus="$event.target.select()" />
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm font-medium px-1">Keterangan <span class="text-error">*</span></label>
-                        <input type="text" v-model="form.keterangan" maxlength="100" class="input input-bordered input-sm w-full uppercase" />
+                        <input type="text" v-model="form.keterangan" maxlength="50" class="input input-bordered input-sm w-full uppercase" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-sm font-medium px-1">Keperluan <span class="text-error">*</span></label>
+                        <input type="text" v-model="form.keperluan" maxlength="70" class="input input-bordered input-sm w-full uppercase" />
                     </div>
                 </div>
                 <div class="modal-action">
