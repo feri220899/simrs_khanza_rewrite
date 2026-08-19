@@ -89,6 +89,8 @@ const fields = {
         ['Penerimaan_NonMedis', 'Penerimaan Logistik Non Medis'],
         ['Kontra_Penerimaan_NonMedis', 'Hutang Penerimaan Logistik Non Medis'],
         ['PPN_Masukan', 'PPN Masukan (Pembelian/Penerimaan)'],
+        ['Retur_Beli_Non_Medis', 'Retur Beli Logistik Non Medis (Persediaan)'],
+        ['Kontra_Retur_Beli_Non_Medis', 'Kontra Retur Beli Non Medis (Hutang)'],
         ['Bayar_Pemesanan_Non_Medis', 'Hutang Vendor Non Medis'],
         ['Pengadaan_Toko', 'Hutang Pengadaan Toko'],
         ['Bayar_Pemesanan_Toko', 'Kas/Bank Bayar Pemesanan Toko'],

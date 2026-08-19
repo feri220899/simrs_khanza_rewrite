@@ -72,6 +72,8 @@ export const SET_AKUN_CONFIG = {
             { key: 'Penerimaan_NonMedis', label: 'Penerimaan Logistik Non Medis' },
             { key: 'Kontra_Penerimaan_NonMedis', label: 'Hutang Penerimaan Logistik Non Medis' },
             { key: 'PPN_Masukan', label: 'PPN Masukan (Pembelian/Penerimaan)' },
+            { key: 'Retur_Beli_Non_Medis', label: 'Retur Beli Logistik Non Medis (Persediaan)' },
+            { key: 'Kontra_Retur_Beli_Non_Medis', label: 'Kontra Retur Beli Non Medis (Hutang)' },
             { key: 'Bayar_Pemesanan_Non_Medis', label: 'Hutang Vendor Non Medis' },
             { key: 'Pengadaan_Toko', label: 'Hutang Pengadaan Toko' },
             { key: 'Bayar_Pemesanan_Toko', label: 'Kas/Bank Bayar Pemesanan Toko' },

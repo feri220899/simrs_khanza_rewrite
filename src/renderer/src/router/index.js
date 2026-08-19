@@ -26,6 +26,7 @@ import IpsrsSuratPemesanan from '../views/ipsrs/SuratPemesanan.vue'
 import IpsrsPenerimaan     from '../views/ipsrs/PenerimaanNonMedis.vue'
 import IpsrsPengadaan      from '../views/ipsrs/PengadaanNonMedis.vue'
 import IpsrsPengeluaran    from '../views/ipsrs/PengeluaranNonMedis.vue'
+import IpsrsReturBeli      from '../views/ipsrs/ReturBeliNonMedis.vue'
 import IpsrsStokOpname     from '../views/ipsrs/StokOpname.vue'
 import IpsrsRiwayat        from '../views/ipsrs/Riwayat.vue'
 import LaporanRl13         from '../views/laporan/KetersediaanTempatTidur.vue'
@@ -98,6 +99,7 @@ const FASE_1_ROUTES = [
     { path: '/ipsrs/penerimaan', component: IpsrsPenerimaan },
     { path: '/ipsrs/pengadaan', component: IpsrsPengadaan },
     { path: '/ipsrs/pengeluaran', component: IpsrsPengeluaran },
+    { path: '/ipsrs/retur-beli', component: IpsrsReturBeli },
     { path: '/ipsrs/stok-opname', component: IpsrsStokOpname },
     { path: '/ipsrs/riwayat', component: IpsrsRiwayat },
     { path: '/keuangan/jurnal', component: KeuanganJurnal },

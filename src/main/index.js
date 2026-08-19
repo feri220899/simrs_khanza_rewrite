@@ -49,6 +49,7 @@ import IpsrsSuratPemesananService from './db/modules/ipsrs/IpsrsSuratPemesananSe
 import IpsrsPenerimaanService from './db/modules/ipsrs/IpsrsPenerimaanService.js'
 import IpsrsPengadaanService from './db/modules/ipsrs/IpsrsPengadaanService.js'
 import IpsrsPengeluaranService from './db/modules/ipsrs/IpsrsPengeluaranService.js'
+import IpsrsReturBeliService from './db/modules/ipsrs/IpsrsReturBeliService.js'
 import KeuanganRekeningService from './db/modules/keuangan/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/keuangan/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/keuangan/KeuanganPengaturanRekeningService.js'
@@ -728,6 +729,18 @@ app.whenReady().then(async () => {
     handle('ipsrs:pengeluaran:create', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'ipsrs_stok_keluar')
         return auth.ok ? IpsrsPengeluaranService.create(data, auth.user.username) : { success: false, message: auth.message }
+    })
+
+    // Retur Beli Barang Non Medis (retur ke suplier) — src/ipsrs/
+    // IPSRSReturBeli.java. Permission `ipsrs_returbeli` sesuai
+    // akses.getipsrs_returbeli() yang menggerbang BtnSimpan di Java.
+    handle('ipsrs:returBeli:listPetugas', () => IpsrsReturBeliService.listPetugas())
+    handle('ipsrs:returBeli:nextNoRetur', (_, tanggal) => IpsrsReturBeliService.getNextNoRetur(tanggal))
+    handle('ipsrs:returBeli:list', (_, params) => IpsrsReturBeliService.list(params))
+    handle('ipsrs:returBeli:detail', (_, noReturBeli) => IpsrsReturBeliService.detail(noReturBeli))
+    handle('ipsrs:returBeli:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_returbeli')
+        return auth.ok ? IpsrsReturBeliService.create(data, auth.user.username) : { success: false, message: auth.message }
     })
 
     handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))
