@@ -48,6 +48,7 @@ import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
 import IpsrsPenerimaanService from './db/modules/IpsrsPenerimaanService.js'
 import IpsrsPengadaanService from './db/modules/IpsrsPengadaanService.js'
+import IpsrsPengeluaranService from './db/modules/IpsrsPengeluaranService.js'
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
@@ -714,6 +715,19 @@ app.whenReady().then(async () => {
     handle('ipsrs:pengadaan:create', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'ipsrs_pengadaan_barang')
         return auth.ok ? IpsrsPengadaanService.create(data, auth.user.username) : { success: false, message: auth.message }
+    })
+
+    // Pengeluaran Barang Non Medis (stok keluar internal) — src/ipsrs/
+    // IPSRSPengeluaran.java. Permission `ipsrs_stok_keluar` sesuai
+    // akses.getipsrs_stok_keluar() yang menggerbang BtnSimpan di Java.
+    handle('ipsrs:pengeluaran:listPetugas', () => IpsrsPengeluaranService.listPetugas())
+    handle('ipsrs:pengeluaran:getFromPermintaan', (_, noPermintaan) => IpsrsPengeluaranService.getFromPermintaan(noPermintaan))
+    handle('ipsrs:pengeluaran:nextNoKeluar', (_, tanggal) => IpsrsPengeluaranService.getNextNoKeluar(tanggal))
+    handle('ipsrs:pengeluaran:list', (_, params) => IpsrsPengeluaranService.list(params))
+    handle('ipsrs:pengeluaran:detail', (_, noKeluar) => IpsrsPengeluaranService.detail(noKeluar))
+    handle('ipsrs:pengeluaran:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_stok_keluar')
+        return auth.ok ? IpsrsPengeluaranService.create(data, auth.user.username) : { success: false, message: auth.message }
     })
 
     handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))

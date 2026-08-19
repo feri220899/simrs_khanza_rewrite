@@ -84,6 +84,7 @@ const fields = {
         ['Piutang_Obat', 'Piutang Obat'],
         ['Pengadaan_Ipsrs', 'Hutang Pengadaan IPSRS'],
         ['Stok_Keluar_Ipsrs', 'Beban Stok Keluar IPSRS'],
+        ['Kontra_Stok_Keluar_Ipsrs', 'Kontra (Persediaan) Stok Keluar IPSRS'],
         ['Bayar_Piutang_Pasien', 'Kas/Bank Penerimaan Piutang Pasien'],
         ['Penerimaan_NonMedis', 'Penerimaan Logistik Non Medis'],
         ['Kontra_Penerimaan_NonMedis', 'Hutang Penerimaan Logistik Non Medis'],
