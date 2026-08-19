@@ -226,6 +226,13 @@ contextBridge.exposeInMainWorld('api', {
             detail:       (noFaktur)        => ipcRenderer.invoke('ipsrs:penerimaan:detail', noFaktur),
             create:       (token, data)     => ipcRenderer.invoke('ipsrs:penerimaan:create', token, data),
         },
+        pengadaan: {
+            listPetugas:  ()               => ipcRenderer.invoke('ipsrs:pengadaan:listPetugas'),
+            nextNoFaktur: (tglBeli)         => ipcRenderer.invoke('ipsrs:pengadaan:nextNoFaktur', tglBeli),
+            list:         (params)          => ipcRenderer.invoke('ipsrs:pengadaan:list', params),
+            detail:       (noFaktur)        => ipcRenderer.invoke('ipsrs:pengadaan:detail', noFaktur),
+            create:       (token, data)     => ipcRenderer.invoke('ipsrs:pengadaan:create', token, data),
+        },
         laporan: {
             rekapPermintaan:    (params) => ipcRenderer.invoke('ipsrs:laporan:rekapPermintaan', params),
             ringkasanPengajuan: (params) => ipcRenderer.invoke('ipsrs:laporan:ringkasanPengajuan', params),
