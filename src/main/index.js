@@ -47,6 +47,7 @@ import IpsrsLaporanService from './db/modules/IpsrsLaporanService.js'
 import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
 import IpsrsPenerimaanService from './db/modules/IpsrsPenerimaanService.js'
+import IpsrsPengadaanService from './db/modules/IpsrsPengadaanService.js'
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
@@ -701,6 +702,18 @@ app.whenReady().then(async () => {
     handle('ipsrs:penerimaan:create', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'penerimaan_non_medis')
         return auth.ok ? IpsrsPenerimaanService.create(data, auth.user.username) : { success: false, message: auth.message }
+    })
+
+    // Pengadaan Barang Non Medis (kas/bank) — src/ipsrs/IPSRSPembelian.java.
+    // Permission `ipsrs_pengadaan_barang` sesuai akses.getipsrs_pengadaan_barang()
+    // yang menggerbang BtnSimpan di Java.
+    handle('ipsrs:pengadaan:listPetugas', () => IpsrsPengadaanService.listPetugas())
+    handle('ipsrs:pengadaan:nextNoFaktur', (_, tglBeli) => IpsrsPengadaanService.getNextNoFaktur(tglBeli))
+    handle('ipsrs:pengadaan:list', (_, params) => IpsrsPengadaanService.list(params))
+    handle('ipsrs:pengadaan:detail', (_, noFaktur) => IpsrsPengadaanService.detail(noFaktur))
+    handle('ipsrs:pengadaan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'ipsrs_pengadaan_barang')
+        return auth.ok ? IpsrsPengadaanService.create(data, auth.user.username) : { success: false, message: auth.message }
     })
 
     handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))

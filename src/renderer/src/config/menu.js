@@ -245,6 +245,7 @@ export const allMenu = [
           { to: '/ipsrs/pengajuan',       label: 'Pengajuan Barang', icon: FileCheck2,     permission: 'pengajuan_barang_nonmedis' },
            { to: '/ipsrs/surat-pemesanan', label: 'Surat Pemesanan',  icon: FileText,       permission: 'surat_pemesanan_non_medis' },
            { to: '/ipsrs/penerimaan',      label: 'Penerimaan Barang Non Medis', icon: PackageCheck, permission: 'penerimaan_non_medis' },
+           { to: '/ipsrs/pengadaan',       label: 'Pengadaan Barang Non Medis', icon: ShoppingBag, permission: 'ipsrs_pengadaan_barang' },
            { to: '/ipsrs/stok-opname',     label: 'Stok Opname',      icon: ClipboardCheck, permission: 'stok_opname_logistik' },
           { to: '/ipsrs/riwayat',         label: 'Riwayat Barang',   icon: History,        permission: 'ipsrs_riwayat_barang' },
         ],
