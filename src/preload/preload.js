@@ -278,6 +278,11 @@ contextBridge.exposeInMainWorld('api', {
             get: (token) => ipcRenderer.invoke('keuangan:pengaturanRekening:get', token),
             save: (token, groupKey, data) => ipcRenderer.invoke('keuangan:pengaturanRekening:save', token, groupKey, data),
         },
+        matrixAkunPerawatan: {
+            list: (token, tipe, params) => ipcRenderer.invoke('keuangan:matrixAkunPerawatan:list', token, tipe, params),
+            save: (token, tipe, kdJenisPrw, fields) => ipcRenderer.invoke('keuangan:matrixAkunPerawatan:save', token, tipe, kdJenisPrw, fields),
+            remove: (token, tipe, kdJenisPrw) => ipcRenderer.invoke('keuangan:matrixAkunPerawatan:remove', token, tipe, kdJenisPrw),
+        },
         masterAkun: {
             listBayar: () => ipcRenderer.invoke('keuangan:masterAkun:listBayar'),
             createBayar: (token, data) => ipcRenderer.invoke('keuangan:masterAkun:createBayar', token, data),

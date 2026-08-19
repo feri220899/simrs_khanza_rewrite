@@ -49,6 +49,7 @@ import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
+import KeuanganMatrixAkunPerawatanService from './db/modules/KeuanganMatrixAkunPerawatanService.js'
 import KeuanganMasterAkunService from './db/modules/KeuanganMasterAkunService.js'
 import KeuanganJurnalService from './db/modules/KeuanganJurnalService.js'
 import KeuanganJurnalHarianService from './db/modules/KeuanganJurnalHarianService.js'
@@ -778,6 +779,22 @@ app.whenReady().then(async () => {
     handle('keuangan:pengaturanRekening:save', (_, token, groupKey, data) => {
         const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
         return auth.ok ? KeuanganPengaturanRekeningService.saveMappingDefault(groupKey, data) : { success: false, message: auth.message }
+    })
+
+    // Matrix akun per jenis tindakan (override di atas mapping default ralan/ranap
+    // di atas) — bagian dari dialog Java yang sama (DlgPengaturanRekening.java),
+    // permission sama: 'pengaturan_rekening'.
+    handle('keuangan:matrixAkunPerawatan:list', (_, token, tipe, params) => {
+        const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
+        return auth.ok ? KeuanganMatrixAkunPerawatanService.list(tipe, params) : { rows: [], total: 0, message: auth.message }
+    })
+    handle('keuangan:matrixAkunPerawatan:save', (_, token, tipe, kdJenisPrw, fields) => {
+        const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
+        return auth.ok ? KeuanganMatrixAkunPerawatanService.save(tipe, kdJenisPrw, fields) : { success: false, message: auth.message }
+    })
+    handle('keuangan:matrixAkunPerawatan:remove', (_, token, tipe, kdJenisPrw) => {
+        const auth = AuthService.requirePermission(token, 'pengaturan_rekening')
+        return auth.ok ? KeuanganMatrixAkunPerawatanService.removeOverride(tipe, kdJenisPrw) : { success: false, message: auth.message }
     })
 
     // Keuangan — Master Akun & Kategori Spasifik (Akun Bayar, Akun Piutang, Kategori Pemasukan/Pengeluaran)
