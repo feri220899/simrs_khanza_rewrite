@@ -46,6 +46,7 @@ import IpsrsPermintaanService from './db/modules/IpsrsPermintaanService.js'
 import IpsrsLaporanService from './db/modules/IpsrsLaporanService.js'
 import IpsrsPengajuanService from './db/modules/IpsrsPengajuanService.js'
 import IpsrsSuratPemesananService from './db/modules/IpsrsSuratPemesananService.js'
+import IpsrsPenerimaanService from './db/modules/IpsrsPenerimaanService.js'
 import KeuanganRekeningService from './db/modules/KeuanganRekeningService.js'
 import KeuanganRekeningTahunService from './db/modules/KeuanganRekeningTahunService.js'
 import KeuanganPengaturanRekeningService from './db/modules/KeuanganPengaturanRekeningService.js'
@@ -686,6 +687,20 @@ app.whenReady().then(async () => {
     handle('ipsrs:suratPemesanan:delete', (_, token, noPemesanan) => {
         const auth = AuthService.requirePermission(token, 'surat_pemesanan_non_medis')
         return auth.ok ? IpsrsSuratPemesananService.deleteOne(noPemesanan) : { success: false, message: auth.message }
+    })
+
+    // Penerimaan Barang Non Medis (kredit/hutang) — src/ipsrs/IPSRSPemesanan.java.
+    // `nip` (petugas) WAJIB dipilih eksplisit (lihat catatan header service)
+    // — permission `penerimaan_non_medis` sesuai akses.getpenerimaan_non_medis()
+    // yang menggerbang BtnSimpan di Java.
+    handle('ipsrs:penerimaan:listPetugas', () => IpsrsPenerimaanService.listPetugas())
+    handle('ipsrs:penerimaan:getFromPO', (_, noPemesanan) => IpsrsPenerimaanService.getFromPO(noPemesanan))
+    handle('ipsrs:penerimaan:nextNoFaktur', (_, tglPesan) => IpsrsPenerimaanService.getNextNoFaktur(tglPesan))
+    handle('ipsrs:penerimaan:list', (_, params) => IpsrsPenerimaanService.list(params))
+    handle('ipsrs:penerimaan:detail', (_, noFaktur) => IpsrsPenerimaanService.detail(noFaktur))
+    handle('ipsrs:penerimaan:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'penerimaan_non_medis')
+        return auth.ok ? IpsrsPenerimaanService.create(data, auth.user.username) : { success: false, message: auth.message }
     })
 
     handle('ipsrs:laporan:rekapPermintaan', (_, params) => IpsrsLaporanService.rekapPermintaan(params))

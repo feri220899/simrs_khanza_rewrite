@@ -69,6 +69,8 @@ export const SET_AKUN_CONFIG = {
             { key: 'Stok_Keluar_Ipsrs', label: 'Beban Stok Keluar IPSRS' },
             { key: 'Bayar_Piutang_Pasien', label: 'Kas/Bank Penerimaan Piutang Pasien' },
             { key: 'Penerimaan_NonMedis', label: 'Penerimaan Logistik Non Medis' },
+            { key: 'Kontra_Penerimaan_NonMedis', label: 'Hutang Penerimaan Logistik Non Medis' },
+            { key: 'PPN_Masukan', label: 'PPN Masukan (Pembelian/Penerimaan)' },
             { key: 'Bayar_Pemesanan_Non_Medis', label: 'Hutang Vendor Non Medis' },
             { key: 'Pengadaan_Toko', label: 'Hutang Pengadaan Toko' },
             { key: 'Bayar_Pemesanan_Toko', label: 'Kas/Bank Bayar Pemesanan Toko' },
