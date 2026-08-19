@@ -13,7 +13,7 @@ import {
   Link2, IdCard, FileCheck2, ListTree, Settings, Bookmark,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
   Tags, UserCircle, Repeat, Coins, SlidersHorizontal, WalletCards, PackageCheck,
-  PackageMinus,
+  PackageMinus, Undo2,
 } from 'lucide-vue-next'
 
 // PERMISSION SLUG SEKARANG = NAMA KOLOM ASLI di sik.sql > CREATE TABLE `user`
@@ -248,6 +248,7 @@ export const allMenu = [
            { to: '/ipsrs/penerimaan',      label: 'Penerimaan Barang Non Medis', icon: PackageCheck, permission: 'penerimaan_non_medis' },
            { to: '/ipsrs/pengadaan',       label: 'Pengadaan Barang Non Medis', icon: ShoppingBag, permission: 'ipsrs_pengadaan_barang' },
            { to: '/ipsrs/pengeluaran',     label: 'Pengeluaran Barang Non Medis', icon: PackageMinus, permission: 'ipsrs_stok_keluar' },
+           { to: '/ipsrs/retur-beli',      label: 'Retur Beli Barang Non Medis', icon: Undo2, permission: 'ipsrs_returbeli' },
            { to: '/ipsrs/stok-opname',     label: 'Stok Opname',      icon: ClipboardCheck, permission: 'stok_opname_logistik' },
           { to: '/ipsrs/riwayat',         label: 'Riwayat Barang',   icon: History,        permission: 'ipsrs_riwayat_barang' },
         ],
