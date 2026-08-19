@@ -1,4 +1,5 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 // Replika DlgCashflow.java > prosesCari(). Java punya banyak query alternatif
 // yang di-comment-out (mis. ikut sertakan rekening Neraca balance='K' di Kas
@@ -24,6 +25,7 @@ async function get({ tgl_awal, tgl_akhir }) {
         return { kasAwal: empty, kasMasuk: empty, kasKeluar: empty, totalKas: 0 }
     }
 
+    try {
     const db = await DatabaseService.get()
     const thnAwal = tgl_awal.substring(0, 4)
     const thnAkhir = tgl_akhir.substring(0, 4)
@@ -94,6 +96,11 @@ async function get({ tgl_awal, tgl_akhir }) {
         kasMasuk: { rows: kasMasukRows, total: penerimaan },
         kasKeluar: { rows: kasKeluarRows, total: pengeluaran },
         totalKas
+    }
+    } catch (err) {
+        LogService.error('[KeuanganCashflowService] Error get', { message: err.message, stack: err.stack })
+        console.error('[KeuanganCashflowService] Error get:', err)
+        throw err
     }
 }
 

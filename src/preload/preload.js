@@ -244,6 +244,18 @@ contextBridge.exposeInMainWorld('api', {
         cashflow: {
             get: (token, params) => ipcRenderer.invoke('keuangan:cashflow:get', token, params),
         },
+        kategoriPengeluaran: {
+            list: (token) => ipcRenderer.invoke('keuangan:kategoriPengeluaran:list', token),
+            create: (token, data) => ipcRenderer.invoke('keuangan:kategoriPengeluaran:create', token, data),
+            update: (token, kode, data) => ipcRenderer.invoke('keuangan:kategoriPengeluaran:update', token, kode, data),
+            delete: (token, kode) => ipcRenderer.invoke('keuangan:kategoriPengeluaran:delete', token, kode),
+        },
+        pengeluaranHarian: {
+            list: (token, params) => ipcRenderer.invoke('keuangan:pengeluaranHarian:list', token, params),
+            nextNo: (token, tanggal) => ipcRenderer.invoke('keuangan:pengeluaranHarian:nextNo', token, tanggal),
+            create: (token, data) => ipcRenderer.invoke('keuangan:pengeluaranHarian:create', token, data),
+            delete: (token, noKeluar) => ipcRenderer.invoke('keuangan:pengeluaranHarian:delete', token, noKeluar),
+        },
         rekening: {
             list: () => ipcRenderer.invoke('keuangan:rekening:list'),
             create: (token, data) => ipcRenderer.invoke('keuangan:rekening:create', token, data),

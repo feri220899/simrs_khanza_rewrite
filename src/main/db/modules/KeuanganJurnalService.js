@@ -1,4 +1,5 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 function generateNoJurnal(lastNo, tgl) {
     const prefix = 'JR' + tgl.replace(/-/g, '')
@@ -10,15 +11,22 @@ function generateNoJurnal(lastNo, tgl) {
 }
 
 async function getNextNoJurnal(tanggal) {
-    const db = await DatabaseService.get()
-    const res = await db.query(
-        "SELECT MAX(no_jurnal) as last_no FROM jurnal WHERE tgl_jurnal = ?",
-        [tanggal]
-    )
-    return generateNoJurnal(res.rows[0]?.last_no, tanggal)
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(
+            "SELECT MAX(no_jurnal) as last_no FROM jurnal WHERE tgl_jurnal = ?",
+            [tanggal]
+        )
+        return generateNoJurnal(res.rows[0]?.last_no, tanggal)
+    } catch (err) {
+        LogService.error('[KeuanganJurnalService] Error getNextNoJurnal', { message: err.message, stack: err.stack })
+        console.error('[KeuanganJurnalService] Error getNextNoJurnal:', err)
+        throw err
+    }
 }
 
 async function list(params = {}) {
+  try {
     const db = await DatabaseService.get()
     let query = `
         SELECT j.no_jurnal, j.no_bukti, j.tgl_jurnal, j.jam_jurnal, j.jenis, j.keterangan,
@@ -92,6 +100,11 @@ async function list(params = {}) {
     }
 
     return grouped
+  } catch (err) {
+    LogService.error('[KeuanganJurnalService] Error list', { message: err.message, stack: err.stack })
+    console.error('[KeuanganJurnalService] Error list:', err)
+    throw err
+  }
 }
 
 function validateDetails(details) {
@@ -145,28 +158,78 @@ async function validateArahSaldo(details, jenis, db) {
     return null
 }
 
+// Inti mesin posting — padanan `Jurnal.java` (`simpanJurnal()`) Java, yang
+// dipanggil SEMUA modul auto-posting (Pengeluaran Harian dkk) langsung, BUKAN
+// lewat form manual `DlgJurnal.java`. PENTING: `Jurnal.java` di Java asli
+// cuma validasi debet==kredit, TIDAK ADA validasi arah saldo per akun —
+// validasi arah saldo itu HANYA ada di `DlgJurnal.java` (form input manual,
+// mencegah salah pilih akun waktu user isi baris manual). Makanya
+// `validateArahSaldo` sengaja TIDAK dipanggil di sini, cuma di `create()` di
+// bawah (jalur form Jurnal Umum) — modul lain yang posting programatik (mis.
+// jurnal pembalik pembatalan) boleh mengkredit akun Biaya/debet akun
+// Pendapatan sesuai kebutuhan tanpa ditolak validasi yang cuma relevan buat
+// input manual.
+//
+// Dipakai baik oleh create() sendiri maupun modul lain (mis. Pengeluaran
+// Harian Tahap D) yang perlu insert transaksi bisnisnya SENDIRI + posting
+// jurnal dalam SATU transaksi DB yang sama (Keuangan.md §4.3 poin 4) —
+// makanya fungsi ini menerima `client` yang sudah di tengah transaksi milik
+// pemanggil, bukan buka koneksi/transaksi sendiri, dan melempar Error (bukan
+// {success:false}) supaya pemanggil ROLLBACK sendiri. Nomor jurnal
+// di-generate & di-insert DI DALAM fungsi ini (bukan di-retry oleh caller) —
+// caller yang mau retry ER_DUP_ENTRY harus bungkus loop-nya SENDIRI di luar
+// (lihat create() di bawah sebagai contoh).
+async function postJurnalOnClient(client, payload, username) {
+    const { no_bukti, tgl_jurnal, jam_jurnal, jenis: jenisInput, keterangan, details } = payload
+
+    if (!tgl_jurnal) throw new Error('Tanggal jurnal tidak boleh kosong')
+    if (!no_bukti?.trim()) throw new Error('No. Bukti tidak boleh kosong')
+    if (!keterangan?.trim()) throw new Error('Keterangan tidak boleh kosong')
+    if (!details || !Array.isArray(details) || details.length === 0) {
+        throw new Error('Detail jurnal tidak boleh kosong')
+    }
+
+    const validated = validateDetails(details)
+    if (validated.error) throw new Error(validated.error)
+
+    const jenis = jenisInput || 'U'
+    const jam = jam_jurnal || new Date().toTimeString().split(' ')[0]
+    const keteranganFinal = `${keterangan.trim()}, OLEH ${username || '-'}`
+
+    // Kunci baris terakhir tanggal ini supaya insert paralel tidak dapat nomor sama.
+    const resNo = await client.query(
+        "SELECT no_jurnal FROM jurnal WHERE tgl_jurnal = ? ORDER BY no_jurnal DESC LIMIT 1 FOR UPDATE",
+        [tgl_jurnal]
+    )
+    const no_jurnal = generateNoJurnal(resNo.rows[0]?.no_jurnal, tgl_jurnal)
+
+    await client.query(
+        "INSERT INTO jurnal (no_jurnal, no_bukti, tgl_jurnal, jam_jurnal, jenis, keterangan) VALUES (?, ?, ?, ?, ?, ?)",
+        [no_jurnal, no_bukti.trim(), tgl_jurnal, jam, jenis, keteranganFinal]
+    )
+
+    for (const d of details) {
+        await client.query(
+            "INSERT INTO detailjurnal (no_jurnal, kd_rek, debet, kredit) VALUES (?, ?, ?, ?)",
+            [no_jurnal, d.kd_rek, Number(d.debet || 0), Number(d.kredit || 0)]
+        )
+    }
+
+    return no_jurnal
+}
+
 // Jurnal yang sudah tersimpan bersifat final (selaras dengan DlgCariJurnal.java yang
 // hanya punya Cari/Print, tanpa Hapus/Edit) — koreksi wajib lewat jurnal baru jenis
 // Penyesuaian ('P'), bukan mengubah/menghapus baris yang sudah diposting.
+//
+// Jalur INI (form Jurnal Umum manual) yang mereplikasi validasi arah saldo
+// `DlgJurnal.java BtnTambahActionPerformed` — bukan `postJurnalOnClient`
+// (mesin bersama), karena validasi itu memang cuma ada di form manual Java,
+// bukan di `Jurnal.java`. Lihat komentar di atas `postJurnalOnClient`.
 async function create(data, username) {
-    if (!data.tgl_jurnal) return { success: false, message: 'Tanggal jurnal tidak boleh kosong' }
-    if (!data.no_bukti?.trim()) return { success: false, message: 'No. Bukti tidak boleh kosong' }
-    if (!data.keterangan?.trim()) return { success: false, message: 'Keterangan tidak boleh kosong' }
-    if (!data.details || !Array.isArray(data.details) || data.details.length === 0) {
-        return { success: false, message: 'Detail jurnal tidak boleh kosong' }
-    }
-
-    const validated = validateDetails(data.details)
-    if (validated.error) return { success: false, message: validated.error }
-
-    const jenis = data.jenis || 'U'
-    const tgl = data.tgl_jurnal
-    const jam = data.jam_jurnal || new Date().toTimeString().split(' ')[0]
-    const keterangan = `${data.keterangan.trim()}, OLEH ${username || '-'}`
-
     const db = await DatabaseService.get()
 
-    const arahError = await validateArahSaldo(data.details, jenis, db)
+    const arahError = await validateArahSaldo(data.details || [], data.jenis || 'U', db)
     if (arahError) return { success: false, message: arahError }
 
     const MAX_RETRY = 5
@@ -175,26 +238,7 @@ async function create(data, username) {
         const client = await db.connect()
         try {
             await client.query('START TRANSACTION')
-
-            // Kunci baris terakhir tanggal ini supaya insert paralel tidak dapat nomor sama.
-            const resNo = await client.query(
-                "SELECT no_jurnal FROM jurnal WHERE tgl_jurnal = ? ORDER BY no_jurnal DESC LIMIT 1 FOR UPDATE",
-                [tgl]
-            )
-            const no_jurnal = generateNoJurnal(resNo.rows[0]?.no_jurnal, tgl)
-
-            await client.query(
-                "INSERT INTO jurnal (no_jurnal, no_bukti, tgl_jurnal, jam_jurnal, jenis, keterangan) VALUES (?, ?, ?, ?, ?, ?)",
-                [no_jurnal, data.no_bukti.trim(), tgl, jam, jenis, keterangan]
-            )
-
-            for (const d of data.details) {
-                await client.query(
-                    "INSERT INTO detailjurnal (no_jurnal, kd_rek, debet, kredit) VALUES (?, ?, ?, ?)",
-                    [no_jurnal, d.kd_rek, Number(d.debet || 0), Number(d.kredit || 0)]
-                )
-            }
-
+            const no_jurnal = await postJurnalOnClient(client, data, username)
             await client.query('COMMIT')
             return { success: true, no_jurnal }
         } catch (err) {
@@ -203,6 +247,7 @@ async function create(data, username) {
             if (err.code === 'ER_NO_REFERENCED_ROW_2' || err.code === 'ER_NO_REFERENCED_ROW') {
                 return { success: false, message: 'Ada kode rekening yang tidak ditemukan di Master COA' }
             }
+            LogService.error('[KeuanganJurnalService] Error create', { message: err.message, stack: err.stack, code: err.code })
             console.error('[KeuanganJurnalService] Error create:', err)
             return { success: false, message: err.code === 'ER_DUP_ENTRY' ? 'Nomor jurnal bentrok, silakan coba lagi' : err.message }
         } finally {
@@ -211,4 +256,4 @@ async function create(data, username) {
     }
 }
 
-export default { list, create, getNextNoJurnal }
+export default { list, create, getNextNoJurnal, postJurnalOnClient }

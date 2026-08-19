@@ -1,15 +1,22 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 // --- KELOMPOK AKUN BAYAR KASIR ---
 async function listAkunBayar() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT a.nama_bayar, a.kd_rek, r.nm_rek, a.ppn
-        FROM akun_bayar a
-        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
-        ORDER BY a.nama_bayar ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT a.nama_bayar, a.kd_rek, r.nm_rek, a.ppn
+            FROM akun_bayar a
+            LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+            ORDER BY a.nama_bayar ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listAkunBayar', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listAkunBayar:', err)
+        throw err
+    }
 }
 
 async function createAkunBayar(data) {
@@ -26,6 +33,8 @@ async function createAkunBayar(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -44,6 +53,8 @@ async function updateAkunBayar(oldNama, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -54,21 +65,29 @@ async function deleteAkunBayar(nama_bayar) {
         await db.query('DELETE FROM akun_bayar WHERE nama_bayar = ?', [nama_bayar])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK AKUN PIUTANG PASIEN ---
 async function listAkunPiutang() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT a.nama_bayar, a.kd_rek, r.nm_rek, a.kd_pj, p.png_jawab
-        FROM akun_piutang a
-        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
-        LEFT JOIN penjab p ON a.kd_pj = p.kd_pj
-        ORDER BY a.nama_bayar ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT a.nama_bayar, a.kd_rek, r.nm_rek, a.kd_pj, p.png_jawab
+            FROM akun_piutang a
+            LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+            LEFT JOIN penjab p ON a.kd_pj = p.kd_pj
+            ORDER BY a.nama_bayar ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listAkunPiutang', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listAkunPiutang:', err)
+        throw err
+    }
 }
 
 async function createAkunPiutang(data) {
@@ -87,6 +106,8 @@ async function createAkunPiutang(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -107,6 +128,8 @@ async function updateAkunPiutang(oldNama, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -117,20 +140,28 @@ async function deleteAkunPiutang(nama_bayar) {
         await db.query('DELETE FROM akun_piutang WHERE nama_bayar = ?', [nama_bayar])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK AKUN PELUNASAN HUTANG VENDOR ---
 async function listAkunBayarHutang() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT a.nama_bayar, a.kd_rek, r.nm_rek
-        FROM akun_bayar_hutang a
-        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
-        ORDER BY a.nama_bayar ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT a.nama_bayar, a.kd_rek, r.nm_rek
+            FROM akun_bayar_hutang a
+            LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+            ORDER BY a.nama_bayar ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listAkunBayarHutang', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listAkunBayarHutang:', err)
+        throw err
+    }
 }
 
 async function createAkunBayarHutang(data) {
@@ -147,6 +178,8 @@ async function createAkunBayarHutang(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -165,6 +198,8 @@ async function updateAkunBayarHutang(oldNama, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -175,21 +210,29 @@ async function deleteAkunBayarHutang(nama_bayar) {
         await db.query('DELETE FROM akun_bayar_hutang WHERE nama_bayar = ?', [nama_bayar])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK AKUN ASET INVENTARIS ---
 async function listAkunAset() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT a.id_jenis, j.nama_jenis, a.kd_rek, r.nm_rek
-        FROM akun_aset_inventaris a
-        LEFT JOIN inventaris_jenis j ON a.id_jenis = j.id_jenis
-        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
-        ORDER BY a.id_jenis ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT a.id_jenis, j.nama_jenis, a.kd_rek, r.nm_rek
+            FROM akun_aset_inventaris a
+            LEFT JOIN inventaris_jenis j ON a.id_jenis = j.id_jenis
+            LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+            ORDER BY a.id_jenis ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listAkunAset', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listAkunAset:', err)
+        throw err
+    }
 }
 
 async function createAkunAset(data) {
@@ -206,6 +249,8 @@ async function createAkunAset(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -224,6 +269,8 @@ async function updateAkunAset(oldIdJenis, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -234,21 +281,29 @@ async function deleteAkunAset(id_jenis) {
         await db.query('DELETE FROM akun_aset_inventaris WHERE id_jenis = ?', [id_jenis])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK KATEGORI PEMASUKAN LAIN ---
 async function listKategoriPemasukan() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT k.kode_kategori, k.nama_kategori, k.kd_rek, r1.nm_rek, k.kd_rek2, r2.nm_rek AS nm_rek2
-        FROM kategori_pemasukan_lain k
-        LEFT JOIN rekening r1 ON k.kd_rek = r1.kd_rek
-        LEFT JOIN rekening r2 ON k.kd_rek2 = r2.kd_rek
-        ORDER BY k.kode_kategori ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT k.kode_kategori, k.nama_kategori, k.kd_rek, r1.nm_rek, k.kd_rek2, r2.nm_rek AS nm_rek2
+            FROM kategori_pemasukan_lain k
+            LEFT JOIN rekening r1 ON k.kd_rek = r1.kd_rek
+            LEFT JOIN rekening r2 ON k.kd_rek2 = r2.kd_rek
+            ORDER BY k.kode_kategori ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listKategoriPemasukan', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listKategoriPemasukan:', err)
+        throw err
+    }
 }
 
 async function createKategoriPemasukan(data) {
@@ -269,6 +324,8 @@ async function createKategoriPemasukan(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -291,6 +348,8 @@ async function updateKategoriPemasukan(oldKode, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -301,21 +360,29 @@ async function deleteKategoriPemasukan(kode_kategori) {
         await db.query('DELETE FROM kategori_pemasukan_lain WHERE kode_kategori = ?', [kode_kategori])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK KATEGORI PENGELUARAN HARIAN ---
 async function listKategoriPengeluaran() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT k.kode_kategori, k.nama_kategori, k.kd_rek, r1.nm_rek, k.kd_rek2, r2.nm_rek AS nm_rek2
-        FROM kategori_pengeluaran_harian k
-        LEFT JOIN rekening r1 ON k.kd_rek = r1.kd_rek
-        LEFT JOIN rekening r2 ON k.kd_rek2 = r2.kd_rek
-        ORDER BY k.kode_kategori ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT k.kode_kategori, k.nama_kategori, k.kd_rek, r1.nm_rek, k.kd_rek2, r2.nm_rek AS nm_rek2
+            FROM kategori_pengeluaran_harian k
+            LEFT JOIN rekening r1 ON k.kd_rek = r1.kd_rek
+            LEFT JOIN rekening r2 ON k.kd_rek2 = r2.kd_rek
+            ORDER BY k.kode_kategori ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listKategoriPengeluaran', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listKategoriPengeluaran:', err)
+        throw err
+    }
 }
 
 async function createKategoriPengeluaran(data) {
@@ -336,6 +403,8 @@ async function createKategoriPengeluaran(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -358,6 +427,8 @@ async function updateKategoriPengeluaran(oldKode, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -368,20 +439,28 @@ async function deleteKategoriPengeluaran(kode_kategori) {
         await db.query('DELETE FROM kategori_pengeluaran_harian WHERE kode_kategori = ?', [kode_kategori])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
 
 // --- KELOMPOK AKUN PENAGIHAN PIUTANG ---
 async function listAkunPenagihanPiutang() {
-    const db = await DatabaseService.get()
-    const res = await db.query(`
-        SELECT a.kd_rek, a.nama_bank, a.atas_nama, a.no_rek, r.nm_rek
-        FROM akun_penagihan_piutang a
-        LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
-        ORDER BY a.nama_bank ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        const res = await db.query(`
+            SELECT a.kd_rek, a.nama_bank, a.atas_nama, a.no_rek, r.nm_rek
+            FROM akun_penagihan_piutang a
+            LEFT JOIN rekening r ON a.kd_rek = r.kd_rek
+            ORDER BY a.nama_bank ASC
+        `)
+        return res.rows
+    } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error listAkunPenagihanPiutang', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error listAkunPenagihanPiutang:', err)
+        throw err
+    }
 }
 
 async function createAkunPenagihanPiutang(data) {
@@ -400,6 +479,8 @@ async function createAkunPenagihanPiutang(data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -420,6 +501,8 @@ async function updateAkunPenagihanPiutang(oldKdRek, data) {
         )
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }
@@ -430,6 +513,8 @@ async function deleteAkunPenagihanPiutang(kd_rek) {
         await db.query('DELETE FROM akun_penagihan_piutang WHERE kd_rek = ?', [kd_rek])
         return { success: true }
     } catch (err) {
+        LogService.error('[KeuanganMasterAkunService] Error', { message: err.message, stack: err.stack })
+        console.error('[KeuanganMasterAkunService] Error:', err)
         return { success: false, message: err.message }
     }
 }

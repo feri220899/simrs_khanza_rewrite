@@ -1,4 +1,5 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 // Definisi kunci mapping default per modul (1:1 kolom asli database Khanza)
 export const SET_AKUN_CONFIG = {
@@ -90,6 +91,7 @@ async function getMappingDefault() {
             const res = await db.query(`SELECT * FROM ${config.table} LIMIT 1`)
             result[groupKey] = res.rows.length > 0 ? res.rows[0] : {}
         } catch (e) {
+            LogService.warn(`[PengaturanRekening] Gagal load ${config.table}`, { message: e.message })
             console.warn(`[PengaturanRekening] Gagal load ${config.table}:`, e.message)
             result[groupKey] = {}
         }
@@ -129,6 +131,7 @@ async function saveMappingDefault(groupKey, data) {
         return { success: true }
     } catch (error) {
         await client.query('ROLLBACK')
+        LogService.error(`[PengaturanRekening] Gagal simpan ${config.table}`, { message: error.message, stack: error.stack })
         console.error(`[PengaturanRekening] Gagal simpan ${config.table}:`, error)
         return { success: false, message: error.message }
     } finally {

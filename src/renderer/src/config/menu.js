@@ -12,7 +12,7 @@ import {
   Building2, FileBarChart, Activity, HandHeart, LineChart, MessageSquare,
   Link2, IdCard, FileCheck2, ListTree, Settings, Bookmark,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
-  Tags, UserCircle, Repeat, Coins, SlidersHorizontal,
+  Tags, UserCircle, Repeat, Coins, SlidersHorizontal, WalletCards,
 } from 'lucide-vue-next'
 
 // PERMISSION SLUG SEKARANG = NAMA KOLOM ASLI di sik.sql > CREATE TABLE `user`
@@ -168,6 +168,8 @@ export const allMenu = [
           // DlgLabaRugi.java (kelas mana yang beneran gate akses-nya) sebelum final.
           { to: '/keuangan/laba-rugi',  label: 'Laba Rugi',       icon: TrendingUp, permission: 'keuangan' },
           { to: '/keuangan/cashflow',   label: 'Cash Flow',       icon: Wallet,     permission: 'cashflow' },
+          { to: '/keuangan/pengeluaran-harian', label: 'Pengeluaran Harian', icon: WalletCards, permission: 'pengeluaran' },
+          { to: '/keuangan/kategori-pengeluaran', label: 'Kategori Pengeluaran', icon: Bookmark, permission: 'kategori_pengeluaran_harian' },
           { to: '/keuangan/rekening',       label: 'Rekening / Akun', icon: Landmark,   permission: 'akun_rekening' },
           { to: '/keuangan/rekening-tahun', label: 'Rekening Tahun',   icon: FolderOpen, permission: 'rekening_tahun' },
           { to: '/keuangan/pengaturan-rekening', label: 'Pengaturan Rekening', icon: Settings, permission: 'pengaturan_rekening' },

@@ -1,15 +1,22 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 async function list() {
-    const db = await DatabaseService.get()
-    // Tampilkan semua rekening, sertakan parent dari subrekening jika ada
-    const res = await db.query(`
-        SELECT r.kd_rek, r.nm_rek, r.tipe, r.balance, r.level, s.kd_rek AS parent
-        FROM rekening r 
-        LEFT JOIN subrekening s ON r.kd_rek = s.kd_rek2 
-        ORDER BY r.kd_rek ASC
-    `)
-    return res.rows
+    try {
+        const db = await DatabaseService.get()
+        // Tampilkan semua rekening, sertakan parent dari subrekening jika ada
+        const res = await db.query(`
+            SELECT r.kd_rek, r.nm_rek, r.tipe, r.balance, r.level, s.kd_rek AS parent
+            FROM rekening r
+            LEFT JOIN subrekening s ON r.kd_rek = s.kd_rek2
+            ORDER BY r.kd_rek ASC
+        `)
+        return res.rows
+    } catch (error) {
+        LogService.error('[RekeningService] Error list', { message: error.message, stack: error.stack })
+        console.error('[RekeningService] Error list:', error)
+        throw error
+    }
 }
 
 function validate(data) {
@@ -61,6 +68,7 @@ async function create(data) {
         return { success: true }
     } catch (error) {
         await client.query('ROLLBACK')
+        LogService.error('[RekeningService] Error create', { message: error.message, stack: error.stack })
         console.error('[RekeningService] Error create:', error)
         return { success: false, message: error.message }
     } finally {
@@ -118,6 +126,7 @@ async function update(oldKode, data) {
         return { success: true }
     } catch (error) {
         await client.query('ROLLBACK')
+        LogService.error('[RekeningService] Error update', { message: error.message, stack: error.stack })
         console.error('[RekeningService] Error update:', error)
         return { success: false, message: error.message }
     } finally {
@@ -144,6 +153,7 @@ async function deleteOne(kode) {
         await db.query('DELETE FROM rekening WHERE kd_rek = ?', [kode])
         return { success: true }
     } catch (error) {
+        LogService.error('[RekeningService] Error delete', { message: error.message, stack: error.stack })
         console.error('[RekeningService] Error delete:', error)
         return { success: false, message: error.message }
     }
