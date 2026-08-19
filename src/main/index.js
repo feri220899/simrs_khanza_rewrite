@@ -850,20 +850,6 @@ app.whenReady().then(async () => {
         return auth.ok ? KeuanganMasterAkunService.deleteKategoriPemasukan(kode) : { success: false, message: auth.message }
     })
 
-    handle('keuangan:masterAkun:listKategoriPengeluaran', () => KeuanganMasterAkunService.listKategoriPengeluaran())
-    handle('keuangan:masterAkun:createKategoriPengeluaran', (_, token, data) => {
-        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
-        return auth.ok ? KeuanganMasterAkunService.createKategoriPengeluaran(data) : { success: false, message: auth.message }
-    })
-    handle('keuangan:masterAkun:updateKategoriPengeluaran', (_, token, oldKode, data) => {
-        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
-        return auth.ok ? KeuanganMasterAkunService.updateKategoriPengeluaran(oldKode, data) : { success: false, message: auth.message }
-    })
-    handle('keuangan:masterAkun:deleteKategoriPengeluaran', (_, token, kode) => {
-        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
-        return auth.ok ? KeuanganMasterAkunService.deleteKategoriPengeluaran(kode) : { success: false, message: auth.message }
-    })
-
     handle('keuangan:masterAkun:listPenagihanPiutang', () => KeuanganMasterAkunService.listAkunPenagihanPiutang())
     handle('keuangan:masterAkun:createPenagihanPiutang', (_, token, data) => {
         const auth = AuthService.requirePermission(token, 'akun_penagihan_piutang')

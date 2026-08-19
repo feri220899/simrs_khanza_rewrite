@@ -15,7 +15,6 @@ const tabs = [
     { key: 'bayarHutang', label: 'Akun Bayar Hutang', permission: 'akun_bayar_hutang' },
     { key: 'aset', label: 'Akun Aset Inventaris', permission: 'akun_aset_inventaris' },
     { key: 'pemasukan', label: 'Kategori Pemasukan', permission: 'kategori_pemasukan_lain' },
-    { key: 'pengeluaran', label: 'Kategori Pengeluaran', permission: 'kategori_pengeluaran_harian' },
     { key: 'penagihanPiutang', label: 'Akun Penagihan Piutang', permission: 'akun_penagihan_piutang' }
 ]
 
@@ -100,7 +99,6 @@ async function load() {
         else if (activeTab.value === 'bayarHutang') rows.value = await window.api.keuangan.masterAkun.listBayarHutang()
         else if (activeTab.value === 'aset') rows.value = await window.api.keuangan.masterAkun.listAset()
         else if (activeTab.value === 'pemasukan') rows.value = await window.api.keuangan.masterAkun.listKategoriPemasukan()
-        else if (activeTab.value === 'pengeluaran') rows.value = await window.api.keuangan.masterAkun.listKategoriPengeluaran()
         else if (activeTab.value === 'penagihanPiutang') rows.value = await window.api.keuangan.masterAkun.listPenagihanPiutang()
  
     } catch (err) {
@@ -115,14 +113,13 @@ async function save() {
     try {
         let result
         const token = authStore.token
-        const d = form.value
+        const d = JSON.parse(JSON.stringify(form.value))
 
         if (activeTab.value === 'bayar') result = editing.value ? await window.api.keuangan.masterAkun.updateBayar(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createBayar(token, d)
         else if (activeTab.value === 'piutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePiutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createPiutang(token, d)
         else if (activeTab.value === 'bayarHutang') result = editing.value ? await window.api.keuangan.masterAkun.updateBayarHutang(token, editing.value.nama_bayar, d) : await window.api.keuangan.masterAkun.createBayarHutang(token, d)
         else if (activeTab.value === 'aset') result = editing.value ? await window.api.keuangan.masterAkun.updateAset(token, editing.value.id_jenis, d) : await window.api.keuangan.masterAkun.createAset(token, d)
         else if (activeTab.value === 'pemasukan') result = editing.value ? await window.api.keuangan.masterAkun.updateKategoriPemasukan(token, editing.value.kode_kategori, d) : await window.api.keuangan.masterAkun.createKategoriPemasukan(token, d)
-        else if (activeTab.value === 'pengeluaran') result = editing.value ? await window.api.keuangan.masterAkun.updateKategoriPengeluaran(token, editing.value.kode_kategori, d) : await window.api.keuangan.masterAkun.createKategoriPengeluaran(token, d)
         else if (activeTab.value === 'penagihanPiutang') result = editing.value ? await window.api.keuangan.masterAkun.updatePenagihanPiutang(token, editing.value.kd_rek, d) : await window.api.keuangan.masterAkun.createPenagihanPiutang(token, d)
 
         if (!result.success) return showToast(result.message || 'Gagal menyimpan', 'error')
@@ -147,7 +144,6 @@ async function remove(row) {
         else if (activeTab.value === 'bayarHutang') result = await window.api.keuangan.masterAkun.deleteBayarHutang(token, row.nama_bayar)
         else if (activeTab.value === 'aset') result = await window.api.keuangan.masterAkun.deleteAset(token, row.id_jenis)
         else if (activeTab.value === 'pemasukan') result = await window.api.keuangan.masterAkun.deleteKategoriPemasukan(token, row.kode_kategori)
-        else if (activeTab.value === 'pengeluaran') result = await window.api.keuangan.masterAkun.deleteKategoriPengeluaran(token, row.kode_kategori)
         else if (activeTab.value === 'penagihanPiutang') result = await window.api.keuangan.masterAkun.deletePenagihanPiutang(token, row.kd_rek)
 
         if (!result.success) return showToast(result.message || 'Gagal menghapus', 'error')
@@ -172,7 +168,7 @@ onMounted(load)
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0">
             <div>
                 <h1 class="text-xl font-bold flex items-center gap-2"><Bookmark class="size-6 text-primary" /> Master Akun & Kategori</h1>
-                <p class="text-sm text-base-content/60">Pengaturan akun bayar, piutang, dan kategori pemasukan/pengeluaran</p>
+                <p class="text-sm text-base-content/60">Pengaturan akun bayar, piutang, aset, dan kategori pemasukan lain</p>
             </div>
             <div class="flex items-center gap-2">
                 <button class="btn btn-ghost btn-sm gap-2" :disabled="loading" @click="load"><RotateCcw class="size-4" /> Refresh</button>
@@ -289,20 +285,20 @@ onMounted(load)
                         </template>
                         <template v-else-if="activeTab === 'penagihanPiutang'">
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-sm font-medium px-1">Rekening</label>
+                                <label class="text-sm font-medium px-1">Rekening <span class="text-error">*</span></label>
                                 <AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." />
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-sm font-medium px-1">Nama Bank</label>
+                                <label class="text-sm font-medium px-1">Nama Bank <span class="text-error">*</span></label>
                                 <input v-model="form.nama_bank" type="text" class="input input-sm input-bordered w-full" required />
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-sm font-medium px-1">Atas Nama</label>
-                                <input v-model="form.atas_nama" type="text" class="input input-sm input-bordered w-full" />
+                                <label class="text-sm font-medium px-1">Atas Nama <span class="text-error">*</span></label>
+                                <input v-model="form.atas_nama" type="text" class="input input-sm input-bordered w-full" required />
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-sm font-medium px-1">No Rekening</label>
-                                <input v-model="form.no_rek" type="text" class="input input-sm input-bordered w-full" />
+                                <label class="text-sm font-medium px-1">No Rekening <span class="text-error">*</span></label>
+                                <input v-model="form.no_rek" type="text" class="input input-sm input-bordered w-full" required />
                             </div>
                         </template>
                         <template v-else>
@@ -317,11 +313,11 @@ onMounted(load)
                         </template>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-sm font-medium px-1">Rekening {{ activeTab === 'pemasukan' || activeTab === 'pengeluaran' ? 'Debet' : '' }}</label>
+                            <label class="text-sm font-medium px-1">Rekening {{ activeTab === 'pemasukan' ? 'Debet' : '' }}</label>
                             <AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." />
                         </div>
 
-                        <template v-if="activeTab === 'pemasukan' || activeTab === 'pengeluaran'">
+                        <template v-if="activeTab === 'pemasukan'">
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-sm font-medium px-1">Rekening Kredit (Kontra)</label>
                                 <AppSelect v-model="form.kd_rek2" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening kontra COA..." />
