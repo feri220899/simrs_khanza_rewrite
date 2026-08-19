@@ -276,40 +276,70 @@ onMounted(load)
                 <form @submit.prevent="save">
                     <div class="p-6 space-y-4">
                         <template v-if="activeTab === 'bayar' || activeTab === 'piutang' || activeTab === 'bayarHutang'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Nama Bayar / Asuransi</span><input v-model="form.nama_bayar" type="text" class="input input-sm input-bordered" required /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">{{ activeTab === 'bayar' ? 'Nama Bayar' : 'Nama Bayar / Asuransi' }}</label>
+                                <input v-model="form.nama_bayar" type="text" class="input input-sm input-bordered w-full" required />
+                            </div>
                         </template>
                         <template v-else-if="activeTab === 'aset'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Jenis Inventaris (Kode ID)</span><AppSelect v-model="form.id_jenis" :options="inventarisOptions" value-prop="id_jenis" label="display" placeholder="Pilih jenis inventaris..." /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Jenis Inventaris (Kode ID)</label>
+                                <AppSelect v-model="form.id_jenis" :options="inventarisOptions" value-prop="id_jenis" label="display" placeholder="Pilih jenis inventaris..." />
+                            </div>
                         </template>
                         <template v-else-if="activeTab === 'penagihanPiutang'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Rekening</span><AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." /></label>
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Nama Bank</span><input v-model="form.nama_bank" type="text" class="input input-sm input-bordered" required /></label>
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Atas Nama</span><input v-model="form.atas_nama" type="text" class="input input-sm input-bordered" /></label>
-                            <label class="form-control gap-1"><span class="label-text font-semibold">No Rekening</span><input v-model="form.no_rek" type="text" class="input input-sm input-bordered" /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Rekening</label>
+                                <AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." />
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Nama Bank</label>
+                                <input v-model="form.nama_bank" type="text" class="input input-sm input-bordered w-full" required />
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Atas Nama</label>
+                                <input v-model="form.atas_nama" type="text" class="input input-sm input-bordered w-full" />
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">No Rekening</label>
+                                <input v-model="form.no_rek" type="text" class="input input-sm input-bordered w-full" />
+                            </div>
                         </template>
                         <template v-else>
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Kode Kategori</span><input v-model="form.kode_kategori" type="text" class="input input-sm input-bordered font-mono" required /></label>
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Nama Kategori</span><input v-model="form.nama_kategori" type="text" class="input input-sm input-bordered" required /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Kode Kategori</label>
+                                <input v-model="form.kode_kategori" type="text" class="input input-sm input-bordered font-mono w-full" required />
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Nama Kategori</label>
+                                <input v-model="form.nama_kategori" type="text" class="input input-sm input-bordered w-full" required />
+                            </div>
                         </template>
 
-                        <div class="form-control gap-1">
-                            <span class="label-text font-semibold">Rekening {{ activeTab === 'pemasukan' || activeTab === 'pengeluaran' ? 'Debet' : '' }}</span>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-sm font-medium px-1">Rekening {{ activeTab === 'pemasukan' || activeTab === 'pengeluaran' ? 'Debet' : '' }}</label>
                             <AppSelect v-model="form.kd_rek" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening COA..." />
                         </div>
 
                         <template v-if="activeTab === 'pemasukan' || activeTab === 'pengeluaran'">
-                            <div class="form-control gap-1">
-                                <span class="label-text font-semibold">Rekening Kredit (Kontra)</span>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Rekening Kredit (Kontra)</label>
                                 <AppSelect v-model="form.kd_rek2" :options="rekeningOptions" value-prop="kd_rek" label="display" placeholder="Pilih rekening kontra COA..." />
                             </div>
                         </template>
 
                         <template v-if="activeTab === 'bayar'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">PPN (%)</span><input v-model.number="form.ppn" type="number" step="0.01" class="input input-sm input-bordered w-32" /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">PPN (%)</label>
+                                <input v-model.number="form.ppn" type="number" step="0.01" class="input input-sm input-bordered w-32" />
+                            </div>
                         </template>
 
                         <template v-if="activeTab === 'piutang'">
-                            <label class="form-control gap-1"><span class="label-text font-semibold">Penjamin (Kode Penjab)</span><input v-model="form.kd_pj" type="text" class="input input-sm input-bordered font-mono" placeholder="Contoh: BPJ" required /></label>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-medium px-1">Penjamin (Kode Penjab)</label>
+                                <input v-model="form.kd_pj" type="text" class="input input-sm input-bordered font-mono w-full" placeholder="Contoh: BPJ" required />
+                            </div>
                         </template>
                     </div>
                     <div class="bg-base-100 px-6 py-4 border-t border-base-200 flex justify-end gap-2">

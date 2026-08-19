@@ -55,6 +55,8 @@ import KeuanganJurnalHarianService from './db/modules/KeuanganJurnalHarianServic
 import KeuanganBukuBesarService from './db/modules/KeuanganBukuBesarService.js'
 import KeuanganLabaRugiService from './db/modules/KeuanganLabaRugiService.js'
 import KeuanganCashflowService from './db/modules/KeuanganCashflowService.js'
+import KeuanganKategoriPengeluaranService from './db/modules/KeuanganKategoriPengeluaranService.js'
+import KeuanganPengeluaranHarianService from './db/modules/KeuanganPengeluaranHarianService.js'
 
 // Sebagian komputer RS (VM/thin-client/GPU tua) gagal launch proses GPU
 // Chromium — gejalanya FATAL "GPU process isn't usable" walau sandbox sudah
@@ -908,6 +910,40 @@ app.whenReady().then(async () => {
         const auth = AuthService.requirePermission(token, 'cashflow')
         const kosong = { kasAwal: { rows: [], total: 0 }, kasMasuk: { rows: [], total: 0 }, kasKeluar: { rows: [], total: 0 }, totalKas: 0 }
         return auth.ok ? KeuanganCashflowService.get(params) : { ...kosong, message: auth.message }
+    })
+
+    handle('keuangan:kategoriPengeluaran:list', (_, token) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganKategoriPengeluaranService.list() : []
+    })
+    handle('keuangan:kategoriPengeluaran:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganKategoriPengeluaranService.create(data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:kategoriPengeluaran:update', (_, token, kode, data) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganKategoriPengeluaranService.update(kode, data) : { success: false, message: auth.message }
+    })
+    handle('keuangan:kategoriPengeluaran:delete', (_, token, kode) => {
+        const auth = AuthService.requirePermission(token, 'kategori_pengeluaran_harian')
+        return auth.ok ? KeuanganKategoriPengeluaranService.deleteOne(kode) : { success: false, message: auth.message }
+    })
+
+    handle('keuangan:pengeluaranHarian:list', (_, token, params) => {
+        const auth = AuthService.requirePermission(token, 'pengeluaran')
+        return auth.ok ? KeuanganPengeluaranHarianService.list(params) : { rows: [], total: 0, message: auth.message }
+    })
+    handle('keuangan:pengeluaranHarian:nextNo', (_, token, tanggal) => {
+        const auth = AuthService.requirePermission(token, 'pengeluaran')
+        return auth.ok ? KeuanganPengeluaranHarianService.getNextNoKeluar(tanggal) : ''
+    })
+    handle('keuangan:pengeluaranHarian:create', (_, token, data) => {
+        const auth = AuthService.requirePermission(token, 'pengeluaran')
+        return auth.ok ? KeuanganPengeluaranHarianService.create(data, auth.user.username) : { success: false, message: auth.message }
+    })
+    handle('keuangan:pengeluaranHarian:delete', (_, token, noKeluar) => {
+        const auth = AuthService.requirePermission(token, 'pengeluaran')
+        return auth.ok ? KeuanganPengeluaranHarianService.deleteOne(noKeluar, auth.user.username) : { success: false, message: auth.message }
     })
 
     // Satuan — SHARED lintas modul (Toko, Dapur, IPSRS, Farmasi, dll di Java

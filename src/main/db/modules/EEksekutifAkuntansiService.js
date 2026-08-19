@@ -1,4 +1,5 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 // `row.parent` = induk (subrekening.kd_rek), kd_rek row itu sendiri = anak
 // (subrekening.kd_rek2 — PK, satu anak cuma py 1 induk). Dua tahap: bikin
@@ -95,6 +96,7 @@ async function applyMutasi(db, nodes, tgl1, tgl2) {
 }
 
 async function hutang(jenis) {
+  try {
     const db = await DatabaseService.get()
     let query
 
@@ -131,9 +133,15 @@ async function hutang(jenis) {
     const charts = [{ title: 'Sebaran Hutang', data: items.map(item => ({ label: `${item.nama} (${item.sisa.toLocaleString('id-ID')})`, value: item.sisa })) }]
 
     return { filter: { jenis }, items, grandTotal, charts }
+  } catch (err) {
+    LogService.error('[EEksekutifAkuntansiService] Error hutang', { message: err.message, stack: err.stack })
+    console.error('[EEksekutifAkuntansiService] Error hutang:', err)
+    throw err
+  }
 }
 
 async function piutangBelumLunas(jenis) {
+  try {
     const db = await DatabaseService.get()
     let query
 
@@ -169,9 +177,15 @@ async function piutangBelumLunas(jenis) {
     const charts = [{ title: 'Sebaran Piutang', data: items.map(item => ({ label: `${item.nama} (${item.sisa.toLocaleString('id-ID')})`, value: item.sisa })) }]
 
     return { filter: { jenis }, items, grandTotal, charts }
+  } catch (err) {
+    LogService.error('[EEksekutifAkuntansiService] Error piutangBelumLunas', { message: err.message, stack: err.stack })
+    console.error('[EEksekutifAkuntansiService] Error piutangBelumLunas:', err)
+    throw err
+  }
 }
 
 async function laporanKeuangan(tahun) {
+  try {
     const db = await DatabaseService.get()
     const { nodes, roots } = await getAkunNodes(db)
     
@@ -207,9 +221,15 @@ async function laporanKeuangan(tahun) {
     result.totalPasiva += result.modalAkhir
 
     return { filter: { tahun }, ...result }
+  } catch (err) {
+    LogService.error('[EEksekutifAkuntansiService] Error laporanKeuangan', { message: err.message, stack: err.stack })
+    console.error('[EEksekutifAkuntansiService] Error laporanKeuangan:', err)
+    throw err
+  }
 }
 
 async function rekeningTahun(tahun) {
+  try {
     const db = await DatabaseService.get()
     const { nodes, roots } = await getAkunNodes(db)
     
@@ -223,9 +243,15 @@ async function rekeningTahun(tahun) {
     roots.forEach(root => calcAkunTree(root, new Set(), visited))
 
     return { filter: { tahun }, roots }
+  } catch (err) {
+    LogService.error('[EEksekutifAkuntansiService] Error rekeningTahun', { message: err.message, stack: err.stack })
+    console.error('[EEksekutifAkuntansiService] Error rekeningTahun:', err)
+    throw err
+  }
 }
 
 async function saldoAkunPerBulan(tahun) {
+  try {
     const db = await DatabaseService.get()
     const { nodes } = await getAkunNodes(db)
     
@@ -276,6 +302,11 @@ async function saldoAkunPerBulan(tahun) {
     }
 
     return { filter: { tahun }, bulan, items }
+  } catch (err) {
+    LogService.error('[EEksekutifAkuntansiService] Error saldoAkunPerBulan', { message: err.message, stack: err.stack })
+    console.error('[EEksekutifAkuntansiService] Error saldoAkunPerBulan:', err)
+    throw err
+  }
 }
 
 export default { hutang, piutangBelumLunas, laporanKeuangan, rekeningTahun, saldoAkunPerBulan }

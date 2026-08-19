@@ -1,4 +1,5 @@
 import DatabaseService from '../DatabaseService.js'
+import LogService from '../../electron/LogService.js'
 
 // Replika DlgLabaRugi.java: Java menghitung tiap baris rekening lewat query
 // berjenjang yang di-unroll manual sampai 13 level (subrekening join berulang),
@@ -24,6 +25,7 @@ async function get({ tgl_awal, tgl_akhir }) {
         }
     }
 
+    try {
     const db = await DatabaseService.get()
     const thnAwal = tgl_awal.substring(0, 4)
     const thnAkhir = tgl_akhir.substring(0, 4)
@@ -94,6 +96,11 @@ async function get({ tgl_awal, tgl_akhir }) {
     const totalPasiva = pasiva.total + modalAkhir
 
     return { pendapatan, biaya, labaBersih, modal, modalAkhir, aktiva, pasiva, totalPasiva }
+    } catch (err) {
+        LogService.error('[KeuanganLabaRugiService] Error get', { message: err.message, stack: err.stack })
+        console.error('[KeuanganLabaRugiService] Error get:', err)
+        throw err
+    }
 }
 
 export default { get }
