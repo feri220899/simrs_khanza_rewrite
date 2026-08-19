@@ -12,7 +12,7 @@ import {
   Building2, FileBarChart, Activity, HandHeart, LineChart, MessageSquare,
   Link2, IdCard, FileCheck2, ListTree, Settings, Bookmark,
   Shield, Briefcase, AlertOctagon, CreditCard, NotebookPen,
-  Tags, UserCircle, Repeat, Coins, SlidersHorizontal, WalletCards,
+  Tags, UserCircle, Repeat, Coins, SlidersHorizontal, WalletCards, PackageCheck,
 } from 'lucide-vue-next'
 
 // PERMISSION SLUG SEKARANG = NAMA KOLOM ASLI di sik.sql > CREATE TABLE `user`
@@ -244,6 +244,7 @@ export const allMenu = [
           { to: '/ipsrs/permintaan',      label: 'Permintaan Barang Non Medis',       icon: ClipboardList,  permission: ['permintaan_non_medis', 'ipsrs_stok_keluar'] },
           { to: '/ipsrs/pengajuan',       label: 'Pengajuan Barang', icon: FileCheck2,     permission: 'pengajuan_barang_nonmedis' },
            { to: '/ipsrs/surat-pemesanan', label: 'Surat Pemesanan',  icon: FileText,       permission: 'surat_pemesanan_non_medis' },
+           { to: '/ipsrs/penerimaan',      label: 'Penerimaan Barang Non Medis', icon: PackageCheck, permission: 'penerimaan_non_medis' },
            { to: '/ipsrs/stok-opname',     label: 'Stok Opname',      icon: ClipboardCheck, permission: 'stok_opname_logistik' },
           { to: '/ipsrs/riwayat',         label: 'Riwayat Barang',   icon: History,        permission: 'ipsrs_riwayat_barang' },
         ],
